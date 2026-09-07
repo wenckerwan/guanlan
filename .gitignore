@@ -1,0 +1,9 @@
+node_modules/
+__pycache__/
+.nuxt/
+.output/
+storage/raw/
+storage/previews/
+.env
+.npm-cache/
+audit.json

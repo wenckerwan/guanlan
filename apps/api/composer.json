@@ -1,0 +1,13 @@
+{
+  "name": "guanlan/api",
+  "type": "project",
+  "require": {
+    "php": ">=8.2",
+    "hyperf/framework": "^3.1",
+    "hyperf/http-server": "^3.1",
+    "hyperf/di": "^3.1",
+    "hyperf/contract": "^3.1"
+  },
+  "autoload": { "psr-4": { "App\\": "src/" } },
+  "scripts": { "start": "php bin/hyperf.php start", "test": "phpunit" }
+}
