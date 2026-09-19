@@ -4,6 +4,10 @@ services:
     environment:
       APP_ENV: production
       DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: guanlan
+      DB_USERNAME: guanlan
+      DB_PASSWORD: change-me
       REDIS_HOST: redis
       SEARCH_HOST: http://meilisearch:7700
     volumes:

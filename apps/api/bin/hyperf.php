@@ -2,8 +2,18 @@
 
 declare(strict_types=1);
 
-use Hyperf\Server\Entry;
+/**
+ * Hyperf 标准控制台入口。
+ *
+ * 定义 BASE_PATH -> 加载 composer autoload -> 构建 DI 容器 -> 运行应用。
+ */
 
-require_once dirname(__DIR__) . '/vendor/autoload.php';
+! defined('BASE_PATH') && define('BASE_PATH', dirname(__DIR__));
 
-Entry::run();
+require BASE_PATH . '/vendor/autoload.php';
+
+$container = require BASE_PATH . '/config/container.php';
+
+$application = $container->get(\Hyperf\Contract\ApplicationInterface::class);
+
+$application->run();

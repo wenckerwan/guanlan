@@ -1,8 +1,21 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { BookOpen, ChevronRight } from 'lucide-vue-next'
-import { subjects } from '../../data/subjects'
+import type { Subject } from '~/types/api'
+import { validateSubjects } from '~/utils/subjects.mjs'
 
 useHead({ title: '资料库｜观澜考研政治知识库', meta: [{ name: 'description', content: '观澜考研政治六大学科资料导航。' }] })
+
+const { data } = await useApiFetch<Subject[]>('/subjects', [])
+
+const subjects = computed(() => data.value ?? [])
+
+if (import.meta.server) {
+  const result = validateSubjects(subjects.value)
+  if (!result.valid) {
+    console.error('[subjects] 学科数据校验失败：', result.errors)
+  }
+}
 </script>
 
 <template>
@@ -23,6 +36,7 @@ useHead({ title: '资料库｜观澜考研政治知识库', meta: [{ name: 'desc
             <span class="catalog-card-copy"><strong>{{ subject.name }}</strong><small>{{ subject.detail }}</small><em>{{ subject.chapters.length }} 个章节 · {{ subject.chapters.reduce((sum, chapter) => sum + chapter.points.length, 0) }} 个知识点</em></span>
             <ChevronRight :size="17" class="catalog-arrow" />
           </NuxtLink>
+          <div v-if="!subjects.length" class="empty-state"><BookOpen :size="18" />学科数据暂不可用，请稍后重试。</div>
         </div>
       </section>
       <NuxtLink class="back-link" to="/"><ChevronRight :size="15" class="back-icon" />返回首页</NuxtLink>

@@ -48,7 +48,7 @@ function closeMenu() {
         <span class="drawer-coming"><FileText :size="17" />真题分析 <small>即将开放</small></span>
         <span class="drawer-coming"><Search :size="17" />搜索 <small>即将开放</small></span>
       </nav>
-      <p class="drawer-note">V0.1-dev.1 · 先把每个入口走通</p>
+      <p class="drawer-note">V0.1-dev.2 · 内容 API 接入 MySQL</p>
     </aside>
   </div>
 

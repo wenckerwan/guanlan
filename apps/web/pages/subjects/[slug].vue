@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ArrowLeft, BookOpen, ChevronRight, FileText } from 'lucide-vue-next'
-import { subjects } from '../../data/subjects'
-import { getSubjectBySlug } from '../../utils/subjects.mjs'
+import type { Subject } from '~/types/api'
+import { getSubjectBySlug } from '~/utils/subjects.mjs'
 
 const route = useRoute()
-const subject = computed(() => getSubjectBySlug(subjects, String(route.params.slug)))
+const { data } = await useApiFetch<Subject[]>('/subjects', [])
+const subject = computed(() => getSubjectBySlug(data.value ?? [], String(route.params.slug)))
 
 useHead(() => ({ title: subject.value ? `${subject.value.short}｜${subject.value.name}｜观澜` : '学科未找到｜观澜', meta: [{ name: 'description', content: subject.value?.intro ?? '观澜考研政治资料库' }] }))
 </script>

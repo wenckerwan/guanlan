@@ -2,13 +2,14 @@
 
 以教材、真题和时政热点为核心的私有学习资料站。在线后台使用 PHP/Hyperf，前端使用 Nuxt 3；Python 只用于离线资料提取、去重和 OCR。
 
-当前版本：`V0.1-dev.1`（开发分支：`feature/subject-navigation`；基线 Git tag：`v0.1`）
+当前版本：`V0.1-dev.2`（开发分支：`feature/content-api`；基线 Git tag：`v0.1`）
 
 ## 当前首版
 
 - 搜索优先的响应式首页，展示最新热点、继续阅读和六大学科入口。
 - 六大学科资料库总览、学科详情页、章节卡片、知识点列表、面包屑和移动端抽屉导航。
-- Hyperf `/api/v1/health`、`/api/v1/home` API 骨架。
+- Hyperf 内容 API：`/api/v1/health`、`/api/v1/home`、`/api/v1/subjects`、`/api/v1/subjects/{slug}`，数据来自 MySQL。
+- 首页、资料库页、学科详情页在 SSR 下经 `useApiFetch` 从 API 取数，不再依赖前端硬编码数据。
 - 本地资料清单工具：按 SHA-256 去重并生成审计清单。
 - Docker Compose 编排 Nuxt、Hyperf、MySQL、Redis、Meilisearch 与 Nginx。
 
@@ -25,11 +26,32 @@ python tools/ingest/manifest.py
 docker compose up --build
 ```
 
-当前开发机未预装 PHP、Composer 和 Docker；可在安装 Docker Desktop 后使用 Compose 启动完整环境。原始资料应放在 `storage/raw/`，不要提交到版本库。
+原始资料应放在 `storage/raw/`，不要提交到版本库。
 
-## V0.1-dev.1 说明
+## 本机 Docker 工作流（WSL2，无 Docker Desktop）
 
-本版本限定为纯前端静态导航；学科、章节和知识点数据暂存于 Nuxt，Hyperf API 和 MySQL 接入安排在 V0.1-dev.2。
+本机为 Windows 10 IoT Enterprise LTSC 2021（build 19044），Docker Desktop 要求 build 19045 且 LTSC 永不升级，因此**无法安装 Docker Desktop**。改用 WSL2 内的 Docker Engine：
+
+- 运行时：WSL2 `Ubuntu-24.04`（systemd 为 PID 1）内的 Docker Engine 29.8.1 + Compose v5.5.1。
+- 网络：已配置 Docker Hub registry mirror（`docker.m.daocloud.io` 等）与 Aliyun composer packagist 镜像，规避境内直连超时。
+- **compose 必须从 WSL 原生副本运行**，不要直接挂载 `/mnt/d`（9P 跨文件系统很慢，且 web 容器 `npm ci` 会用 Linux 二进制覆盖 Windows 的 `node_modules`）。标准做法是用 tar 复制到 `~/guanlan` 再构建：
+
+```bash
+wsl -d Ubuntu-24.04
+cd ~ && rm -rf guanlan && mkdir guanlan
+tar -cf - -C "/mnt/d/code_files/观澜｜考研政治知识库/guanlan" \
+  --exclude=node_modules --exclude=.nuxt --exclude=.output --exclude=vendor --exclude=.git . \
+  | tar -xf - -C ~/guanlan
+cd ~/guanlan && docker compose up --build -d
+docker compose logs api --tail 50          # 观察 migrate/db:seed/监听 9501
+curl http://localhost:8080/api/v1/health   # 经 nginx 反代验证
+```
+
+api 容器启动链为 `migrate --force`（等待 MySQL 就绪的重试循环）→ `db:seed --force` → `start`，首次启动会自动建表并灌入种子数据。
+
+## V0.1-dev.2 说明
+
+本版本补齐可启动的 Hyperf 后端骨架，将六大学科/章节/知识点、首页热点与资料卡从前端硬编码迁入 MySQL，并提供统一的 `/api/v1` 内容接口；三个前端页面改为 SSR 经 `useApiFetch` 取数。manifest→MySQL 导入器与 Meilisearch 索引顺延至 V0.1-dev.3。
 
 ## 开发规范
 
@@ -104,7 +126,7 @@ docker compose up --build
 ### 当前基线
 
 - 项目名称：观澜｜考研政治知识库
-- 当前版本：`V0.1-dev.1`
+- 当前版本：`V0.1-dev.2`
 - Git 显示版本：`v0.1`
 - 稳定分支：`main`
 - 当前首版记录：见 [CHANGELOG.md](CHANGELOG.md)
