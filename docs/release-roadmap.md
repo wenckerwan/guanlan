@@ -1,4 +1,12 @@
-# 观澜版本路线
+# 观澜版本路线（历史存档）
+
+> **本文件是早期路线存档，不再是开发标准。** 它记录 V0.1 时期对后续版本的
+> 最初设想，其中部分内容（如「V0.1-dev.3 接入 Meilisearch」）实际未按此执行。
+>
+> - 当前开发计划与验收标准：[development-plan.md](development-plan.md)
+> - 站点现状快照：[website-roadmap.md](website-roadmap.md)
+> - 实际发生了什么：[../CHANGELOG.md](../CHANGELOG.md)
+
 
 ## V0.1-dev.1：导航与学习入口
 

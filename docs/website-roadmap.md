@@ -1,11 +1,20 @@
-# 观澜站点下一步规划
+# 观澜站点现状快照
+
+> **本文件不是开发标准。** 下一步做什么、每项怎么算做完，以
+> [development-plan.md](development-plan.md) 为准。
+>
+> 本文件记录的是**某一时刻的站点现状**：内容来源怎么映射、已经实现了什么、
+> 当时有哪些已知限制。它随版本推进可能滞后，请以
+> [../CHANGELOG.md](../CHANGELOG.md) 与 [development-plan.md](development-plan.md) 为准。
 
 本文件回答两件事：
 
 1. 站点骨架（前端 + 后台 + 登录注册）现在到底完成了什么；
-2. 下一步按什么顺序继续做，每一阶段怎么算做完。
+2. 内容模块与源目录怎么对应。
 
-配套文件：[release-roadmap.md](release-roadmap.md)（版本路线）、[../CHANGELOG.md](../CHANGELOG.md)（事实记录）。
+配套文件：[development-plan.md](development-plan.md)（开发标准）、
+[release-roadmap.md](release-roadmap.md)（历史版本路线）、
+[../CHANGELOG.md](../CHANGELOG.md)（事实记录）。
 
 ## 一、内容来源与模块划分
 
@@ -79,7 +88,9 @@
 
 ## 三、下一步规划
 
-按「先补齐内容 → 再打通数据导入 → 再做增强功能 → 最后上线」推进。
+> 以下是 V0.1-dev.3 时点写下的粗排期，**仅供了解演进脉络**。
+> 权威计划（含阻塞项、完成标准与验收总则）见
+> [development-plan.md](development-plan.md)——两者若有出入，以后者为准。
 
 ### 阶段 1：补齐基础功能缺口（V0.1-dev.4）
 

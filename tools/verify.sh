@@ -21,6 +21,7 @@ echo "观澜｜考研政治知识库 离线验证"
 echo "工作目录: $(pwd)"
 
 step "Python 语法检查（ingest + tools）" python -m compileall -q tools
+step "文档链接检查（README / docs）" python tools/doclink.py
 step "PHP 结构检查（98 文件 / PSR-4 / 模型列 / 路由）" python tools/phpcheck.py
 step "PHP 检查器反向自测（注入 5 类错误必须被抓到）" python tools/phpcheck_selftest.py
 step "数据集重新生成" python tools/ingest/build_all.py

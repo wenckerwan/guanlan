@@ -25,7 +25,8 @@
 - 本地资料清单工具：按 SHA-256 去重并生成审计清单。
 - Docker Compose 编排 Nuxt、Hyperf、MySQL、Redis、Meilisearch 与 Nginx。
 
-详细模块划分与后续排期见 [docs/website-roadmap.md](docs/website-roadmap.md)。
+站点现状与内容来源映射见 [docs/website-roadmap.md](docs/website-roadmap.md)；
+**下一步开发计划与验收标准见 [docs/development-plan.md](docs/development-plan.md)**。
 
 ## 开发
 
@@ -78,11 +79,24 @@ api 容器启动链为 `migrate --force`（等待 MySQL 就绪的重试循环）
 
 ## V0.1-dev.3 说明
 
-本版本补齐可启动的 Hyperf 后端骨架，将六大学科/章节/知识点、首页热点与资料卡从前端硬编码迁入 MySQL，并提供统一的 `/api/v1` 内容接口；三个前端页面改为 SSR 经 `useApiFetch` 取数。manifest→MySQL 导入器与 Meilisearch 索引顺延至 V0.1-dev.3。
+本版本把 `F:\2027考研资料\考研政治` 的**时政热点、真题分析与个人错题分析**接入站点，
+并补齐站点基础功能：真题回顾、模拟押题、站内搜索、登录注册、用户学习记录与后台管理。
+
+- 六大内容模块全部可用，数据来自只读源目录经 `tools/ingest/` 离线导入 MySQL。
+- 新增聚合检索端点 `GET /api/v1/search`，一次覆盖七类内容。
+- 新增令牌认证（`Authorization: Bearer`，库内只存 sha256）、用户态与后台。
+- 新增离线 PHP 结构检查器 `tools/phpcheck.py`（含反向自测），
+  在没有 PHP/Docker 的机器上也能拦住 PSR-4、括号配平、模型列引用、路由方法缺失四类错误。
+- **容器未验证**：本机 WSL2 返回 `Wsl/Service/E_ACCESSDENIED`，
+  迁移、Seeder 与 `/api/v1/search` 尚未在容器内复跑，详见开发规划阻塞项 B1。
 
 ## 开发规范
 
 本 README 是本项目的开发要求文件。后续开发、版本发布和 Git 同步必须遵守本章节；若规范发生变化，应先更新 README 和 CHANGELOG，再执行对应开发工作。
+
+**动手写代码前，先读 [docs/development-plan.md](docs/development-plan.md)。**
+该文件是开发标准，定义当前阻塞项、各阶段任务、每项的完成标准与验收总则；
+未列入其中的工作属于范围外变更，应先补进该文件再执行。
 
 ### 版本规则
 
@@ -158,3 +172,5 @@ api 容器启动链为 `migrate --force`（等待 MySQL 就绪的重试循环）
 - 稳定分支：`main`
 - 当前首版记录：见 [CHANGELOG.md](CHANGELOG.md)
 - 当前版本来源：见 [VERSION](VERSION)
+- 下一步开发计划：见 [docs/development-plan.md](docs/development-plan.md)
+- 站点现状快照：见 [docs/website-roadmap.md](docs/website-roadmap.md)
