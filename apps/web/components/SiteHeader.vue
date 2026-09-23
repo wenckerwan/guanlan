@@ -101,7 +101,7 @@ async function handleLogout() {
           <button type="button" @click="handleLogout">退出登录</button>
         </template>
       </div>
-      <p class="drawer-note">V0.1-dev.3 · 真题 / 时政 / 错题 / 模拟</p>
+      <p class="drawer-note">V0.1-dev.4 · 真题 / 时政 / 错题 / 模拟</p>
     </aside>
   </div>
 

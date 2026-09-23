@@ -22,9 +22,9 @@ class AuthController
 
     public function register(): ResponseInterface
     {
-        $validator = new Validator($this->request->all())
-            ->required('email', '邮箱')
-            ->email('email', '邮箱')
+        $validator = new Validator($this->request->all());
+        $validator->required('email', '邮箱');
+        $validator->email('email', '邮箱')
             ->required('password', '密码')
             ->min('password', 6, '密码')
             ->max('email', 191, '邮箱');
@@ -53,8 +53,8 @@ class AuthController
 
     public function login(): ResponseInterface
     {
-        $validator = new Validator($this->request->all())
-            ->required('email', '邮箱')
+        $validator = new Validator($this->request->all());
+        $validator->required('email', '邮箱')
             ->required('password', '密码');
 
         if ($validator->fails()) {

@@ -118,6 +118,14 @@ def balanced(path: Path, raw: str) -> None:
             errors.append(f"{path.relative_to(ROOT)}: unbalanced {name} {code.count(open_c)}/{code.count(close_c)}")
 
 
+def syntax_hazards(path: Path, raw: str) -> None:
+    code = strip_php(raw)
+    if re.search(r"(?<!\()\bnew\s+[A-Z]\w*\s*\([^;]*\)\s*->", code, re.S):
+        errors.append(
+            f"{path.relative_to(ROOT)}: invalid direct method chain after new expression; wrap it in parentheses"
+        )
+
+
 def php_files(*dirs: str) -> list[Path]:
     out: list[Path] = []
     for d in dirs:
@@ -144,6 +152,7 @@ def main() -> int:
         if "<?php" not in raw:
             errors.append(f"{path.relative_to(ROOT)}: missing <?php")
         balanced(path, raw)
+        syntax_hazards(path, raw)
         if "declare(strict_types=1)" in code and "declare(strict_types=1);" not in code:
             errors.append(f"{path.relative_to(ROOT)}: malformed declare")
 

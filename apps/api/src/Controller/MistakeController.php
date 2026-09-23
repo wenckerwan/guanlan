@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Resource\MistakeResource;
 use App\Service\MistakeService;
 use App\Support\ApiResponse;
+use App\Support\Validator;
 use Hyperf\HttpServer\Contract\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -53,10 +54,14 @@ class MistakeController
             return ApiResponse::message('考生不存在', 404);
         }
 
-        $items = $this->service->items(
+        $page = max(1, (int) $this->request->input('page', 1));
+        $perPage = min(100, max(1, (int) $this->request->input('perPage', 20)));
+        $result = $this->service->items(
             (int) $student->id,
             (string) $this->request->input('module', ''),
-            (string) $this->request->input('errorType', '')
+            (string) $this->request->input('errorType', ''),
+            $page,
+            $perPage
         );
 
         return ApiResponse::data([
@@ -65,7 +70,10 @@ class MistakeController
                 $this->service->moduleCounts((int) $student->id),
                 $this->service->errorTypeCounts((int) $student->id)
             ),
-            'items' => MistakeResource::items($items),
+            'items' => MistakeResource::items($result['items']),
+            'total' => $result['total'],
+            'page' => $page,
+            'perPage' => $perPage,
         ]);
     }
 
@@ -77,6 +85,26 @@ class MistakeController
         }
 
         return ApiResponse::data(MistakeResource::handbooks($this->service->handbooks((int) $student->id)));
+    }
+
+    public function updateAction(int $id): ResponseInterface
+    {
+        $item = $this->service->item($id);
+        if (! $item) {
+            return ApiResponse::message('错题不存在', 404);
+        }
+
+        $validator = new Validator($this->request->all());
+        $validator->required('action', '行动建议')
+            ->max('action', 20000, '行动建议');
+
+        if ($validator->fails()) {
+            return ApiResponse::message('请求校验失败', 422, $validator->errors());
+        }
+
+        return ApiResponse::data(
+            MistakeResource::item($this->service->updateAction($item, $validator->string('action')))
+        );
     }
 
     public function handbook(int $id): ResponseInterface

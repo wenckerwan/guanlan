@@ -23,7 +23,7 @@ final class HealthController
             'data' => [
                 'status' => 'ok',
                 'db' => $db,
-                'version' => 'V0.1-dev.3',
+                'version' => 'V0.1-dev.4',
             ],
         ];
     }

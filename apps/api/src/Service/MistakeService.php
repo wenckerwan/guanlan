@@ -25,15 +25,27 @@ class MistakeService
         return MistakeStudent::query()->where('code', $code)->first();
     }
 
-    public function items(int $studentId, string $module = '', string $errorType = ''): array
+    /** @return array{items: array<int, MistakeItem>, total: int} */
+    public function items(
+        int $studentId,
+        string $module = '',
+        string $errorType = '',
+        int $page = 1,
+        int $perPage = 20
+    ): array
     {
-        return MistakeItem::query()
+        $query = MistakeItem::query()
             ->where('student_id', $studentId)
             ->when($module !== '', fn (Builder $q) => $q->where('module', $module))
-            ->when($errorType !== '', fn (Builder $q) => $q->where('error_type', $errorType))
-            ->orderBy('sort_order')
+            ->when($errorType !== '', fn (Builder $q) => $q->where('error_type', $errorType));
+
+        $total = (int) (clone $query)->count();
+        $items = $query->orderBy('sort_order')
+            ->forPage(max(1, $page), max(1, min(100, $perPage)))
             ->get()
             ->all();
+
+        return ['items' => $items, 'total' => $total];
     }
 
     /** @return array<string, int> 各模块错题数 */
@@ -81,5 +93,18 @@ class MistakeService
     public function handbook(int $id): ?MistakeHandbook
     {
         return MistakeHandbook::find($id);
+    }
+
+    public function item(int $id): ?MistakeItem
+    {
+        return MistakeItem::find($id);
+    }
+
+    public function updateAction(MistakeItem $item, string $action): MistakeItem
+    {
+        $item->action = $action;
+        $item->save();
+
+        return $item;
     }
 }

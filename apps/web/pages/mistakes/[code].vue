@@ -1,28 +1,129 @@
 <script setup lang="ts">
-import { computed, reactive } from 'vue'
-import { ArrowLeft, BookOpen, Check, RotateCcw, X } from 'lucide-vue-next'
+import { computed, reactive, ref, watch } from 'vue'
+import { ArrowLeft, BookOpen, Check, RotateCcw, Send } from 'lucide-vue-next'
 import type { Handbook, MistakeItemsPayload, MistakeItem } from '~/types/api'
-import { displayAnswer } from '~/utils/quiz.mjs'
+import { displayAnswer, isCorrect } from '~/utils/quiz.mjs'
+import { normalizePage } from '~/utils/pagination.mjs'
+import { withQuery } from '~/composables/useApi'
 
 const route = useRoute()
 const code = String(route.params.code)
+const { request, isLoggedIn, restore } = useAuth()
+if (import.meta.client) restore()
 
-const { data } = await useApiFetch<MistakeItemsPayload | null>(`/mistakes/students/${code}/items`, null)
+const router = useRouter()
+const requestedPage = computed(() => Math.max(1, Number(route.query.page) || 1))
+const page = ref(requestedPage.value)
+const activeModule = ref(String(route.query.module ?? ''))
+const perPage = 20
+const itemsPath = computed(() => withQuery(`/mistakes/students/${code}/items`, {
+  page: page.value,
+  perPage,
+  module: activeModule.value,
+}))
+const { data } = await useApiFetch<MistakeItemsPayload | null>(
+  itemsPath,
+  null,
+  { watch: [page, activeModule] },
+)
 const { data: handbooks } = await useApiFetch<Handbook[]>(`/mistakes/students/${code}/handbooks`, [])
 
 const student = computed(() => data.value?.student ?? null)
 const items = computed(() => data.value?.items ?? [])
 
-const activeModule = ref('')
-const showAnswer = reactive<Record<number, boolean>>({})
+const redoOpen = reactive<Record<number, boolean>>({})
+const redoChoices = reactive<Record<number, string[]>>({})
+const redoResults = reactive<Record<number, boolean | null>>({})
+const redoActions = reactive<Record<number, string>>({})
+const redoNotices = reactive<Record<number, string>>({})
 
 const modules = computed(() => Object.keys(student.value?.moduleCounts ?? {}))
-const filtered = computed(() => (activeModule.value ? items.value.filter((item) => item.module === activeModule.value) : items.value))
+const total = computed(() => data.value?.total ?? student.value?.itemCount ?? 0)
+
+watch(requestedPage, (value) => { page.value = value })
+watch(() => String(route.query.module ?? ''), (value) => { activeModule.value = value })
+watch(total, (value) => {
+  const normalized = normalizePage(page.value, value, perPage)
+  if (normalized !== page.value) page.value = normalized
+})
+watch(page, (value) => {
+  const nextPage = value === 1 ? undefined : String(value)
+  if (String(route.query.page ?? '') !== String(nextPage ?? '')) {
+    router.replace({ query: { ...route.query, page: nextPage } })
+  }
+})
+watch(activeModule, (value) => {
+  if (page.value !== 1) page.value = 1
+  const nextModule = value || undefined
+  if (String(route.query.module ?? '') !== String(nextModule ?? '') || route.query.page) {
+    router.replace({ query: { ...route.query, module: nextModule, page: undefined } })
+  }
+})
 
 useHead(() => ({ title: student.value ? `考生 ${student.value.code} 错题｜观澜` : '错题分析｜观澜' }))
 
 function marksOf(item: MistakeItem) {
   return item.options.filter((option) => option.mark)
+}
+
+function isMulti(item: MistakeItem) {
+  return /多|multi/i.test(item.qType) || displayAnswer(item.correctAnswer).length > 1
+}
+
+function toggleRedo(item: MistakeItem) {
+  redoOpen[item.id] = !redoOpen[item.id]
+  if (redoOpen[item.id] && !redoChoices[item.id]) redoChoices[item.id] = []
+}
+
+function chooseRedo(item: MistakeItem, label: string) {
+  const current = redoChoices[item.id] ?? []
+  redoChoices[item.id] = isMulti(item)
+    ? current.includes(label) ? current.filter((value) => value !== label) : [...current, label]
+    : [label]
+  redoResults[item.id] = null
+  redoNotices[item.id] = ''
+}
+
+async function submitRedo(item: MistakeItem) {
+  const chosen = displayAnswer((redoChoices[item.id] ?? []).join(''))
+  if (!chosen) {
+    redoNotices[item.id] = '请先选择答案。'
+    return
+  }
+
+  const correct = displayAnswer(item.correctAnswer)
+  const right = isCorrect(chosen, correct)
+  redoResults[item.id] = right
+  const action = right
+    ? '本次重练正确，继续保持并定期回访。'
+    : `本次重练仍未掌握，复习原错因（${item.errorType || '未记录'}）后再练。`
+
+  if (!isLoggedIn.value) {
+    redoNotices[item.id] = '已完成判分；登录后可保存重练记录和行动建议。'
+    return
+  }
+
+  try {
+    await request(`/mistakes/items/${item.id}/action`, {
+      method: 'PATCH',
+      body: { action },
+    })
+    await request('/study/attempts', {
+      method: 'POST',
+      body: {
+        source: 'mistake',
+        sourceRef: code,
+        questionRef: item.sourceNo,
+        module: item.module,
+        chosen,
+        correct,
+      },
+    })
+    redoActions[item.id] = action
+    redoNotices[item.id] = '已保存重练记录，并更新下次行动建议。'
+  } catch {
+    redoNotices[item.id] = '已完成判分，但保存失败，请稍后重试。'
+  }
 }
 </script>
 
@@ -50,12 +151,13 @@ function marksOf(item: MistakeItem) {
       </section>
 
       <nav class="filter-chips">
-        <button type="button" class="chip" :class="{ active: activeModule === '' }" @click="activeModule = ''">全部模块 · {{ items.length }}</button>
+        <button type="button" class="chip" :class="{ active: activeModule === '' }" @click="activeModule = ''">全部模块</button>
         <button v-for="name in modules" :key="name" type="button" class="chip" :class="{ active: activeModule === name }" @click="activeModule = name">{{ name }} · {{ student?.moduleCounts[name] }}</button>
+        <span class="filter-count">当前 {{ items.length }} 道 · 共 {{ total }} 道</span>
       </nav>
 
       <section class="quiz-body">
-        <article v-for="item in filtered" :key="item.id" class="question-card mistake-card" :class="item.errorType === '既漏又错' ? 'wrong' : ''">
+        <article v-for="item in items" :key="item.id" class="question-card mistake-card" :class="item.errorType === '既漏又错' ? 'wrong' : ''">
           <header class="question-header">
             <span class="q-no">{{ item.sourceNo }}</span>
             <span class="q-type">{{ item.qType }}</span>
@@ -79,17 +181,35 @@ function marksOf(item: MistakeItem) {
 
           <div class="mistake-answer">
             <p><strong>上次：</strong>我选 <b>{{ displayAnswer(item.myAnswer) || '未记录' }}</b> ｜ 正确 <b>{{ displayAnswer(item.correctAnswer) }}</b></p>
-            <p v-if="item.action" class="mistake-action"><strong>下次怎么做：</strong>{{ item.action }}</p>
+            <p v-if="redoActions[item.id] || item.action" class="mistake-action"><strong>下次怎么做：</strong>{{ redoActions[item.id] || item.action }}</p>
           </div>
 
-          <button class="ghost-button small" type="button" @click="showAnswer[item.id] = !showAnswer[item.id]">
-            <RotateCcw :size="13" />{{ showAnswer[item.id] ? '收起' : '标记已重做' }}
+          <button class="ghost-button small" type="button" @click="toggleRedo(item)">
+            <RotateCcw :size="13" />{{ redoOpen[item.id] ? '收起重练' : '开始重练' }}
           </button>
-          <p v-if="showAnswer[item.id]" class="redo-state"><Check :size="13" />已重做，记得回访清单核对。</p>
+          <div v-if="redoOpen[item.id]" class="redo-panel">
+            <p class="redo-title">重新作答 · {{ isMulti(item) ? '多选题' : '单选题' }}</p>
+            <ul class="option-list redo-options">
+              <li v-for="option in item.options" :key="option.label" :class="{ chosen: redoChoices[item.id]?.includes(option.label) }">
+                <button type="button" @click="chooseRedo(item, option.label)">
+                  <span class="option-letter">{{ option.label }}</span>
+                  <span class="option-text">{{ option.text }}</span>
+                </button>
+              </li>
+            </ul>
+            <button class="primary-button small" type="button" :disabled="!redoChoices[item.id]?.length" @click="submitRedo(item)">
+              <Send :size="13" />提交答案
+            </button>
+            <p v-if="redoResults[item.id] !== null && redoResults[item.id] !== undefined" class="redo-state" :class="redoResults[item.id] ? 'success' : 'failure'">
+              <Check :size="13" />{{ redoResults[item.id] ? '本次答对' : '本次答错' }} · 你的答案 {{ displayAnswer((redoChoices[item.id] ?? []).join('')) }} · 正确答案 {{ displayAnswer(item.correctAnswer) }}
+            </p>
+            <p v-if="redoNotices[item.id]" class="redo-notice">{{ redoNotices[item.id] }}</p>
+          </div>
         </article>
       </section>
 
-      <div v-if="!filtered.length" class="empty-state">该筛选条件下暂无错题。</div>
+      <div v-if="!items.length" class="empty-state">暂无错题。</div>
+      <PaginationControls :page="data?.page ?? page" :total="total" :per-page="data?.perPage ?? perPage" @change="page = $event" />
       <NuxtLink class="back-link" to="/mistakes"><ArrowLeft :size="15" />返回考生列表</NuxtLink>
     </main>
   </div>

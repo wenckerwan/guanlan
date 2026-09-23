@@ -1,5 +1,6 @@
 import type { ApiEnvelope } from '~/types/api'
 import { unwrapEnvelope } from '~/utils/api.mjs'
+import type { Ref } from 'vue'
 
 /**
  * 统一的 API 取数封装（SSR + 客户端）。
@@ -10,7 +11,7 @@ import { unwrapEnvelope } from '~/utils/api.mjs'
  *
  * API 宕机时 transform/default 回退到 fallback，页面渲染空态而非抛 500。
  */
-export function useApiFetch<T>(path: string, fallback: T, options: Record<string, unknown> = {}) {
+export function useApiFetch<T>(path: string | Ref<string>, fallback: T, options: Record<string, unknown> = {}) {
   const config = useRuntimeConfig()
   const baseURL = import.meta.server
     ? (config.apiInternalBase as string)

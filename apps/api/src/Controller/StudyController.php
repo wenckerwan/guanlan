@@ -32,8 +32,8 @@ class StudyController
 
     public function toggleFavorite(): ResponseInterface
     {
-        $validator = new Validator($this->request->all())
-            ->required('targetType', '收藏类型')
+        $validator = new Validator($this->request->all());
+        $validator->required('targetType', '收藏类型')
             ->required('targetId', '收藏对象')
             ->in('targetType', StudyService::TARGET_TYPES, '收藏类型');
 
@@ -73,8 +73,8 @@ class StudyController
 
     public function createNote(): ResponseInterface
     {
-        $validator = new Validator($this->request->all())
-            ->required('targetType', '笔记类型')
+        $validator = new Validator($this->request->all());
+        $validator->required('targetType', '笔记类型')
             ->required('targetId', '笔记对象')
             ->required('content', '笔记内容')
             ->in('targetType', StudyService::TARGET_TYPES, '笔记类型')
@@ -105,8 +105,8 @@ class StudyController
 
     public function createAttempt(): ResponseInterface
     {
-        $validator = new Validator($this->request->all())
-            ->required('source', '来源')
+        $validator = new Validator($this->request->all());
+        $validator->required('source', '来源')
             ->required('questionRef', '题号')
             ->in('source', ['paper', 'mock', 'mistake', 'question'], '来源');
 
@@ -143,8 +143,8 @@ class StudyController
 
     public function saveProgress(): ResponseInterface
     {
-        $validator = new Validator($this->request->all())
-            ->required('scope', '范围')
+        $validator = new Validator($this->request->all());
+        $validator->required('scope', '范围')
             ->required('ref', '对象');
 
         if ($validator->fails()) {

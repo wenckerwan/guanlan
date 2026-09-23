@@ -1,5 +1,26 @@
 # 更新记录
 
+## V0.1-dev.4 - 2026-09-23
+
+### 修复与新增
+
+- 修复 `AuthController`、`StudyController` 中未加括号的 PHP `new Class()->method()` 链式调用语法错误，
+  恢复登录、收藏、笔记、进度、统计和后台接口。
+- 修复 Docker 权限：WSL2 Ubuntu-24.04 用户 `administrator` 加入 `docker` 组；普通用户可运行
+  `docker version`（29.8.1）和 `docker ps`。
+- 新增 `PATCH /api/v1/mistakes/items/{id}/action`，登录用户可保存错题重练后的行动建议。
+- 错题页新增单选/多选重练、即时判分、原错因对比，并将作答写入 `/study/attempts`。
+- `tools/phpcheck.py` 新增未加括号 `new Class()->method()` 风险检查，反向自测扩展为 6 类错误。
+
+### 验证
+
+- `python tools/phpcheck.py`：`checked=99 files, classes=66, tables=20`，`OK`。
+- `python tools/phpcheck_selftest.py`：6 类错误用例与 clean tree 全部 `PASS`，`SELFTEST OK`。
+- `npm test --prefix apps/web`：36/36 通过。
+- `npm run build --prefix apps/web`：Nuxt 生产构建成功，`Σ Total size: 5.17 MB (1.34 MB gzip)`。
+- WSL 原生验证副本执行 `docker compose up --build -d` 成功，19 个 migration 与 Seeder 成功；
+  `bash tools/smoke.sh` 通过。认证、用户态、后台、搜索、分页和错题 action 接口均验证。
+
 ## V0.1-dev.3 - 2026-09-22
 
 本版本把 `F:\2027考研资料\考研政治` 的时政热点、真题分析与个人错题分析
@@ -138,12 +159,15 @@ mocks 1 [38] [33]
 
 ### 已知限制
 
-- **容器未验证**：本机无 Docker Desktop、无 PHP；WSL2 在本环境返回
-  `Wsl/Service/E_ACCESSDENIED`，因此数据库迁移、Seeder 与 API 冒烟
-  **本轮未在容器内复跑**。离线侧已用 `phpcheck.py`（含反向自测）覆盖
-  上述四类静态错误，但运行时行为仍需容器确认。
-- 上一轮容器内已确认通过的部分（迁移 + Seeder + `/api/v1/health` 及内容端点冒烟）
-  未受影响；本轮新增的 `/api/v1/search` 端点**等待容器验证**。
+- **Docker 权限已修复**：WSL2 Ubuntu-24.04 用户 `administrator` 加入 `docker` 组并重新启动发行版；
+  `docker version` 显示 29.8.1，普通用户可运行 `docker ps`。
+- 从工程工作区复制到独立验证目录 `~/guanlan-verify`（排除密钥、缓存、依赖及构建产物）后，
+  `docker compose up --build -d` 构建成功，API 日志确认 19 个 migration 与 Seeder 完成；
+  数据统计为 analysis 13、hotspots 3、predictions 6、mistake students 2 / items 292 / handbooks 5、papers 42 / questions 1479。
+- 容器启动期间 `/api/v1/health`、`/api/v1/search?q=马原`、
+  `/api/v1/mistakes/students/A/items?page=2&perPage=20` 均返回 HTTP 200。
+- **验证仍未完成**：WSL 发行版在调用结束后自动停止，Docker daemon 随之退出，导致 Windows `localhost:8080` 不可持续访问；
+  `tools/smoke.sh` 未完整执行。开发规划 B1 保持进行中。
 - 站内搜索用 SQL `LIKE` 全表扫，数据量继续增长需换索引或 Meilisearch。
 - `documents` 表（V0.1-dev.2 建立）本期仍无数据，PDF 在线阅读未开始。
 - 模拟押题仅 1 套；`船` 目录下的其他模拟卷未纳入。

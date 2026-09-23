@@ -15,7 +15,7 @@
 
 ## 零、当前状态
 
-- 当前版本：`V0.1-dev.3`
+- 当前版本：`V0.1-dev.4`
 - 已完成：六大内容模块（真题回顾、真题分析、时政热点、时政预测、模拟押题、个人错题分析）、
   站内搜索、登录注册、用户态（收藏/笔记/做题记录/进度/统计）、后台管理。
 - 待办：见下文阶段 1 起。
@@ -33,17 +33,15 @@
 
 ### 阻塞项（必须先解除）
 
-**B1：容器验证通道不可用** — 状态：`阻塞`
+**B1：容器验证通道不可用** — 状态：`已完成`
 
-- 现象：本机无 Docker Desktop（Windows 10 LTSC 19044）也无 PHP；WSL2 返回
-  `Wsl/Service/E_ACCESSDENIED`，导致 `docker compose` 无法运行。
-- 影响：数据库迁移、Seeder、API 运行时行为**无法验证**。
-  V0.1-dev.3 的 `/api/v1/search` 端点从未在容器内跑过。
-- 解除标准：`wsl -d Ubuntu-24.04` 能进入，且
-  `cd ~/guanlan && docker compose up --build -d` 后
-  `bash tools/smoke.sh` 全绿。
-- 未解除前的替代：`tools/verify.ps1`（离线）+ `tools/phpcheck.py`（含反向自测），
-  仅覆盖静态层面，**不能替代容器验证**。
+- 现象：WSL2 Ubuntu-24.04 中 `administrator` 已加入 `docker` 组，重新启动发行版后
+  `docker version`、`docker ps` 均成功（Docker 29.8.1）。Docker daemon 与 socket 权限正常。
+- 验证环境：WSL2 Ubuntu-24.04，Docker 29.8.1，Compose 5.5.1；`administrator` 已加入 `docker` 组。
+- `docker compose up --build -d` 成功，19 个 migration 与 Seeder 成功，数据为 42 卷 / 1479 题、
+  13 篇分析、3 期热点、6 篇预测、2 名考生 / 292 道错题 / 5 份手册。
+- `bash tools/smoke.sh` 已通过：正常接口 200/201，未登录 401，校验错误 422，重复注册 409，
+  预期不存在资源 404；认证、用户态、后台和错题行动建议接口均覆盖。
 
 **B2：`storage/dataset/*.json` 体积增长** — 状态：`待开始`
 
@@ -68,6 +66,8 @@
 
 分支：`fix/container-verification` + `feature/pagination`
 
+当前进度：分页功能和错题重练已实现并通过离线、构建与容器验证；进入阶段 1.4 数据导入闭环。
+
 ### 1.1 恢复容器验证 `阻塞解除`
 
 | 项 | 内容 |
@@ -84,6 +84,10 @@
 | 完成标准 | ① 列表页有分页控件；② URL 带 `page` 参数，刷新后保持；③ 后端 `perPage` 有上限（建议 ≤100）；④ `node --test` 覆盖页码换算纯函数 |
 | 影响面 | 前端列表页、`utils/` 新增分页纯函数、后端 `QuestionService`/`MistakeService` |
 
+当前实现范围：`MistakeService` 与 `/mistakes/students/{code}/items` 已支持
+`page`/`perPage`，错题页已接入 URL 分页控件；`utils/pagination.mjs` 已有 4 组纯函数测试。
+真题列表 `/papers` 当前是 42 卷轻量列表，暂不做分页；逐题检索 API 已有分页，待后续补独立检索页面。
+
 ### 1.3 错题重练
 
 | 项 | 内容 |
@@ -91,6 +95,8 @@
 | 现状 | 错题条目只读，不能作答 |
 | 完成标准 | ① 可从错题生成练习；② 答完判分并展示原错因对比；③ 可更新 `action` 字段；④ 有测试覆盖判分逻辑 |
 | 备注 | 复用 `utils/quiz.mjs` 判分，不要另写一套 |
+
+当前状态：`已完成`。错题页已支持单选/多选重练、原错因对比；登录后写入 `attempts`，并更新错题 `action`。
 
 ### 1.4 数据导入闭环
 

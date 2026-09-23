@@ -27,7 +27,16 @@ t.write_text("<?php\nnamespace App\\Service;\nclass SelfTest {\n  public functio
 cases.append(("unbalanced-brace", *run()))
 t.unlink()
 
-# 3. 模型 cast 引用了不存在的列
+# 3. new 表达式直接链式调用（PHP 语法错误）
+t = service / "_SelfTest.php"
+t.write_text("<?php\nnamespace App\\Service;\nuse App\\Support\\Validator;\nclass SelfTest {\n"
+             "  public function x(): self {\n"
+             "    return new Validator([])->required('x', 'X');\n"
+             "  }\n}\n", encoding="utf-8")
+cases.append(("new-chain-syntax", *run()))
+t.unlink()
+
+# 4. 模型 cast 引用了不存在的列
 t = api / "src" / "Model" / "_SelfTest.php"
 t.write_text("<?php\nnamespace App\\Model;\nuse Hyperf\\Database\\Model\\Model;\n"
              "class _SelfTest extends Model {\n  protected ?string $table = 'papers';\n"
@@ -35,20 +44,20 @@ t.write_text("<?php\nnamespace App\\Model;\nuse Hyperf\\Database\\Model\\Model;\
 cases.append(("bad-cast-column", *run()))
 t.unlink()
 
-# 4. 路由指向不存在的控制器方法
+# 5. 路由指向不存在的控制器方法
 routes.write_text(backup_routes + "\nRouter::get('/api/v1/_selftest', "
                   "[\\App\\Controller\\SubjectController::class, 'notARealMethod']);\n", encoding="utf-8")
 cases.append(("route-missing-method", *run()))
 routes.write_text(backup_routes, encoding="utf-8")
 
-# 5. 未导入的类引用
+# 6. 未导入的类引用
 t = service / "_SelfTest.php"
 t.write_text("<?php\nnamespace App\\Service;\nclass SelfTest {\n"
              "  public function x(): TotallyUnknownClass { return new TotallyUnknownClass(); }\n}\n", encoding="utf-8")
 cases.append(("unresolved-class", *run()))
 t.unlink()
 
-# 6. 干净树必须通过
+# 7. 干净树必须通过
 cases.append(("clean-tree", *run()))
 
 ok = True

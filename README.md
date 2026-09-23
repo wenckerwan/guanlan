@@ -2,7 +2,7 @@
 
 以教材、真题和时政热点为核心的私有学习资料站。在线后台使用 PHP/Hyperf，前端使用 Nuxt 3；Python 只用于离线资料提取、去重和 OCR。
 
-当前版本：`V0.1-dev.3`（开发分支：`feature/content-api`；基线 Git tag：`v0.1`）
+当前版本：`V0.1-dev.4`（开发分支：`feature/content-api`；基线 Git tag：`v0.1`）
 
 ## 当前首版
 
@@ -51,7 +51,7 @@ powershell -ExecutionPolicy Bypass -File tools/verify.ps1
 ```
 
 它会依次执行：`python -m compileall tools`、`tools/phpcheck.py`（PSR-4 / 括号配平 /
-模型列引用 / 路由方法存在性）、`tools/phpcheck_selftest.py`（反向注入 5 类错误，
+模型列引用 / 路由方法存在性 / PHP 链式语法风险）、`tools/phpcheck_selftest.py`（反向注入 6 类错误，
 必须全部被抓到）、`build_all.py` 数据集重生成、以及 `apps/web` 的 `npm test`。
 
 原始资料应放在 `storage/raw/`，不要提交到版本库。
@@ -77,7 +77,7 @@ curl http://localhost:8080/api/v1/health   # 经 nginx 反代验证
 
 api 容器启动链为 `migrate --force`（等待 MySQL 就绪的重试循环）→ `db:seed --force` → `start`，首次启动会自动建表并灌入种子数据。
 
-## V0.1-dev.3 说明
+## V0.1-dev.4 说明
 
 本版本把 `F:\2027考研资料\考研政治` 的**时政热点、真题分析与个人错题分析**接入站点，
 并补齐站点基础功能：真题回顾、模拟押题、站内搜索、登录注册、用户学习记录与后台管理。
@@ -87,8 +87,11 @@ api 容器启动链为 `migrate --force`（等待 MySQL 就绪的重试循环）
 - 新增令牌认证（`Authorization: Bearer`，库内只存 sha256）、用户态与后台。
 - 新增离线 PHP 结构检查器 `tools/phpcheck.py`（含反向自测），
   在没有 PHP/Docker 的机器上也能拦住 PSR-4、括号配平、模型列引用、路由方法缺失四类错误。
-- **容器未验证**：本机 WSL2 返回 `Wsl/Service/E_ACCESSDENIED`，
-  迁移、Seeder 与 `/api/v1/search` 尚未在容器内复跑，详见开发规划阻塞项 B1。
+- Docker 验证通道已恢复：WSL2 `administrator` 加入 `docker` 组，普通用户可执行 Docker 29.8.1。
+- 修复认证与用户态控制器中的 PHP `new Class()->method()` 语法错误，登录、收藏、笔记、进度、统计和后台接口恢复。
+- 错题页增加重练交互：支持单选/多选判分、显示原错因对比、保存行动建议和 `/study/attempts` 作答记录。
+- `/api/v1/mistakes/items/{id}/action` 仅允许登录用户更新行动建议。
+- 容器验证：迁移与 Seeder 成功，`tools/smoke.sh` 全部通过；正常接口为 200/201，未登录为 401，参数校验为 422，重复注册为 409，预期不存在资源为 404。
 
 ## 开发规范
 
@@ -167,7 +170,7 @@ api 容器启动链为 `migrate --force`（等待 MySQL 就绪的重试循环）
 ### 当前基线
 
 - 项目名称：观澜｜考研政治知识库
-- 当前版本：`V0.1-dev.3`
+- 当前版本：`V0.1-dev.4`
 - Git 显示版本：`v0.1`
 - 稳定分支：`main`
 - 当前首版记录：见 [CHANGELOG.md](CHANGELOG.md)

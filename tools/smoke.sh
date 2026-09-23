@@ -71,6 +71,8 @@ printf 'stats            %s\n' "$(code "${AUTH[@]}" "$B/study/stats")"
 printf 'progress save    %s\n' "$(code "${AUTH[@]}" -X POST "$B/study/progress" -H 'Content-Type: application/json' -d '{"scope":"paper","ref":"2026","label":"2026 真题","status":"reading","progress":40}')"
 printf 'favorite toggle  %s\n' "$(code "${AUTH[@]}" -X POST "$B/study/favorites" -H 'Content-Type: application/json' -d '{"targetType":"question","targetId":1,"title":"测试收藏","url":"/papers/2026"}')"
 printf 'note create      %s\n' "$(code "${AUTH[@]}" -X POST "$B/study/notes" -H 'Content-Type: application/json' -d '{"targetType":"question","targetId":1,"content":"测试笔记"}')"
+MISTAKE_ID=$(curl -s "$B/mistakes/students/A/items?perPage=1" | sed -n 's/.*"items":\[{"id":\([0-9]*\).*/\1/p')
+printf 'mistake action   %s\n' "$(code "${AUTH[@]}" -X PATCH "$B/mistakes/items/$MISTAKE_ID/action" -H 'Content-Type: application/json' -d '{"action":"测试重练建议"}')"
 printf 'study (no token) %s\n' "$(code "$B/study/favorites")"
 
 echo; echo "=== 10. 后台 ==="

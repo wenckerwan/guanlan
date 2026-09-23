@@ -198,6 +198,9 @@ export type MistakeStudent = {
 export type MistakeItemsPayload = {
   student: MistakeStudent
   items: MistakeItem[]
+  total: number
+  page: number
+  perPage: number
 }
 
 export type HandbookSection = {

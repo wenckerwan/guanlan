@@ -51,6 +51,7 @@ Router::get('/api/v1/mocks/{slug}', [MockController::class, 'show']);
 
 // 个人错题分析
 Router::get('/api/v1/mistakes/students', [MistakeController::class, 'students']);
+Router::patch('/api/v1/mistakes/items/{id:\d+}/action', [MistakeController::class, 'updateAction'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
 Router::get('/api/v1/mistakes/handbooks/{id:\d+}', [MistakeController::class, 'handbook']);
 Router::get('/api/v1/mistakes/students/{code}/items', [MistakeController::class, 'items']);
 Router::get('/api/v1/mistakes/students/{code}/handbooks', [MistakeController::class, 'handbooks']);
