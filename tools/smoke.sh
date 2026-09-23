@@ -1,0 +1,90 @@
+#!/bin/bash
+B=http://localhost:8080/api/v1
+code() { curl -s -o /tmp/out -w '%{http_code}' "$@"; }
+
+echo "=== 1. 基础 ==="
+printf 'health          %s  %s\n' "$(code $B/health)" "$(cat /tmp/out)"
+printf 'home            %s\n' "$(code $B/home)"
+head -c 700 /tmp/out; echo
+printf 'stats/overview  %s\n' "$(code $B/stats/overview)"
+head -c 300 /tmp/out; echo
+
+echo; echo "=== 2. 学科 ==="
+printf 'subjects        %s  len=%s\n' "$(code $B/subjects)" "$(wc -c </tmp/out)"
+printf 'subjects/marx   %s  len=%s\n' "$(code $B/subjects/marxism)" "$(wc -c </tmp/out)"
+printf 'subjects/404    %s\n' "$(code $B/subjects/nope)"
+
+echo; echo "=== 3. 真题回顾 ==="
+printf 'papers          %s\n' "$(code $B/papers)"
+head -c 300 /tmp/out; echo
+printf 'papers/modules  %s\n' "$(code $B/papers/modules)"
+head -c 300 /tmp/out; echo
+printf 'papers/2026     %s  len=%s\n' "$(code "$B/papers/2026")" "$(wc -c </tmp/out)"
+printf 'papers/2026 hide %s  answer_null=%s\n' "$(code "$B/papers/2026?reveal=0")" "$(grep -o '"answer":null' /tmp/out | wc -l)"
+printf 'questions       %s\n' "$(code "$B/questions?module=my&perPage=2")"
+head -c 500 /tmp/out; echo
+printf 'questions/1     %s\n' "$(code "$B/questions/1")"
+
+echo; echo "=== 4. 分析/时政/预测 ==="
+printf 'analysis        %s\n' "$(code $B/analysis)"
+head -c 300 /tmp/out; echo
+printf 'hotspots        %s\n' "$(code $B/hotspots)"
+head -c 300 /tmp/out; echo
+printf 'predictions     %s\n' "$(code $B/predictions)"
+head -c 300 /tmp/out; echo
+
+echo; echo "=== 5. 错题 ==="
+printf 'students        %s\n' "$(code $B/mistakes/students)"
+head -c 500 /tmp/out; echo
+printf 'A/items         %s\n' "$(code "$B/mistakes/students/A/items")"
+head -c 200 /tmp/out; echo
+printf 'A/handbooks     %s\n' "$(code "$B/mistakes/students/A/handbooks")"
+head -c 200 /tmp/out; echo
+
+echo; echo "=== 6. 模拟 ==="
+printf 'mocks           %s\n' "$(code $B/mocks)"
+head -c 300 /tmp/out; echo
+echo; echo "=== 7. 统一检索 ==="
+printf 'search?q=马原     %s\n' "$(code "$B/search?q=%E9%A9%AC%E5%8E%9F")"
+head -c 600 /tmp/out; echo
+printf 'search empty      %s  items=%s\n' "$(code "$B/search?q=")" "$(grep -o '"items":\[\]' /tmp/out | wc -l)"
+printf 'search type=bad   %s\n' "$(code "$B/search?q=x&type=nope")"
+printf 'search long       %s\n' "$(code "$B/search?q=$(python3 -c 'print("a"*80)')")"
+
+echo; echo "=== 8. 认证 ==="
+TOKEN=$(curl -s -X POST "$B/auth/login" -H 'Content-Type: application/json' \
+  -d '{"email":"admin@guanlan.local","password":"guanlan2027"}' \
+  | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
+printf 'login            token_len=%s\n' "${#TOKEN}"
+printf 'me (no token)    %s\n' "$(code "$B/auth/me")"
+printf 'me (token)       %s\n' "$(code -H "Authorization: Bearer $TOKEN" "$B/auth/me")"
+head -c 300 /tmp/out; echo
+printf 'bad password     %s\n' "$(code -X POST "$B/auth/login" -H 'Content-Type: application/json' -d '{"email":"admin@guanlan.local","password":"wrong"}')"
+printf 'register dup     %s\n' "$(code -X POST "$B/auth/register" -H 'Content-Type: application/json' -d '{"email":"admin@guanlan.local","password":"guanlan2027","displayName":"dup"}')"
+
+echo; echo "=== 9. 用户态（收藏/笔记/进度）==="
+AUTH=(-H "Authorization: Bearer $TOKEN")
+printf 'favorites        %s\n' "$(code "${AUTH[@]}" "$B/study/favorites")"
+printf 'notes            %s\n' "$(code "${AUTH[@]}" "$B/study/notes")"
+printf 'progress         %s\n' "$(code "${AUTH[@]}" "$B/study/progress")"
+printf 'stats            %s\n' "$(code "${AUTH[@]}" "$B/study/stats")"
+printf 'progress save    %s\n' "$(code "${AUTH[@]}" -X POST "$B/study/progress" -H 'Content-Type: application/json' -d '{"scope":"paper","ref":"2026","label":"2026 真题","status":"reading","progress":40}')"
+printf 'favorite toggle  %s\n' "$(code "${AUTH[@]}" -X POST "$B/study/favorites" -H 'Content-Type: application/json' -d '{"targetType":"question","targetId":1,"title":"测试收藏","url":"/papers/2026"}')"
+printf 'note create      %s\n' "$(code "${AUTH[@]}" -X POST "$B/study/notes" -H 'Content-Type: application/json' -d '{"targetType":"question","targetId":1,"content":"测试笔记"}')"
+printf 'study (no token) %s\n' "$(code "$B/study/favorites")"
+
+echo; echo "=== 10. 后台 ==="
+printf 'overview (admin) %s\n' "$(code "${AUTH[@]}" "$B/admin/overview")"
+head -c 400 /tmp/out; echo
+printf 'users (admin)    %s\n' "$(code "${AUTH[@]}" "$B/admin/users")"
+printf 'hotspots (admin) %s\n' "$(code "${AUTH[@]}" "$B/admin/hotspots")"
+printf 'analysis (admin) %s\n' "$(code "${AUTH[@]}" "$B/admin/analysis")"
+printf 'admin (no token) %s\n' "$(code "$B/admin/overview")"
+
+echo; echo "=== 11. 详情页 404 ==="
+printf 'analysis/404     %s\n' "$(code "$B/analysis/nope")"
+printf 'hotspots/404     %s\n' "$(code "$B/hotspots/nope")"
+printf 'predictions/404  %s\n' "$(code "$B/predictions/nope")"
+printf 'mocks/404        %s\n' "$(code "$B/mocks/nope")"
+
+echo; echo "=== 冒烟结束 ==="

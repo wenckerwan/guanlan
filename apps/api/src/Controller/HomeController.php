@@ -8,6 +8,8 @@ use App\Resource\DocumentResource;
 use App\Resource\HotspotResource;
 use App\Resource\SubjectSummaryResource;
 use App\Service\HomeService;
+use App\Support\ApiResponse;
+use Psr\Http\Message\ResponseInterface;
 
 class HomeController
 {
@@ -15,14 +17,13 @@ class HomeController
     {
     }
 
-    public function index(): array
+    public function index(): ResponseInterface
     {
-        return [
-            'data' => [
-                'hotspots' => HotspotResource::collection($this->service->hotspots()),
-                'documents' => DocumentResource::collection($this->service->documents()),
-                'subjects' => SubjectSummaryResource::collection($this->service->subjects()),
-            ],
-        ];
+        return ApiResponse::data([
+            'hotspots' => HotspotResource::collection($this->service->hotspots()),
+            'documents' => DocumentResource::collection($this->service->documents()),
+            'subjects' => SubjectSummaryResource::collection($this->service->subjects()),
+            'stats' => $this->service->stats(),
+        ]);
     }
 }

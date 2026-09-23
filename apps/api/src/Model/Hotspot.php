@@ -13,6 +13,8 @@ class Hotspot extends Model
 
     protected array $guarded = [];
 
+    protected array $casts = ['outline' => 'array'];
+
     public function subject(): BelongsTo
     {
         return $this->belongsTo(Subject::class, 'subject_id');

@@ -1,0 +1,2842 @@
+[
+ {
+  "pid": "1994·文科",
+  "year": 1994,
+  "label": "文科",
+  "kind": "split",
+  "question_count": 29,
+  "total_score": 42,
+  "answered_count": 20,
+  "sections": [
+   {
+    "key": "single",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "一、在下列各题的备选答案中，选出其中一个正确答案，将字母标号填入括号内，错选不给分。"
+   },
+   {
+    "key": "multi",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "二、下列各题，有一个或一个以上正确答案，选出正确答案，将字母标号填入括号内。错选、多选、"
+   },
+   {
+    "key": "simple",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "三、简答题"
+   },
+   {
+    "key": "discern",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "四、辨析题。要求对所给命题或观点进行辨别、分析，观点正确，言之成理。"
+   },
+   {
+    "key": "essay",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "五、论述题。要求论述紧扣题意，合乎逻辑。"
+   },
+   {
+    "key": "material",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "六、材料题。结合所学知识或原理分析材料并回答问题。"
+   },
+   {
+    "key": "single",
+    "per": 1,
+    "total": 10,
+    "declared": null,
+    "rng": null,
+    "raw": "一、单项选择题(每小题1分，共10分)"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 20,
+    "declared": null,
+    "rng": null,
+    "raw": "二、多项选择题(每小题2分，共20分)"
+   },
+   {
+    "key": "simple",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "三、简答题"
+   },
+   {
+    "key": "discern",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "四、辨析题"
+   },
+   {
+    "key": "essay",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "五、论述题"
+   },
+   {
+    "key": "material",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "六、材料题"
+   }
+  ],
+  "sort_order": 0
+ },
+ {
+  "pid": "1994·理科",
+  "year": 1994,
+  "label": "理科",
+  "kind": "split",
+  "question_count": 27,
+  "total_score": 91.8,
+  "answered_count": 16,
+  "sections": [
+   {
+    "key": "multi",
+    "per": null,
+    "total": 20,
+    "declared": null,
+    "rng": null,
+    "raw": "二、在下列各题的途项中，至少有一项是符合题意的请把所选答案的字母填人题后括号内。少选、乡选、锗选，该囹不给分，（每J、题2分，共20分）"
+   },
+   {
+    "key": "simple",
+    "per": null,
+    "total": 8,
+    "declared": null,
+    "rng": null,
+    "raw": "三、简答题按题意作出正确的回答（每小匹4分，共8分）"
+   },
+   {
+    "key": "discern",
+    "per": 5,
+    "total": 20,
+    "declared": null,
+    "rng": null,
+    "raw": "四、辨析题要求对所给命题进行辨别，分析观点正确，言之成理。（每小题5分，共20分）"
+   },
+   {
+    "key": "essay",
+    "per": null,
+    "total": 36,
+    "declared": null,
+    "rng": null,
+    "raw": "五、论述题要求紧扣题意，论述符合逻辑。（共36分）"
+   },
+   {
+    "key": "material",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "六、材料因结合所学知识或原理，分析有关材料并回答问题（6分）"
+   },
+   {
+    "key": "single",
+    "per": 1,
+    "total": 10,
+    "declared": null,
+    "rng": null,
+    "raw": "一、单项选择题(每小题1分，共10分)"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 20,
+    "declared": null,
+    "rng": null,
+    "raw": "二、多项选择题(每小题2分，共20分)"
+   },
+   {
+    "key": "simple",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "三、简答题"
+   },
+   {
+    "key": "discern",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "四、辨析题"
+   },
+   {
+    "key": "essay",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "五、论述题"
+   },
+   {
+    "key": "material",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "六、材料题"
+   }
+  ],
+  "sort_order": 1
+ },
+ {
+  "pid": "1995·文科",
+  "year": 1995,
+  "label": "文科",
+  "kind": "split",
+  "question_count": 30,
+  "total_score": 46,
+  "answered_count": 20,
+  "sections": [
+   {
+    "key": "single",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "一、在下列各题的备选答案中，选出其中一个正确答案，特字母标号填入括号内，错选不给分。"
+   },
+   {
+    "key": "multi",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "二、在下列各题的选项中，至少有一项是符合题意的。请把所选答案的字母填入题后括号内。少选、多选、错选，该题不给分。"
+   },
+   {
+    "key": "simple",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "三、简答题"
+   },
+   {
+    "key": "discern",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "四、辨析题。要求对所给命题或观点进行辨别、分析，观点正确，言之成理。"
+   },
+   {
+    "key": "essay",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "五、论述题。要求论述紧扣题意，合乎逻辑。"
+   },
+   {
+    "key": "material",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "六、材料题。结合所学知识或原理分析材料并回答问题。"
+   },
+   {
+    "key": "single",
+    "per": 1,
+    "total": 10,
+    "declared": null,
+    "rng": null,
+    "raw": "一、单项选择题(每小题1分，共10分)"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 20,
+    "declared": null,
+    "rng": null,
+    "raw": "二、多项选择题(每小题2分，共20分)"
+   },
+   {
+    "key": "simple",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "三、简答题"
+   },
+   {
+    "key": "discern",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "四、辨析题"
+   },
+   {
+    "key": "essay",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "五、论述题"
+   }
+  ],
+  "sort_order": 2
+ },
+ {
+  "pid": "1995·理科",
+  "year": 1995,
+  "label": "理科",
+  "kind": "split",
+  "question_count": 31,
+  "total_score": 65,
+  "answered_count": 21,
+  "sections": [
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 20,
+    "declared": null,
+    "rng": null,
+    "raw": "二、下列每题的选项中，至少有一项足符合回意的，请把所述答案的字母填写在回答相应的括号内。少途、多途、错选，该匹不给分。（每小题2分，共20分）"
+   },
+   {
+    "key": "simple",
+    "per": 4,
+    "total": 8,
+    "declared": 2,
+    "rng": null,
+    "raw": "三、简答将答案写在答案纸相应位置上。（共2题，每题4分，共8分）"
+   },
+   {
+    "key": "discern",
+    "per": 5,
+    "total": 15,
+    "declared": 3,
+    "rng": null,
+    "raw": "四、辩析题要求对所给命题或观点进行辨别、分析，观点正确，言之成理。将答案写在答题纸相应的位置上。（共3题，每题5分，共15分）"
+   },
+   {
+    "key": "essay",
+    "per": null,
+    "total": null,
+    "declared": 3,
+    "rng": null,
+    "raw": "五、论述题：要求论述符合题意，合乎逻辑。将答案写在答题纸相应位置上。（共3题，32分）"
+   },
+   {
+    "key": "single",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "一、单项选择题"
+   },
+   {
+    "key": "simple",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "三、简答题"
+   },
+   {
+    "key": "discern",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "四、辨析题"
+   },
+   {
+    "key": "essay",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "五、论述题"
+   },
+   {
+    "key": "material",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "六、材料题"
+   }
+  ],
+  "sort_order": 3
+ },
+ {
+  "pid": "1996·文科",
+  "year": 1996,
+  "label": "文科",
+  "kind": "split",
+  "question_count": 28,
+  "total_score": 43,
+  "answered_count": 19,
+  "sections": [
+   {
+    "key": "single",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "一、在下列各题的备选答案中，选出其中一个正确答案，将字母标号填人括号内，错选不给分。"
+   },
+   {
+    "key": "multi",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "二、在下列各题的选项中，至少有一项是符合题意的。请把所选答案的字母镇人题后括号内。少选、多选、"
+   },
+   {
+    "key": "simple",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "三、简答题"
+   },
+   {
+    "key": "discern",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "四、辨析题。要求对所给命题或观点进行辨别分析，观点正确，官之成理。"
+   },
+   {
+    "key": "essay",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "五、论述题。要求论述紧扣题意合乎逻辑。"
+   },
+   {
+    "key": "material",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "六、材料题。结合所学知识或原理分析材料并回答问题。"
+   },
+   {
+    "key": "single",
+    "per": 1,
+    "total": 10,
+    "declared": null,
+    "rng": null,
+    "raw": "一、单项选择题(每小题1分，共10分)"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 20,
+    "declared": null,
+    "rng": null,
+    "raw": "二、多项选择题(每小题2分，共20分)"
+   },
+   {
+    "key": "simple",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "三、简答题"
+   },
+   {
+    "key": "discern",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "四、辨析题"
+   },
+   {
+    "key": "essay",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "五、论述题"
+   },
+   {
+    "key": "material",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "六、材料题"
+   }
+  ],
+  "sort_order": 4
+ },
+ {
+  "pid": "1996·理科",
+  "year": 1996,
+  "label": "理科",
+  "kind": "split",
+  "question_count": 30,
+  "total_score": 100,
+  "answered_count": 20,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 10,
+    "declared": null,
+    "rng": null,
+    "raw": "一、下列每题的途项中，有一项是最符合题意的，请将所选答案的字母写在答题纸上相应的括号内。（每小题1分，共10分）"
+   },
+   {
+    "key": "multi",
+    "per": null,
+    "total": 20,
+    "declared": null,
+    "rng": null,
+    "raw": "二、下列每题的选项中，至少有一项足符合题意的，诏把所途答寨的字母填写在答回纸上相应的括号内。少选、多选、铬选，该题不给分（每小囹2分，共20分）"
+   },
+   {
+    "key": "simple",
+    "per": 4,
+    "total": 8,
+    "declared": 2,
+    "rng": null,
+    "raw": "三、简答题（共2题，每题4分，共8分）将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "discern",
+    "per": 5,
+    "total": 20,
+    "declared": 4,
+    "rng": null,
+    "raw": "四、辨析题（共4题，每题5分，共20分）要求对所给命题或观点进行辨别、分析，观点正确，言之成理。将答案写在答问纸相应位置上。"
+   },
+   {
+    "key": "essay",
+    "per": null,
+    "total": 22,
+    "declared": 2,
+    "rng": null,
+    "raw": "五、论述题（共2题，共22分）要求论述紧扣题意，合乎逻辑，将答案写在答题纸相位置上。"
+   },
+   {
+    "key": "material",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "六、材料题（共2题，每题10分，共20分）结合所学知识或原理，分析有关材料回答问题。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "single",
+    "per": 1,
+    "total": 10,
+    "declared": null,
+    "rng": null,
+    "raw": "一、单项选择题（每小题1分，共10分）"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 20,
+    "declared": null,
+    "rng": null,
+    "raw": "二、多项选择题（每小题2分，共20分）"
+   },
+   {
+    "key": "simple",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "三、简答题21.答案略。"
+   },
+   {
+    "key": "discern",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "四、辨析题23.答案要点："
+   },
+   {
+    "key": "essay",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "五、论述题27.答案要点："
+   },
+   {
+    "key": "material",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "六、材料题29.答案要点："
+   }
+  ],
+  "sort_order": 5
+ },
+ {
+  "pid": "1997·文科",
+  "year": 1997,
+  "label": "文科",
+  "kind": "split",
+  "question_count": 30,
+  "total_score": 88,
+  "answered_count": 20,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 10,
+    "declared": null,
+    "rng": null,
+    "raw": "一、下列每题的选项中，有一项是最符合题意的。请在答题纸上将所选项的字母涂黑。(每小题1分，共10分)"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 20,
+    "declared": null,
+    "rng": null,
+    "raw": "二、下列每题的选项中，至少有一项是符合题意的。请在答题纸上持所选项的字母涂黑。少选、多选、错选，该题不得分。(每小题2分，共20分)"
+   },
+   {
+    "key": "simple",
+    "per": 4,
+    "total": 8,
+    "declared": 2,
+    "rng": null,
+    "raw": "三、简答题(共2题，每题4分，共8分)将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "discern",
+    "per": 5,
+    "total": 20,
+    "declared": 4,
+    "rng": null,
+    "raw": "四、辨析题(共4题，每题5分，共20分)要求对所给命题或观点进行辨别、分析，观点正确，言之成理。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "essay",
+    "per": null,
+    "total": null,
+    "declared": 2,
+    "rng": null,
+    "raw": "五、论述题（共2题，22分）要求论述紧扣题意，合乎逻辑。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "material",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "六、材料题(共2题，每题10分，共20分)结合所学知识或原理分析材料并回答问题。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "single",
+    "per": 1,
+    "total": 10,
+    "declared": null,
+    "rng": null,
+    "raw": "一、下列每题的选项中，有一项是最符合题意的。每小题1分，共10分。"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 20,
+    "declared": null,
+    "rng": null,
+    "raw": "二、下列每题的选项中，至少有一项是符合题意的。少选、多选、错选、该题不得分。每小题2分，共20分。"
+   },
+   {
+    "key": "simple",
+    "per": 4,
+    "total": 8,
+    "declared": 2,
+    "rng": null,
+    "raw": "三、简答题：共2题，每题4分，共8分。"
+   },
+   {
+    "key": "discern",
+    "per": 5,
+    "total": 20,
+    "declared": 4,
+    "rng": null,
+    "raw": "四、辨析题：共4题，每题5分，共20分。要求对所给命题或观点进行辨别、分折，观点正确，言之成理。"
+   },
+   {
+    "key": "essay",
+    "per": null,
+    "total": null,
+    "declared": 2,
+    "rng": null,
+    "raw": "五、论述题：共2题，22分；第27题12分，28题10分。要求论述紧扣题意，合乎逻辑。"
+   },
+   {
+    "key": "material",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "六、材料题：共2题，每题10分，共20分。结合所学知识或原理分析材料并回答问题。"
+   }
+  ],
+  "sort_order": 6
+ },
+ {
+  "pid": "1997·理科",
+  "year": 1997,
+  "label": "理科",
+  "kind": "split",
+  "question_count": 25,
+  "total_score": 55,
+  "answered_count": 18,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 10,
+    "declared": null,
+    "rng": null,
+    "raw": "一、下列每题的选项中，有一项是最符合题意的。请选出正确的答案。 （每小题１分，共１０分）"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 20,
+    "declared": null,
+    "rng": null,
+    "raw": "二、下列每题的选项中，至少有一项是符合题意的。请选出正确的答案。少选、多选、错选，该题不给分。 （每小题２分，共２０分）"
+   },
+   {
+    "key": "simple",
+    "per": 4,
+    "total": 8,
+    "declared": 2,
+    "rng": null,
+    "raw": "三、简答题（共２题，每题４分，共８分）将答案写在答题纸上，用鼠标单击题号可以看参考答案。"
+   },
+   {
+    "key": "discern",
+    "per": 5,
+    "total": 20,
+    "declared": 4,
+    "rng": null,
+    "raw": "四、辨析题（共４题，每题５分，共２０分）要求对所给命题或观点进行辨别、分析，观点正确，言之成理。将答案写在答题纸上。用鼠标单击题号可以看参考答案。"
+   },
+   {
+    "key": "essay",
+    "per": null,
+    "total": 22,
+    "declared": 2,
+    "rng": null,
+    "raw": "五、论述题（共２题，共２２分）要求论述紧扣题意，合乎逻辑。将答案写在答题纸上。用鼠标单击题号可以看参考答案。"
+   },
+   {
+    "key": "material",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "六、材料题（共２题，每题１０分，共２０分）结合所学知识或原理，分析有关材料回答问题。将答案写在答题纸上。用鼠标单击题号可以看参考答案。"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 20,
+    "declared": null,
+    "rng": null,
+    "raw": "二、下列每题的选项中，至少有一项是符合题意的。少选、多选、错选，该题不得分。每小题2分，共20分。"
+   },
+   {
+    "key": "simple",
+    "per": 4,
+    "total": 8,
+    "declared": 2,
+    "rng": null,
+    "raw": "三、简答题：共2题，每题4分，共8分。"
+   },
+   {
+    "key": "discern",
+    "per": 5,
+    "total": 20,
+    "declared": 4,
+    "rng": null,
+    "raw": "四、辨析题：共4题，每题5分，共20分。要求对所给命题或观点进行辨别、分析，观点正确，言之成理。"
+   },
+   {
+    "key": "essay",
+    "per": null,
+    "total": null,
+    "declared": 2,
+    "rng": null,
+    "raw": "五、论述题：共2题，22分，第27题12分，28题10分。要求论述紧扣题意，合乎逻辑。"
+   },
+   {
+    "key": "material",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "六、材料题：共2题，每题10分，共20分。结合所学知识或原理分析材料并回答问题。"
+   }
+  ],
+  "sort_order": 7
+ },
+ {
+  "pid": "1998·文科",
+  "year": 1998,
+  "label": "文科",
+  "kind": "split",
+  "question_count": 30,
+  "total_score": 88,
+  "answered_count": 20,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 10,
+    "declared": null,
+    "rng": null,
+    "raw": "一、下列每题的选项中，有一项是最符合题意的。请在答题纸上将所选项的字母涂黑。(每小题1分，共10分)"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 20,
+    "declared": null,
+    "rng": null,
+    "raw": "二、下列每题的选项中，至少有一项是符合题意的。请在答题纸上将所这项的字母涂黑。少选、多选、错选，该题不得分。(每小题2分，共20分)"
+   },
+   {
+    "key": "simple",
+    "per": 4,
+    "total": 8,
+    "declared": 2,
+    "rng": null,
+    "raw": "三、简答题[共2题，每题4分，共8分)特答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "discern",
+    "per": 5,
+    "total": 20,
+    "declared": 4,
+    "rng": null,
+    "raw": "四、辨析题(共4题，每题5分，共20分)要求对历给台题或观点进行辨别、分析，观点正确，言之成理。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "essay",
+    "per": null,
+    "total": null,
+    "declared": 2,
+    "rng": null,
+    "raw": "五、论述题[共2题，22分)要求论述紧初题意，合乎逻辑。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "material",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "六、材料题[共2题，每题10分，共20分)结合所学知识或原理分析材料并回答问题。持答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "single",
+    "per": 1,
+    "total": 10,
+    "declared": null,
+    "rng": null,
+    "raw": "一、下列每题的选项中，有一项是最符合题意的。每小题1分，共10分。"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "二、下列每题的选项中，至少有一项是符合题意的。少选、多选、错选，该题不得分。每小题2分，共20"
+   },
+   {
+    "key": "simple",
+    "per": 4,
+    "total": 8,
+    "declared": 2,
+    "rng": null,
+    "raw": "三、简答题：共2题，每题4分。共8分。"
+   },
+   {
+    "key": "discern",
+    "per": 5,
+    "total": 20,
+    "declared": 4,
+    "rng": null,
+    "raw": "四、辨折题：共4题，每题5分，共20分。要求对所给命题或观点进行辨别、分析，观点正确，言之成理。"
+   },
+   {
+    "key": "essay",
+    "per": null,
+    "total": null,
+    "declared": 2,
+    "rng": null,
+    "raw": "五、论述题：共2题，22分。要求论述紧初题意，合乎逻辑。"
+   },
+   {
+    "key": "material",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "六、材料题：共2题，每题10分，共20分。结合所学知识或原理分析材料并回答问题。"
+   }
+  ],
+  "sort_order": 8
+ },
+ {
+  "pid": "1998·理科",
+  "year": 1998,
+  "label": "理科",
+  "kind": "split",
+  "question_count": 29,
+  "total_score": 99,
+  "answered_count": 19,
+  "sections": [
+   {
+    "key": "simple",
+    "per": 4,
+    "total": 8,
+    "declared": 2,
+    "rng": null,
+    "raw": "三、简答题（共2题，每题4分，共8分）将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "discern",
+    "per": 5,
+    "total": 20,
+    "declared": 4,
+    "rng": null,
+    "raw": "四、辨析题（共4题，每题5分，共20分）要求对所给命题或观点进行辨别、分析，观点正确，言之成理。将答案写在答问纸相应位置上。"
+   },
+   {
+    "key": "essay",
+    "per": null,
+    "total": 22,
+    "declared": 2,
+    "rng": null,
+    "raw": "五、论述题（共2题，共22分）要求论述紧扣题意，合乎逻辑，将答案写在答题纸相位置上。"
+   },
+   {
+    "key": "material",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "六、材料题（共2题，每题10分，共20分）结合所学知识或原理，分析有关材料回答问题。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "single",
+    "per": 1,
+    "total": 10,
+    "declared": null,
+    "rng": null,
+    "raw": "一、下列每题的选项中，有一项是最符合题意的。每小题1分，共10分。"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "二、下列每题的选项中，至少有一项是符合题意的。少选、多选、错选，该题不得分。每小题2分，共20"
+   },
+   {
+    "key": "simple",
+    "per": 4,
+    "total": 8,
+    "declared": 2,
+    "rng": null,
+    "raw": "三、简答题：共2题，每题4分。共8分。"
+   },
+   {
+    "key": "discern",
+    "per": 5,
+    "total": 20,
+    "declared": 4,
+    "rng": null,
+    "raw": "四、辨折题：共4题，每题5分，共20分。要求对所给命题或观点进行辨别、分析，观点正确，言之成理。"
+   },
+   {
+    "key": "essay",
+    "per": null,
+    "total": null,
+    "declared": 2,
+    "rng": null,
+    "raw": "五、论述题：共2题，22分。要求论述紧初题意，合乎逻辑。"
+   },
+   {
+    "key": "material",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "六、材料题：共2题，每题10分，共20分。结合所学知识或原理分析材料并回答问题。"
+   }
+  ],
+  "sort_order": 9
+ },
+ {
+  "pid": "1999·文科",
+  "year": 1999,
+  "label": "文科",
+  "kind": "split",
+  "question_count": 36,
+  "total_score": 97,
+  "answered_count": 22,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": null,
+    "raw": "一．下列每题的选项中，有一项是最符合题意的。请在答题纸上将所选项的字母涂黑。（每小题1分，共16分）"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 24,
+    "declared": null,
+    "rng": null,
+    "raw": "二．下列每题的选项中，至少有一项是符合题意的。请在答题纸上将所选项的字母涂黑。少选、多选、错选，该题不得分。（每小题2分，共24分）"
+   },
+   {
+    "key": "simple",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "三．简答题（5分）将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "discern",
+    "per": 5,
+    "total": 15,
+    "declared": 3,
+    "rng": null,
+    "raw": "四．辨析题（共3题，每题5分，共15分）要求对所给命题或观点进行辨别、分析，观点正确，言之成理。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "essay",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "五．论述题（共2题，每题10分，共20分）要求论述紧扣题意，合乎逻辑。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "material",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "六．材料题（共2题，每题10分，共20分）结合所学知识或原理分析材料并回答问题。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "二、下列每题的选项中，至少有一项最符合题意的。少选、多选、错选，该题不得分。每小题2分，"
+   },
+   {
+    "key": "simple",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "三、简答题：5分。"
+   },
+   {
+    "key": "discern",
+    "per": 5,
+    "total": 15,
+    "declared": 3,
+    "rng": null,
+    "raw": "四、辨析题：共3题，每题5分，共15分。要求对所给命题或观点进行辨别、分折、观点正确，言之成理。"
+   },
+   {
+    "key": "essay",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "五、论述题：共2题，每题10分，共20分。要求论述紧扣题意，合乎逻辑。"
+   },
+   {
+    "key": "material",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "六、材料题：共2题，每题10分，共20分。结合所学知识或原理分折材料并回答问题。"
+   }
+  ],
+  "sort_order": 10
+ },
+ {
+  "pid": "1999·理科",
+  "year": 1999,
+  "label": "理科",
+  "kind": "split",
+  "question_count": 35,
+  "total_score": 87,
+  "answered_count": 28,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": null,
+    "raw": "一、下列每题的选项中，有一项是最符合题意的。请在答题纸上将所选项的字母涂黑。（每小题1分，共16分）"
+   },
+   {
+    "key": "multi",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "二、不定项选择题。下列每题的选项中，至少有一项是符合题意的。"
+   },
+   {
+    "key": "material",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "六、材料题（共2题，每题10分，共20分）结合所学知识或原理分析材料并回答问题。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "material",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "1. 材料1（《井冈山土地法》）的颁布有何意义？条文中尚有哪些不适合当时中国农村实际的政策规定？（3分）"
+   },
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": null,
+    "raw": "一、下列每题的选项中，有一项是最符合题意的。每小题1分，共16分。"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "二、下列每题的选项中，至少有一项是符合题意的。少选、多选、错选，该题不得分。每小题2分，"
+   },
+   {
+    "key": "simple",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "三、简答题：5分。"
+   },
+   {
+    "key": "discern",
+    "per": 5,
+    "total": 15,
+    "declared": 3,
+    "rng": null,
+    "raw": "四、辨析题：共3题，每题5分，共15分。要求对历给命题或观点进行辨别、分析，观点正确，言之成理。"
+   },
+   {
+    "key": "essay",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "五、论述题：共2题，每题10分，共20分。要求论述紧句题意，合乎逻辑。"
+   },
+   {
+    "key": "material",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "六、材料题：共2题，每题10分，共20分。结合所学知识或原理分析材料回答问题。"
+   }
+  ],
+  "sort_order": 11
+ },
+ {
+  "pid": "2000·文科",
+  "year": 2000,
+  "label": "文科",
+  "kind": "split",
+  "question_count": 35,
+  "total_score": 98,
+  "answered_count": 27,
+  "sections": [
+   {
+    "key": "simple",
+    "per": null,
+    "total": null,
+    "declared": 1,
+    "rng": null,
+    "raw": "三、简答题（共1题，5分）将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "discern",
+    "per": 5,
+    "total": 15,
+    "declared": 3,
+    "rng": null,
+    "raw": "四、辩析题（共3题，每题5分，共15分）要求对所给命题或观点进行辩别、分析，观点正确，言之成理。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "essay",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "五、论述题（共2题，每题10分，共20分）要求论述紧扣题意，合乎逻辑。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "material",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "六、材料题（共2题，每题10分，共20分）结合所学知识或原理分析材料并回答问题。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "single",
+    "per": 1,
+    "total": null,
+    "declared": 16,
+    "rng": null,
+    "raw": "一. 单项选择题（共16题，每题1 分）"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": null,
+    "declared": 12,
+    "rng": null,
+    "raw": "二. 多项选择题（共12题，每题2 分）"
+   },
+   {
+    "key": "simple",
+    "per": 5,
+    "total": null,
+    "declared": 1,
+    "rng": null,
+    "raw": "三. 简答题（共1题，每题5分）"
+   },
+   {
+    "key": "essay",
+    "per": 10,
+    "total": null,
+    "declared": 2,
+    "rng": null,
+    "raw": "五. 论述题（共2题，每题10分）"
+   },
+   {
+    "key": "material",
+    "per": 10,
+    "total": null,
+    "declared": 2,
+    "rng": null,
+    "raw": "六. 材料题（共2题，每题10分）"
+   }
+  ],
+  "sort_order": 12
+ },
+ {
+  "pid": "2000·理科",
+  "year": 2000,
+  "label": "理科",
+  "kind": "split",
+  "question_count": 36,
+  "total_score": 97,
+  "answered_count": 28,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": null,
+    "raw": "一、下列每题的选项中，有一项是最符合题意的。请在答题纸上将所选项的字母涂黑。（每小题1分，共16分）"
+   },
+   {
+    "key": "analyse",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "5．分析资本主义生产过程是劳动过程和价值增殖过程的统一，关键是运用。"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 24,
+    "declared": null,
+    "rng": null,
+    "raw": "二、下列每题的选项中，至少有一项是符合题意的。请在答题纸上将所选项的字母黑。少选、多选、错选，该题不得分。（每小题2分，共24分）"
+   },
+   {
+    "key": "simple",
+    "per": null,
+    "total": null,
+    "declared": 1,
+    "rng": null,
+    "raw": "三、简答题（共1题，5分）将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "discern",
+    "per": 5,
+    "total": 15,
+    "declared": 3,
+    "rng": null,
+    "raw": "四、辨析题（共3题，每题5分，共15分）要求对所给命题或观点进行辨别、分析、观点正确，言之成理。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "essay",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "五、论述题（共2题，每题10分，共20分）要求论述紧扣题意，合乎逻辑。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "material",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "六、材料题（共2题，每题10分，共20分）结合所学知识或原理分析材料并回答问题。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": null,
+    "raw": "一、下列每题的选项中，有一项是最符合题意的。请在答题纸上将所选项的字母涂黑。（每小题1分，共16分）"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 24,
+    "declared": null,
+    "rng": null,
+    "raw": "二、下列每题的选项中，至少有一项是符合题意的。请在答题纸上将所选项的字母黑。少选多选错选，该题不得分。（每小题2分，共24分）"
+   },
+   {
+    "key": "simple",
+    "per": null,
+    "total": null,
+    "declared": 1,
+    "rng": null,
+    "raw": "三、简答题（共1题，5分）将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "discern",
+    "per": 5,
+    "total": 15,
+    "declared": 3,
+    "rng": null,
+    "raw": "四、辨析题（共3题，每题5分，共15分）要求对所给命题或观点进行辨别、分析、观点正确，言之成理。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "essay",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "五、论述题（共2题，每题10分，共20分）要求论述紧扣题意，合乎逻辑。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "material",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "六、材料题（共2题，每题10分，共20分）结合所学知识或原理分析材料并回答问题。将答案写在答题纸相应位置上。"
+   }
+  ],
+  "sort_order": 13
+ },
+ {
+  "pid": "2001·文科",
+  "year": 2001,
+  "label": "文科",
+  "kind": "split",
+  "question_count": 37,
+  "total_score": 100,
+  "answered_count": 31,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 15,
+    "declared": null,
+    "rng": null,
+    "raw": "一、下列每题的选项中，有一项是最符合题意的。请在答题纸上将所选项的字母涂黑。（每小题1分，共15分）"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 30,
+    "declared": null,
+    "rng": null,
+    "raw": "二、下列每题的选项中，至少有一项是符合题意的。请在答题纸上将所选项的安母涂黑。少选、多选、错选，该题不得分。（每小题2分，共30分）"
+   },
+   {
+    "key": "discern",
+    "per": 5,
+    "total": 15,
+    "declared": 3,
+    "rng": null,
+    "raw": "三、辨析题（共3题，每题5分，共15分）要求对所给命题或观点进行辨别、分析，观点正确，言之成理。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "essay",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "四、论述题（共2题，每题10分，共20分）要求论述紧扣题意，合乎逻辑。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "material",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "五、材料题（共2题，每题10分，共20分）结合所学知识或原理分析材料并回答问题。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "single",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "一、单项选择题"
+   },
+   {
+    "key": "discern",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "三、辨析题"
+   },
+   {
+    "key": "essay",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "四、论述题"
+   },
+   {
+    "key": "material",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "五、材料题"
+   }
+  ],
+  "sort_order": 14
+ },
+ {
+  "pid": "2001·理科",
+  "year": 2001,
+  "label": "理科",
+  "kind": "split",
+  "question_count": 36,
+  "total_score": 98,
+  "answered_count": 29,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 15,
+    "declared": null,
+    "rng": null,
+    "raw": "一、下列每题的选项中，有一项是最符合题意的。请在答题纸上将所选项的字母涂黑。（每小题1分，共15分）"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 30,
+    "declared": null,
+    "rng": null,
+    "raw": "二、下列每题的选项中，至少有一项是符合题意的。请在答题纸上将所选项的字母涂黑。少选、多选、错选，该题不得分。（每小题2分，共30分）"
+   },
+   {
+    "key": "discern",
+    "per": 5,
+    "total": 15,
+    "declared": 3,
+    "rng": null,
+    "raw": "三、辨析题（共3题，每题5分，共15分）要求对所给命题或观点进行辨别、分析，观点正确，言之成理。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "essay",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "四、论述题（共2题，每题10分，共20分）要求论述紧扣题意，合乎逻辑。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "material",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "五、材料题（共2题，每题10分，共20分）结合所学知识或原理分析材料并回答问题。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "single",
+    "per": 1,
+    "total": 15,
+    "declared": null,
+    "rng": null,
+    "raw": "一、下列每题的选项中，有一项是最符合题意的。每小题1分，共15分。"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 30,
+    "declared": null,
+    "rng": null,
+    "raw": "二、下列每题的选项中，至少有一项是符合题意的。少选、多选、错选，该题不得分。每小题2分，共30分。"
+   },
+   {
+    "key": "discern",
+    "per": 5,
+    "total": 15,
+    "declared": 3,
+    "rng": null,
+    "raw": "三、辨析题：共3题，每题5分，共15分。"
+   },
+   {
+    "key": "essay",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "四、论述题：共2题，每题10分，共20分。要求论述紧扣题意，合乎逻辑。论述过程联系题意不紧密、逻辑不清晰者可酌情扣分。"
+   },
+   {
+    "key": "material",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "五、材料题：共2题，每题10分，共20分。结合所学知识或原理分析材料并回答问题。仅简单复述材料者酌情扣分。"
+   }
+  ],
+  "sort_order": 15
+ },
+ {
+  "pid": "2002·文科",
+  "year": 2002,
+  "label": "文科",
+  "kind": "split",
+  "question_count": 37,
+  "total_score": 100,
+  "answered_count": 30,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 15,
+    "declared": null,
+    "rng": null,
+    "raw": "一、下列每题的选项中，有一项是最符合题意的。请在答题卡上将所选项的字母涂黑。(每小题1分，共15分)"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 30,
+    "declared": null,
+    "rng": null,
+    "raw": "二、下列每题的选项中，至少有一项是符合题意的。请在答题卡上将所选项的字母涂黑。少选、多选、错选，该题不得分。（每小题2分，共30分）"
+   },
+   {
+    "key": "discern",
+    "per": 5,
+    "total": 15,
+    "declared": 3,
+    "rng": null,
+    "raw": "三、辨析题(共3题，每题5分，共15分) 要求对所给命题或观点进行辨别、分析，观点正确，言之成理。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "essay",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "四、论述题(共2题，每题10分，共20分)要求论述紧扣题意，合乎逻辑。将答案写在答题纸相应位置上。论述过程联系题意不紧密、逻辑不清晰者可酌情扣分。"
+   },
+   {
+    "key": "material",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "五、材料题(共2题，每题10分，共20分)结合所学知识或原理分析材料并回答问题。将答案写在答题纸相应位置上。仅简单复述材料者酌情扣分。"
+   },
+   {
+    "key": "choose",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "一、选择题"
+   },
+   {
+    "key": "choose",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "二、选择题"
+   },
+   {
+    "key": "discern",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "三、辨析题"
+   },
+   {
+    "key": "essay",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "四、论述题"
+   },
+   {
+    "key": "material",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "五、材料题"
+   }
+  ],
+  "sort_order": 16
+ },
+ {
+  "pid": "2002·理科",
+  "year": 2002,
+  "label": "理科",
+  "kind": "split",
+  "question_count": 37,
+  "total_score": 100,
+  "answered_count": 30,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 15,
+    "declared": null,
+    "rng": null,
+    "raw": "一、下列每题的选项中，有一项是最符合题意的。请在答题卡上将所选项的字母涂黑。(每小题1分，共15分)"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 30,
+    "declared": null,
+    "rng": null,
+    "raw": "二、下列每题的选项中，至少有一项是符合题意的。请在答题卡上将所选项的字母涂黑。少选、多选、错选，该题不得分。（每小题2分，共30分）"
+   },
+   {
+    "key": "discern",
+    "per": 5,
+    "total": 15,
+    "declared": 3,
+    "rng": null,
+    "raw": "三、辨析题(共3题，每题5分，共15分) 要求对所给命题或观点进行辨别、分析，观点正确，言之成理。将答案写在答题纸相应位置上。"
+   },
+   {
+    "key": "essay",
+    "per": 10,
+    "total": 20,
+    "declared": null,
+    "rng": null,
+    "raw": "四、论述题(共?题，每题10分，共20分)要求论述紧扣题意，合乎逻辑。将答案写在答题纸相应位置上。论述过程联系题意不紧密、逻辑不清晰者可酌情扣分。"
+   },
+   {
+    "key": "material",
+    "per": 10,
+    "total": 20,
+    "declared": 2,
+    "rng": null,
+    "raw": "五、材料题(共2题，每题10分，共20分)结合所学知识或原理分析材料并回答问题。将答案写在答题纸相应位置上。仅简单复述材料者酌情扣分。"
+   },
+   {
+    "key": "choose",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "一、选择题"
+   },
+   {
+    "key": "choose",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "二、选择题"
+   },
+   {
+    "key": "discern",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "三、辨析题"
+   },
+   {
+    "key": "essay",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "四、论述题"
+   },
+   {
+    "key": "material",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "五、材料题"
+   }
+  ],
+  "sort_order": 17
+ },
+ {
+  "pid": "2003",
+  "year": 2003,
+  "label": "",
+  "kind": "legacy",
+  "question_count": 36,
+  "total_score": 97,
+  "answered_count": 29,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 15,
+    "declared": null,
+    "rng": null,
+    "raw": "一、下列每题的选项中，有一项是最符合题意的。（每小题1分，共15分）"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 30,
+    "declared": null,
+    "rng": null,
+    "raw": "二、下列每题的选项中，至少有一项是符合题意的。（每小题2分，共30分）"
+   },
+   {
+    "key": "discern",
+    "per": 6,
+    "total": 18,
+    "declared": 3,
+    "rng": null,
+    "raw": "三、辨析题。（共3题，每题6分，共18分）"
+   },
+   {
+    "key": "analyse",
+    "per": 9,
+    "total": 37,
+    "declared": 4,
+    "rng": null,
+    "raw": "四、分析题。（共4题，其中第34、35、36题每题9分，第37题10分，共37分）"
+   }
+  ],
+  "sort_order": 18
+ },
+ {
+  "pid": "2004",
+  "year": 2004,
+  "label": "",
+  "kind": "legacy",
+  "question_count": 37,
+  "total_score": 90,
+  "answered_count": 28,
+  "sections": [
+   {
+    "key": "single",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "一、单项选择题"
+   },
+   {
+    "key": "multi",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "二、多项选择题"
+   },
+   {
+    "key": "discern",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "三、辨析题"
+   },
+   {
+    "key": "analyse",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "四、分析题"
+   }
+  ],
+  "sort_order": 19
+ },
+ {
+  "pid": "2005",
+  "year": 2005,
+  "label": "",
+  "kind": "legacy",
+  "question_count": 37,
+  "total_score": 90,
+  "answered_count": 30,
+  "sections": [
+   {
+    "key": "single",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "一、单项选择题"
+   },
+   {
+    "key": "multi",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "二、多项选择题"
+   },
+   {
+    "key": "discern",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "三、辨析题"
+   },
+   {
+    "key": "analyse",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "四、分析题"
+   }
+  ],
+  "sort_order": 20
+ },
+ {
+  "pid": "2006",
+  "year": 2006,
+  "label": "",
+  "kind": "legacy",
+  "question_count": 38,
+  "total_score": 100,
+  "answered_count": 33,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": [
+     1,
+     16
+    ],
+    "raw": "一、单项选择题：1～16题，每小题1分，共16分。下列每题给出的四个选项中，只有一个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 34,
+    "declared": null,
+    "rng": [
+     17,
+     33
+    ],
+    "raw": "二、多项选择题：17～33小题，每小题2分，共34分。下列每题给出的四个选项中，至少有两个选项是符合试题要求的。请在答题卡上将所选项的字母涂黑。多选、少选或错选均不得分。"
+   },
+   {
+    "key": "analyse",
+    "per": 10,
+    "total": 50,
+    "declared": null,
+    "rng": [
+     34,
+     38
+    ],
+    "raw": "三、分析题:34～38小题，每小题10分，共50分。要求结合所学知识分析材料回答问题。将答案写在答题纸相应位置上。"
+   }
+  ],
+  "sort_order": 21
+ },
+ {
+  "pid": "2007",
+  "year": 2007,
+  "label": "",
+  "kind": "legacy",
+  "question_count": 37,
+  "total_score": 99,
+  "answered_count": 32,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": [
+     1,
+     16
+    ],
+    "raw": "一、单项选择题：1～16题，每小题1分，共16分。下列每题给出的四个选项中，只有一个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 34,
+    "declared": null,
+    "rng": [
+     17,
+     33
+    ],
+    "raw": "二、多项选择题：17～33小题，每小题2分，共34分。下列每题给出的四个选项中，至少有两个选项是符合试题要求的。请在答题卡上将所选项的字母涂黑。多选、少选或错选均不得分。"
+   },
+   {
+    "key": "analyse",
+    "per": 10,
+    "total": 50,
+    "declared": null,
+    "rng": [
+     34,
+     38
+    ],
+    "raw": "三、分析题：34-38小题，每小题10分，共50分。要求结合所学知识分析材料回答问题。将答案写在答题纸相应位置上。"
+   }
+  ],
+  "sort_order": 22
+ },
+ {
+  "pid": "2008",
+  "year": 2008,
+  "label": "",
+  "kind": "legacy",
+  "question_count": 38,
+  "total_score": 100,
+  "answered_count": 33,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": [
+     1,
+     16
+    ],
+    "raw": "一、单项选择题：1～16小题，每小题1分，共16分。下列每题给出的四个选项中，只有一个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 34,
+    "declared": null,
+    "rng": [
+     17,
+     33
+    ],
+    "raw": "二、多项选择题：17～33小题，每小题2分，共34分。下列每题给出的四个选项中，至少有两个选项是符合试题要求的。请在答题卡上将所选项的字母涂黑。多选或少选均不得分。"
+   },
+   {
+    "key": "analyse",
+    "per": 10,
+    "total": 50,
+    "declared": null,
+    "rng": [
+     34,
+     38
+    ],
+    "raw": "三、分析题：34-38小题，每小题10分，共50分。要求结合所学知识分析材料回答问题。将答案写在答题纸相应位置上。"
+   }
+  ],
+  "sort_order": 23
+ },
+ {
+  "pid": "2009",
+  "year": 2009,
+  "label": "",
+  "kind": "legacy",
+  "question_count": 38,
+  "total_score": 100,
+  "answered_count": 33,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": [
+     1,
+     16
+    ],
+    "raw": "一、单项选择题：1～16小题，每小题1分，共16分。下列每题给出的四个选项中，只有一个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 34,
+    "declared": null,
+    "rng": [
+     17,
+     33
+    ],
+    "raw": "二、多项选择题：17～33题，每小题2分，共34分。下列每题给出的四个选项中，至少有两个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。多选或少选均不得分。"
+   },
+   {
+    "key": "analyse",
+    "per": 10,
+    "total": 50,
+    "declared": null,
+    "rng": [
+     34,
+     38
+    ],
+    "raw": "三、分析题：34～38小题，每小题10分，共50分。要求结合所学知识分析材料并回答问题。将答案写在答题纸指定位置上。"
+   }
+  ],
+  "sort_order": 24
+ },
+ {
+  "pid": "2010",
+  "year": 2010,
+  "label": "",
+  "kind": "modern",
+  "question_count": 38,
+  "total_score": 100,
+  "answered_count": 33,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": [
+     1,
+     16
+    ],
+    "raw": "一、单项选择题：1～16小题，每小题1分，共16分。下列每题给出的四个选项中，只有一个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 34,
+    "declared": null,
+    "rng": [
+     17,
+     33
+    ],
+    "raw": "二、多项选择题：17～33题，每小题2分，共34分。下列每题给出的四个选项中，至少有两个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。多选或少选均不得分。"
+   },
+   {
+    "key": "analyse",
+    "per": 10,
+    "total": 50,
+    "declared": null,
+    "rng": [
+     34,
+     38
+    ],
+    "raw": "三、分析题：34～38小题，每小题10分，共50分。要求结合所学知识分析材料回答问题。"
+   }
+  ],
+  "sort_order": 25
+ },
+ {
+  "pid": "2011",
+  "year": 2011,
+  "label": "",
+  "kind": "modern",
+  "question_count": 38,
+  "total_score": 100,
+  "answered_count": 33,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": [
+     1,
+     16
+    ],
+    "raw": "一、单项选择题：1～16小题，每小题1分，共16分。下列每题给出的四个选项中，只有一个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 34,
+    "declared": null,
+    "rng": [
+     17,
+     33
+    ],
+    "raw": "二、多项选择题：17～33题，每小题2分，共34分。下列每题给出的四个选项中，至少有两个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。多选或少选均不得分。"
+   },
+   {
+    "key": "analyse",
+    "per": 10,
+    "total": 50,
+    "declared": null,
+    "rng": [
+     34,
+     38
+    ],
+    "raw": "三、分析题：34～38小题，每小题10分，共50分。要求结合所学知识分析材料并回答问题。"
+   }
+  ],
+  "sort_order": 26
+ },
+ {
+  "pid": "2012",
+  "year": 2012,
+  "label": "",
+  "kind": "modern",
+  "question_count": 38,
+  "total_score": 100,
+  "answered_count": 34,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": [
+     1,
+     16
+    ],
+    "raw": "一、单项选择题：1～16小题，每小题1分，共16分。下列每题给出的四个选项中，只有一个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 34,
+    "declared": null,
+    "rng": [
+     17,
+     33
+    ],
+    "raw": "二、多项选择题：17～33题，每小题2分，共34分。下列每题给出的四个选项中，至少有两个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。多选或少选均不得分。"
+   },
+   {
+    "key": "analyse",
+    "per": 10,
+    "total": 50,
+    "declared": null,
+    "rng": [
+     34,
+     38
+    ],
+    "raw": "三、分析题：34～38小题，第34题12分，第35、36、37小题每题10分，第38小题8分，共50分。要求结合所学知识分析材料并回答问题。将答案写在答题纸指定位置上。"
+   }
+  ],
+  "sort_order": 27
+ },
+ {
+  "pid": "2013",
+  "year": 2013,
+  "label": "",
+  "kind": "modern",
+  "question_count": 38,
+  "total_score": 100,
+  "answered_count": 33,
+  "sections": [
+   {
+    "key": "single",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "一、单项选择题"
+   },
+   {
+    "key": "multi",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "二、多项选择题"
+   },
+   {
+    "key": "analyse",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "三、分析题"
+   }
+  ],
+  "sort_order": 28
+ },
+ {
+  "pid": "2014",
+  "year": 2014,
+  "label": "",
+  "kind": "modern",
+  "question_count": 38,
+  "total_score": 100,
+  "answered_count": 33,
+  "sections": [
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 34,
+    "declared": null,
+    "rng": [
+     17,
+     33
+    ],
+    "raw": "二、多项选择题：17～33题，每小题2分，共34分。下列每题给出的四个选项中，至少有两个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。多选或少选均不得分。"
+   }
+  ],
+  "sort_order": 29
+ },
+ {
+  "pid": "2015",
+  "year": 2015,
+  "label": "",
+  "kind": "modern",
+  "question_count": 38,
+  "total_score": 100,
+  "answered_count": 33,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": [
+     1,
+     16
+    ],
+    "raw": "一、单项选择题：1～16小题，每小题1分，共16分。下列每题给出的四个选项中，只有一个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 34,
+    "declared": null,
+    "rng": [
+     17,
+     33
+    ],
+    "raw": "二、多项选择题：17～33题，每小题2分，共34分。下列每题给出的四个选项中，至少有两个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。多选或少选均不得分。"
+   },
+   {
+    "key": "analyse",
+    "per": 10,
+    "total": 50,
+    "declared": null,
+    "rng": [
+     34,
+     38
+    ],
+    "raw": "三、分析题：34～38小题，每小题10分，共50分。要求结合所学知识分析材料并回答问题。将答案写在答题纸指定位置上。"
+   }
+  ],
+  "sort_order": 30
+ },
+ {
+  "pid": "2016",
+  "year": 2016,
+  "label": "",
+  "kind": "modern",
+  "question_count": 38,
+  "total_score": 100,
+  "answered_count": 33,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": [
+     1,
+     16
+    ],
+    "raw": "一、单项选择题1~16小题，每小题1分，共16分。下列每题给出的四个选项中，只有一个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 34,
+    "declared": null,
+    "rng": [
+     17,
+     33
+    ],
+    "raw": "二、多项选择题：17~33小题，每小题2分，共34分。下列每题给出的四个选项中，至少有两个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。多选或少选均不得分。"
+   },
+   {
+    "key": "analyse",
+    "per": 10,
+    "total": 50,
+    "declared": null,
+    "rng": [
+     34,
+     38
+    ],
+    "raw": "三、分析题：34~38小题，每小题10分，共50分。要求结合所学知识，分析材料回答问题。将答案写在答题卡指定位置的边框区域内"
+   }
+  ],
+  "sort_order": 31
+ },
+ {
+  "pid": "2017",
+  "year": 2017,
+  "label": "",
+  "kind": "modern",
+  "question_count": 38,
+  "total_score": 100,
+  "answered_count": 33,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": [
+     1,
+     16
+    ],
+    "raw": "一、单项选择题：1～16小题，每小题1分，共16分。下列每题给出的四个选项中，只有一个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 34,
+    "declared": null,
+    "rng": [
+     17,
+     33
+    ],
+    "raw": "二、多项选择题：17～33题，每小题2分，共34分。下列每题给出的四个选项中，至少有两个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。多选或少选均不得分。"
+   },
+   {
+    "key": "analyse",
+    "per": 10,
+    "total": 50,
+    "declared": null,
+    "rng": [
+     34,
+     38
+    ],
+    "raw": "三、分析题：34～38小题，每小题10分，共50分。要求结合所学知识分析材料并回答问题。将答案写在答题纸指定位置上。"
+   }
+  ],
+  "sort_order": 32
+ },
+ {
+  "pid": "2018",
+  "year": 2018,
+  "label": "",
+  "kind": "modern",
+  "question_count": 38,
+  "total_score": 100,
+  "answered_count": 33,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": [
+     1,
+     16
+    ],
+    "raw": "一、单项选择题：1～16小题，每小题1分，共16分。下列每题给出的四个选项中，只有一个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 34,
+    "declared": null,
+    "rng": [
+     17,
+     33
+    ],
+    "raw": "二、多项选择题：17～33题，每小题2分，共34分。下列每题给出的四个选项中，至少有两个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。多选或少选均不得分。"
+   },
+   {
+    "key": "analyse",
+    "per": 10,
+    "total": 50,
+    "declared": null,
+    "rng": [
+     34,
+     38
+    ],
+    "raw": "三、分析题：34～38小题，每小题10分，共50分。要求结合所学知识分析材料并回答问题。将答案写在答题纸指定位置上。"
+   }
+  ],
+  "sort_order": 33
+ },
+ {
+  "pid": "2019",
+  "year": 2019,
+  "label": "",
+  "kind": "modern",
+  "question_count": 38,
+  "total_score": 100,
+  "answered_count": 33,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": [
+     1,
+     16
+    ],
+    "raw": "一、单项选择题：1～16 小题，每小题 1 分，共 16 分。下列每题给出的四个选项中，只有一个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 34,
+    "declared": null,
+    "rng": [
+     17,
+     33
+    ],
+    "raw": "二、多项选择题：17～33 题，每小题 2 分，共 34 分。下列每题给出的四个选项中，至少有两个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。多选或少选均不得分。"
+   },
+   {
+    "key": "analyse",
+    "per": 10,
+    "total": 50,
+    "declared": null,
+    "rng": [
+     34,
+     38
+    ],
+    "raw": "三、分析题：34～38 小题，每小题 10 分，共 50 分。要求结合所学知识分析材料并回答问题。将答案写在答题纸指定位置上。"
+   }
+  ],
+  "sort_order": 34
+ },
+ {
+  "pid": "2020",
+  "year": 2020,
+  "label": "",
+  "kind": "modern",
+  "question_count": 38,
+  "total_score": 100,
+  "answered_count": 33,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": [
+     1,
+     16
+    ],
+    "raw": "一、单项选择题：1～16小题，每小题1分，共16分。下列每题给出的四个选项中，只有一个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 34,
+    "declared": null,
+    "rng": [
+     17,
+     33
+    ],
+    "raw": "二、多项选择题：17～33题，每小题2分，共34分。下列每题给出的四个选项中，至少有两个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑，多选或少选均不得分。"
+   },
+   {
+    "key": "analyse",
+    "per": 10,
+    "total": 50,
+    "declared": null,
+    "rng": [
+     34,
+     38
+    ],
+    "raw": "三、材料分析题：34～38小题，每小题10分，共50分。要求结合所学知识分析材料回答问题。将答案写在答题纸指定位置上。"
+   }
+  ],
+  "sort_order": 35
+ },
+ {
+  "pid": "2021",
+  "year": 2021,
+  "label": "",
+  "kind": "modern",
+  "question_count": 38,
+  "total_score": 100,
+  "answered_count": 33,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": [
+     1,
+     16
+    ],
+    "raw": "一、单项选择题：1～16 小题，每小题 1 分，共 16 分。下列每题给出的四个选项中，只有一个选项是符合题目要求的。请在答题卡上将所选项的字母涂黑。"
+   },
+   {
+    "key": "analyse",
+    "per": 10,
+    "total": 50,
+    "declared": null,
+    "rng": [
+     34,
+     38
+    ],
+    "raw": "三、材料分析题：34-38 小题，每小题 10 分，共 50 分。要求结合所学知识分析材料回答问题。"
+   }
+  ],
+  "sort_order": 36
+ },
+ {
+  "pid": "2022",
+  "year": 2022,
+  "label": "",
+  "kind": "modern",
+  "question_count": 38,
+  "total_score": 100,
+  "answered_count": 33,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": [
+     1,
+     16
+    ],
+    "raw": "一、单项选择题∶1～16小题，每小题1分，共 16分。下列每题给出的四个选项中，只有一个选项"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 34,
+    "declared": null,
+    "rng": [
+     17,
+     33
+    ],
+    "raw": "二、多项选择题∶17~33小题，每小题2分，共34分。下列每题给出的四个选项中，至少有两个选"
+   },
+   {
+    "key": "analyse",
+    "per": 10,
+    "total": 50,
+    "declared": null,
+    "rng": [
+     34,
+     38
+    ],
+    "raw": "三、材料分析题∶34~38 小题，每小题10分，共 50分。要求结合所学知识分析材料回答问题。"
+   }
+  ],
+  "sort_order": 37
+ },
+ {
+  "pid": "2023",
+  "year": 2023,
+  "label": "",
+  "kind": "modern",
+  "question_count": 38,
+  "total_score": 100,
+  "answered_count": 29,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": [
+     1,
+     16
+    ],
+    "raw": "一、单项选择题：1~16小题，每小题1分，共16分。下列每题给出的四个选项中，只有一个选项"
+   },
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": [
+     1,
+     16
+    ],
+    "raw": "一、单项选择题：1~16小题，每小题1分，共16分。下列每题给出的四个选项中，只有一个选项"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 34,
+    "declared": null,
+    "rng": [
+     17,
+     33
+    ],
+    "raw": "二、多项选择题：17~33小题，每小题2分，共34分。下列每题给出的四个选项中，至少有两个选"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 34,
+    "declared": null,
+    "rng": [
+     17,
+     33
+    ],
+    "raw": "二、多项选择题：17~33小题，每小题2分，共34分。下列每题给出的四个选项中，至少有两个选"
+   },
+   {
+    "key": "analyse",
+    "per": 10,
+    "total": 50,
+    "declared": null,
+    "rng": [
+     34,
+     38
+    ],
+    "raw": "三、材料分析题：34~38小题，每小题10分，共50分。要求结合所学知识分析材料回答问题。"
+   },
+   {
+    "key": "analyse",
+    "per": 10,
+    "total": 50,
+    "declared": null,
+    "rng": [
+     34,
+     38
+    ],
+    "raw": "三、材料分析题：34~38小题，每小题10分，共50分。要求结合所学知识分析材料回答问题。"
+   }
+  ],
+  "sort_order": 38
+ },
+ {
+  "pid": "2024",
+  "year": 2024,
+  "label": "",
+  "kind": "modern",
+  "question_count": 32,
+  "total_score": 49,
+  "answered_count": 0,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": [
+     1,
+     16
+    ],
+    "raw": "一、单项选择题：1～16小题，每小题1分，共16分。下列每题给出的四个选项中，只有-个"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 34,
+    "declared": null,
+    "rng": [
+     17,
+     33
+    ],
+    "raw": "二、多项选择题：第17～33小题，每小题2分，共34分。下列每题给出的四个选项中，至少"
+   }
+  ],
+  "sort_order": 39
+ },
+ {
+  "pid": "2025",
+  "year": 2025,
+  "label": "",
+  "kind": "modern",
+  "question_count": 38,
+  "total_score": 100,
+  "answered_count": 33,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": [
+     1,
+     16
+    ],
+    "raw": "一、单项选择题：第1~16 小题，每小题1 分，共16 分。下列每题给出的四个选项中，只"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 34,
+    "declared": null,
+    "rng": [
+     17,
+     33
+    ],
+    "raw": "二、多项选择题：第17~33 小题，每小题2 分，共34 分。下列每题给出的四个选项中，至"
+   },
+   {
+    "key": "analyse",
+    "per": 10,
+    "total": 50,
+    "declared": null,
+    "rng": [
+     34,
+     38
+    ],
+    "raw": "三、材料分析题：第34~38 小题，每小题10 分，共50 分。要求结合所学知识分析材料回"
+   },
+   {
+    "key": "material",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "34.材料一:"
+   },
+   {
+    "key": "material",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "35. 材料一:"
+   },
+   {
+    "key": "material",
+    "per": null,
+    "total": null,
+    "declared": null,
+    "rng": null,
+    "raw": "36. 材料一:"
+   }
+  ],
+  "sort_order": 40
+ },
+ {
+  "pid": "2026",
+  "year": 2026,
+  "label": "",
+  "kind": "modern",
+  "question_count": 38,
+  "total_score": 100,
+  "answered_count": 33,
+  "sections": [
+   {
+    "key": "single",
+    "per": 1,
+    "total": 16,
+    "declared": null,
+    "rng": null,
+    "raw": "一、单项选择题：1˜16 小题，每题1 分，共16 分。下列每题给出的四个选项中，只有一个"
+   },
+   {
+    "key": "multi",
+    "per": 2,
+    "total": 34,
+    "declared": null,
+    "rng": null,
+    "raw": "二、多项选择题：17˜33 小题，每题2 分，共34 分。下列每题给出的四个选项中，至少有"
+   },
+   {
+    "key": "analyse",
+    "per": 10,
+    "total": 50,
+    "declared": null,
+    "rng": null,
+    "raw": "三、材料分析题：34˜38 小题，每题10 分，共50 分。"
+   }
+  ],
+  "sort_order": 41
+ }
+]

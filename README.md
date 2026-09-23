@@ -2,16 +2,30 @@
 
 以教材、真题和时政热点为核心的私有学习资料站。在线后台使用 PHP/Hyperf，前端使用 Nuxt 3；Python 只用于离线资料提取、去重和 OCR。
 
-当前版本：`V0.1-dev.2`（开发分支：`feature/content-api`；基线 Git tag：`v0.1`）
+当前版本：`V0.1-dev.3`（开发分支：`feature/content-api`；基线 Git tag：`v0.1`）
 
 ## 当前首版
 
-- 搜索优先的响应式首页，展示最新热点、继续阅读和六大学科入口。
-- 六大学科资料库总览、学科详情页、章节卡片、知识点列表、面包屑和移动端抽屉导航。
-- Hyperf 内容 API：`/api/v1/health`、`/api/v1/home`、`/api/v1/subjects`、`/api/v1/subjects/{slug}`，数据来自 MySQL。
-- 首页、资料库页、学科详情页在 SSR 下经 `useApiFetch` 从 API 取数，不再依赖前端硬编码数据。
+六大内容模块全部可用，均为真实数据（来自 `F:\2027考研资料\考研政治`，经离线导入器入 MySQL）。
+
+| 模块 | 路由 | 规模 |
+|---|---|---|
+| 真题回顾 | `/papers`、`/questions` | 42 卷 / 1479 题 |
+| 真题分析 | `/analysis` | 13 篇 |
+| 时政热点 | `/hotspots` | 3 期 |
+| 时政预测 | `/predictions` | 6 篇 |
+| 模拟押题 | `/mocks` | 1 套 / 38 题 |
+| 个人错题分析 | `/mistakes` | 2 名考生 / 292 题 / 5 份提分手册 |
+
+- 站内搜索 `/search`：一次聚合七类内容，支持类型筛选与结果计数。
+- 用户态：注册/登录、收藏、笔记、做题记录、阅读进度、正确率统计。
+- 后台 `/admin`：内容总览、用户管理、时政热点与真题分析的增删改。
+- 真题支持 `reveal=0` 隐藏答案与解析，用于先做题后对答案。
+- Hyperf 内容 API：52 个路由注册，统一 `{"data": ...}` 包络、对外字段 camelCase。
 - 本地资料清单工具：按 SHA-256 去重并生成审计清单。
 - Docker Compose 编排 Nuxt、Hyperf、MySQL、Redis、Meilisearch 与 Nginx。
+
+详细模块划分与后续排期见 [docs/website-roadmap.md](docs/website-roadmap.md)。
 
 ## 开发
 
@@ -22,9 +36,22 @@ npm run dev
 ```
 
 ```bash
-python tools/ingest/manifest.py
+python tools/ingest/manifest.py   # 本地资料清单（SHA-256 去重）
+python tools/ingest/build_all.py  # 只读源目录 -> storage/dataset/*.json
 docker compose up --build
 ```
+
+### 离线验证
+
+本机没有 PHP 与 Docker 时，仍可完成离线自检：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/verify.ps1
+```
+
+它会依次执行：`python -m compileall tools`、`tools/phpcheck.py`（PSR-4 / 括号配平 /
+模型列引用 / 路由方法存在性）、`tools/phpcheck_selftest.py`（反向注入 5 类错误，
+必须全部被抓到）、`build_all.py` 数据集重生成、以及 `apps/web` 的 `npm test`。
 
 原始资料应放在 `storage/raw/`，不要提交到版本库。
 
@@ -49,7 +76,7 @@ curl http://localhost:8080/api/v1/health   # 经 nginx 反代验证
 
 api 容器启动链为 `migrate --force`（等待 MySQL 就绪的重试循环）→ `db:seed --force` → `start`，首次启动会自动建表并灌入种子数据。
 
-## V0.1-dev.2 说明
+## V0.1-dev.3 说明
 
 本版本补齐可启动的 Hyperf 后端骨架，将六大学科/章节/知识点、首页热点与资料卡从前端硬编码迁入 MySQL，并提供统一的 `/api/v1` 内容接口；三个前端页面改为 SSR 经 `useApiFetch` 取数。manifest→MySQL 导入器与 Meilisearch 索引顺延至 V0.1-dev.3。
 
@@ -60,7 +87,7 @@ api 容器启动链为 `migrate --force`（等待 MySQL 就绪的重试循环）
 ### 版本规则
 
 - 稳定版本使用大写 `V`：`V0.1`、`V0.2`、`V1.0`。
-- 开发版本：`V0.1-dev.1`、`V0.1-dev.2`；测试版本：`V0.1-beta.1`、`V0.1-beta.2`。
+- 开发版本：`V0.1-dev.1`、`V0.1-dev.3`；测试版本：`V0.1-beta.1`、`V0.1-beta.2`。
 - README 与 CHANGELOG 对外展示大写 `V`；Git tag 使用小写标准形式，如 `v0.1`、`v0.1-beta.1`。
 - `V0.1` 是当前已确认基线。新增完整功能先使用 `V0.1-dev.N`，首个可测试版本使用 `V0.1-beta.1`，完成一轮稳定功能后升级到 `V0.2`。
 - 只修复错误或补充小范围文档时增加合适的后缀，不随意提升主版本号。
@@ -126,7 +153,7 @@ api 容器启动链为 `migrate --force`（等待 MySQL 就绪的重试循环）
 ### 当前基线
 
 - 项目名称：观澜｜考研政治知识库
-- 当前版本：`V0.1-dev.2`
+- 当前版本：`V0.1-dev.3`
 - Git 显示版本：`v0.1`
 - 稳定分支：`main`
 - 当前首版记录：见 [CHANGELOG.md](CHANGELOG.md)

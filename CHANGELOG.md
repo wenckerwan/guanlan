@@ -1,5 +1,157 @@
 # 更新记录
 
+## V0.1-dev.3 - 2026-09-22
+
+本版本把 `F:\2027考研资料\考研政治` 的时政热点、真题分析与个人错题分析
+全部接入站点，并补齐站点基础功能：真题回顾、模拟押题、站内搜索、登录注册、
+用户学习记录与后台管理。
+
+### 新增
+
+**离线导入器（`tools/ingest/`，只读源目录 -> `storage/dataset/*.json`）**
+
+- `common.py`：Markdown->HTML（tables/fenced_code/sane_lists）、星级 `★`->`S/A/B/C`、
+  文本清洗、稳定 slug（ascii 前缀 + sha1 后缀）。
+- `build_questions.py`：`真题库v2` -> `papers.json`（42 卷）+ `questions.json`（1479 题）。
+- `build_articles.py`：-> `analysis_articles.json`（13 篇）+ `hotspots.json`（3 期）
+  + `predictions.json`（6 篇）。真题分析按 `ANALYSIS_CATEGORY` 分「选择题规律 /
+  分析题规律 / 会议与周年 / 综合结论 / 数据说明」五类。
+- `build_mistakes.py`：-> `mistakes.json`（2 名考生 / 292 题 / 5 份提分手册）。
+  解析 `**上次**：我选 **B** ｜ 正确 **D** ｜ 单选` 状态行、`- A．选项 ← 标记`
+  选项行、`错题明细.md` 的两种表格（马原式 / 毛中特式）以回填 `action` 与 `errorType`。
+- `build_mocks.py`：-> `mocks.json`（1 套 / 38 题）+ `stats.json`（图表数据）。
+- `build_all.py`：总入口，打印各数据集条数。
+
+**后端（`apps/api`）**
+
+- 14 个新迁移（迁移总数 19）：`papers`、`questions`、`analysis_articles`、`hotspots`（扩展）、
+  `analysis_articles`（扩展 `release`/`priority`）、
+  `predictions`、`mistake_students`、`mistake_items`、`mistake_handbooks`、
+  `mocks`、`mock_questions`、`users`、`user_tokens`、`study_tables`
+  （favorites / notes / attempts / study_progress）。
+- 20 个模型、10 个 Service、13 个 Controller、15 个 Resource、3 个中间件。
+- 52 个路由注册，统一 `{"data": ...}` 包络与 camelCase 字段：
+  - 内容只读：`/papers`、`/papers/{pid}`、`/papers/modules`、`/questions`、
+    `/questions/{id}`、`/analysis`、`/hotspots`、`/predictions`、`/mocks`、
+    `/stats/overview`。
+  - 认证：`/auth/register`、`/auth/login`、`/auth/me`、`/auth/logout`。
+  - 用户态：`/study/favorites`、`/study/notes`、`/study/attempts`、
+    `/study/progress`、`/study/stats`。
+  - 后台：`/admin/overview`、`/admin/users`、`/admin/hotspots`、`/admin/analysis`。
+- 令牌认证：`Authorization: Bearer <token>`，库里只存 `sha256(token)`，
+  30 天有效期；未登录不拦截（`AuthMiddleware`），由 `RequireAuthMiddleware` /
+  `RequireAdminMiddleware` 决定拒绝。
+- 5 个 Seeder 读数据集幂等灌库，含管理员 `admin@guanlan.local`。
+- 真题 `reveal=0` 时服务端不下发 `answer` 与 `analysis`。
+
+**前端（`apps/web`）**
+
+- 页面：`/papers`（列表 + 详情 + 逐题作答）、`/hotspots`、`/predictions`、
+  `/analysis`（列表 + 阅读页）、`/mocks`（在线作答 + 交卷判分）、`/mistakes`
+  （考生切换 + 模块/章节筛选 + 错题详情 + 提分手册）、`/search`、`/login`、`/me/*`
+  （收藏 / 笔记 / 进度）、`/admin/*`（总览 / 用户 / 热点 / 分析）。
+- `composables/useAuth.ts`（token 存 localStorage + `useState` 共享）、
+  `composables/useApi.ts`（SSR 走容器 DNS、客户端走 nginx 反代）、
+  `utils/quiz.mjs`（判分）、`utils/articles.mjs`（排序/分组/摘要）、
+  `utils/search.mjs`（类型标签、结果计数、路由解析）。
+- 站内搜索新增聚合端点 `GET /api/v1/search?q=&type=&limit=`：一次检索
+  真题 / 试卷 / 分析 / 热点 / 预测 / 模拟 / 错题七类，返回 `items`（含
+  `type/title/snippet/url/meta`）、`total` 与 `groups` 计数。
+- 真题分析新增「发行版」标记：同一主题的工作稿与定稿都保留，定稿带
+  `release=true`，列表排序与卡片徽标都优先展示。
+
+### 修复
+
+- 修复 `MockQuestion::$timestamps` 未声明类型导致的 Fatal error。
+- 修复 `ArticleService::hotspots()/hotspotCard()` 查询不存在的 `sort_order` 列
+  （`hotspots` 表实际列为 `period`/`priority`/`published_at`）。
+- 修复 `AppExceptionHandler` 基类错误：应为
+  `Hyperf\ExceptionHandler\ExceptionHandler`，不是
+  `Hyperf\HttpServer\Exception\Handler\ExceptionHandler`；签名改为
+  `handle(Throwable, $response)` + `setStatus()/setHeader()/setBody()`。
+- 修复文章摘要提取：跳过表格行、表格分隔线、引用、标题与列表标记，
+  原先摘要会以 `| 项目 | 说明 |` 或 `>` 开头。
+- 修复真题分析 slug 冲突：`选择题绝对错误选项规律v2_发行版.md` 与工作稿标题
+  相同，slug 相同会被唯一约束合并掉发布稿，现为发行版追加区分后缀。
+- 修复 `utils/search.mjs` 的 `resolveHitUrl` 会接受站外链接
+  （`https://` / 协议相对 `//`），现只接受站内相对路径。
+
+### 变更
+
+- 版本从 `V0.1-dev.2` 更新为 `V0.1-dev.3`，同步 `VERSION` 与 README。
+- 新增 `hotspots` 扩展列（`slug`/`period`/`priority`/`published_at`/`html`/
+  `outline`/`source_file`/`word_count`），长文与首页卡片共用一张表：
+  卡片行 `slug` 为 NULL，长文行 `slug` 非空。
+- `analysis_articles` 新增 `release`（是否定稿）与 `priority`（星级）两列，
+  列表按 `release DESC, sort_order ASC` 排序。
+- 新增 `tools/phpcheck.py`：离线 PHP 结构检查器，覆盖
+  PSR-4 命名空间一致性、括号配平、`extends`/`new`/`::` 类引用可解析性、
+  模型 `$casts` 列与迁移列一致、路由到控制器方法存在性。
+- 新增 `tools/phpcheck_selftest.py`：反向注入 5 类真实错误，验证检查器本身有效。
+- 新增 `tools/verify.ps1` / `tools/verify.sh`：本机离线验证总入口。
+- `tools/smoke.sh` 扩展第 7-11 组：统一检索、认证、用户态、后台、详情页 404。
+
+### 验证
+
+离线验证（Windows 本机，无 PHP / 无 Docker）：
+
+```
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/verify.ps1
+
+== Python 语法检查（tools）
+   OK
+== PHP 结构检查（PSR-4 / 模型列 / 路由）
+checked=99 files, classes=66, tables=20
+   OK
+== PHP 检查器反向自测（5 类错误必须被抓到）
+PASS  psr4-mismatch          exit=1
+PASS  unbalanced-brace       exit=1
+PASS  bad-cast-column        exit=1
+PASS  route-missing-method   exit=1
+PASS  unresolved-class       exit=1
+PASS  clean-tree             exit=0
+
+SELFTEST OK
+   OK
+== 数据集重新生成
+papers=42 questions=1479
+analysis_articles.json 13
+hotspots.json 3
+predictions.json 6
+students=2 items=292 handbooks=5
+mocks 1 [38] [33]
+   OK
+== 前端测试（node --test）
+# tests 32
+# pass 32
+# fail 0
+   OK
+全部离线验证通过。
+```
+
+- `npm run build`（`apps/web`）：通过，Nuxt 3.21.11 生产构建成功，
+  `Σ Total size: 5.16 MB (1.34 MB gzip)`，新增 chunk `search-*.mjs`。
+- 数据集规模：`papers.json` 42 卷、`questions.json` 1479 题、
+  `analysis_articles.json` 13 篇、`hotspots.json` 3 期、
+  `predictions.json` 6 篇、`mistakes.json` 2 考生 / 292 题 / 5 手册、
+  `mocks.json` 1 套 38 题（33 题带答案）、`stats.json` 182 项。
+
+### 已知限制
+
+- **容器未验证**：本机无 Docker Desktop、无 PHP；WSL2 在本环境返回
+  `Wsl/Service/E_ACCESSDENIED`，因此数据库迁移、Seeder 与 API 冒烟
+  **本轮未在容器内复跑**。离线侧已用 `phpcheck.py`（含反向自测）覆盖
+  上述四类静态错误，但运行时行为仍需容器确认。
+- 上一轮容器内已确认通过的部分（迁移 + Seeder + `/api/v1/health` 及内容端点冒烟）
+  未受影响；本轮新增的 `/api/v1/search` 端点**等待容器验证**。
+- 站内搜索用 SQL `LIKE` 全表扫，数据量继续增长需换索引或 Meilisearch。
+- `documents` 表（V0.1-dev.2 建立）本期仍无数据，PDF 在线阅读未开始。
+- 模拟押题仅 1 套；`船` 目录下的其他模拟卷未纳入。
+- 考生 B 的马原批次源文件导出时删掉了错选项，15 条无法判定错因，
+  记为 `errorType=未记录`。
+- 移动端为响应式降级，未做专属布局。
+- `apps/web` 的 peer 依赖冲突仍以 `.npmrc` 的 `legacy-peer-deps` 绕过。
+
 ## V0.1-dev.2 - 2026-09-19
 
 ### 新增
