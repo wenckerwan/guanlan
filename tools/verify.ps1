@@ -26,6 +26,7 @@ Step "Python 语法检查（tools）"        { python -m compileall -q tools }
 Step "文档链接检查（README / docs）"      { python tools\doclink.py }
 Step "PHP 结构检查（PSR-4 / 模型列 / 路由）" { python tools\phpcheck.py }
 Step "PHP 检查器反向自测（5 类错误必须被抓到）" { python tools\phpcheck_selftest.py }
+Step "数据导入单元测试"                { python -m unittest discover -s tools\ingest -p "test_*.py" -v }
 Step "数据集重新生成"                  { python tools\ingest\build_all.py }
 
 Write-Host ""

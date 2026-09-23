@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.ingest import dataset_manifest
+from tools.ingest import build_all, dataset_manifest
 
 
 class DatasetManifestTest(unittest.TestCase):
@@ -80,6 +80,13 @@ class DatasetManifestTest(unittest.TestCase):
         first = self.output.read_bytes()
         dataset_manifest.write_manifest(self.output, manifest)
         self.assertEqual(first, self.output.read_bytes())
+
+    def test_publish_manifest_uses_dataset_and_source_paths(self):
+        result = build_all.publish_manifest(
+            self.dataset_dir, self.source_path, self.output
+        )
+        self.assertEqual(result["totals"]["files"], 8)
+        self.assertTrue(self.output.is_file())
 
 
 if __name__ == "__main__":

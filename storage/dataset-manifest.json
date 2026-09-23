@@ -1,0 +1,78 @@
+{
+  "datasets": {
+    "analysis_articles.json": {
+      "bytes": 405934,
+      "groups": {},
+      "items": 13,
+      "sha256": "8c5fa8e3f0bf9b57badcdfb68f74c79874aa28e0e87380ac32af8de60eeccb2e"
+    },
+    "hotspots.json": {
+      "bytes": 171902,
+      "groups": {},
+      "items": 3,
+      "sha256": "e917edcfbea75f04e99d959750d74e9ccf6db1f252568466438a100c2cbcea39"
+    },
+    "mistakes.json": {
+      "bytes": 922590,
+      "groups": {
+        "handbooks": 5,
+        "items": 292,
+        "students": 2
+      },
+      "items": 299,
+      "sha256": "202dbd80a8df0a124b4c5ce57de351808f6723613f63c0b983374efff93c1b15"
+    },
+    "mocks.json": {
+      "bytes": 23446,
+      "groups": {},
+      "items": 1,
+      "sha256": "c598958f47659cc63a2c22979ec66df27307911bbb5add6599627abb0e2aa124"
+    },
+    "papers.json": {
+      "bytes": 73863,
+      "groups": {},
+      "items": 42,
+      "sha256": "63cde0cc505402305e5dfc316200266beaccdf91846bc27497ba2ffda6d6a5c5"
+    },
+    "predictions.json": {
+      "bytes": 302375,
+      "groups": {},
+      "items": 6,
+      "sha256": "e3791b98ef90368c81ba6edbb8533d2a3a61c9e3f0f80ca6b89a84bd9752d86c"
+    },
+    "questions.json": {
+      "bytes": 2962359,
+      "groups": {},
+      "items": 1479,
+      "sha256": "d75a7cfff60cdf39a4b046e61c5ea782f76ec2550565b44d9d87320eafc30dfb"
+    },
+    "stats.json": {
+      "bytes": 30812,
+      "groups": {
+        "byModule": 7,
+        "difficultyHard": 15,
+        "kaodianTop": 30,
+        "moduleByYear": 13,
+        "moduleTotal": 6,
+        "multiCombo": 11,
+        "shishiTopics": 8,
+        "structureByYear": 41,
+        "wordingMulti": 4,
+        "wordingSingle": 5,
+        "yearCounts": 42
+      },
+      "items": 182,
+      "sha256": "c28396a35e2b6433e069fe68c118613b71eb7661b71d3748faef2eb0370d6ec3"
+    }
+  },
+  "schema_version": 1,
+  "source_manifest": {
+    "asset_count": 177,
+    "logical_document_count": 151
+  },
+  "totals": {
+    "bytes": 4893281,
+    "files": 8,
+    "items": 2025
+  }
+}

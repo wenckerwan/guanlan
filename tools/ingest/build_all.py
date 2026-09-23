@@ -1,13 +1,19 @@
 """观澜 ingest 总入口：从只读源目录生成 storage/dataset/*.json。"""
 from __future__ import annotations
 
-import json
 import subprocess
 import sys
 from pathlib import Path
 
+try:
+    from .dataset_manifest import build_manifest, write_manifest
+except ImportError:
+    from dataset_manifest import build_manifest, write_manifest
+
 HERE = Path(__file__).resolve().parent
 OUT = HERE.parents[1] / "storage" / "dataset"
+SOURCE_MANIFEST = HERE.parents[1] / "storage" / "import-manifest.json"
+DATASET_MANIFEST = HERE.parents[1] / "storage" / "dataset-manifest.json"
 
 STEPS = [
     ("build_questions.py", "papers.json + questions.json"),
@@ -15,6 +21,12 @@ STEPS = [
     ("build_mistakes.py", "mistakes.json"),
     ("build_mocks.py", "mocks.json + stats.json"),
 ]
+
+
+def publish_manifest(dataset_dir: Path, source_manifest: Path, output: Path) -> dict:
+    manifest = build_manifest(dataset_dir, source_manifest)
+    write_manifest(output, manifest)
+    return manifest
 
 
 def main() -> int:
@@ -26,21 +38,28 @@ def main() -> int:
         if result.returncode != 0:
             failed.append(script)
 
-    print("\n== dataset summary")
-    for path in sorted(OUT.glob("*.json")):
-        size = path.stat().st_size
-        try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
-            count = len(payload) if isinstance(payload, list) else (
-                sum(len(v) for v in payload.values() if isinstance(v, list)) if isinstance(payload, dict) else "?"
-            )
-        except Exception:
-            count = "?"
-        print(f"  {path.name:<26} {size / 1024:9.1f} KB  items={count}")
-
     if failed:
         print("\nFAILED:", ", ".join(failed))
         return 1
+
+    print("\n== manifest.py -> import-manifest.json")
+    result = subprocess.run([sys.executable, str(HERE / "manifest.py")], cwd=HERE)
+    if result.returncode != 0:
+        print("\nFAILED: manifest.py")
+        return 1
+
+    manifest = publish_manifest(OUT, SOURCE_MANIFEST, DATASET_MANIFEST)
+    print("\n== dataset summary")
+    for name, details in manifest["datasets"].items():
+        print(
+            f"  {name:<26} {details['bytes'] / 1024:9.1f} KB  "
+            f"items={details['items']}  sha256={details['sha256']}"
+        )
+    totals = manifest["totals"]
+    print(
+        f"  totals: files={totals['files']}  items={totals['items']}  "
+        f"bytes={totals['bytes']}"
+    )
     print("\nOK")
     return 0
 
