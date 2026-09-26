@@ -11,7 +11,7 @@ Implemented Task 3 only.
 
 ## Commit
 
-`9acefda` (`feat: verify dataset integrity before import`)
+Implementation commit: `3c75372` (`feat: verify dataset integrity before import`)
 
 ## Verification
 
