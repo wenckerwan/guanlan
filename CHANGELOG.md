@@ -1,5 +1,31 @@
 # 更新记录
 
+## V0.1-dev.5 - 2026-09-27
+
+### 变更
+
+- 当前版本表面从 `V0.1-dev.4` 升级为 `V0.1-dev.5`，同步更新 `VERSION`、健康检查 API
+  版本字段、前端抽屉版本行、README 当前版本行与开发规划当前版本行。历史版本标题未改动。
+- 新增生产部署（宝塔 + Docker）配套脚本与文档后的集成验收记录。
+
+### 验证
+
+- `git diff --check`：通过（无空白错误）。
+- `python tools/doclink.py`：`checked 23 relative links in 7 files`，`OK`。
+- `python tools/phpcheck.py`：`checked=101 files, classes=68, tables=20`，`OK`。
+- `python tools/phpcheck_selftest.py`：7 个案例全部 `PASS`，`SELFTEST OK`。
+- `python -m unittest discover -s tools/ingest -p "test_*.py" -v`：20/20 通过。
+- `npm test --prefix apps/web`：36/36 通过。
+- `npm run build --prefix apps/web`：Nuxt 生产构建成功，`Σ Total size: 5.17 MB (1.34 MB gzip)`。
+
+### 已知限制
+
+- 当前主机没有 PHP，未执行 PHP lint 或可执行 PHP 测试。
+- Docker/PHP/live-MySQL 相关步骤（`compose up`、`lint.sh`、`smoke.sh`、`deploy.sh`
+  线上运行、`docker inspect`、`healthcheck.sh`）在本机不可运行，均已 SKIPPED，未声称成功。
+- 生产部署（1.7）与数据导入闭环（1.4）保持 `进行中`：Docker/live 验证证据缺失，
+  待目标服务器实测后再标记 `已完成`。
+
 ## 文档补充 - 2026-09-26
 
 ### 变更

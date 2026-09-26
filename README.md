@@ -2,7 +2,7 @@
 
 以教材、真题和时政热点为核心的私有学习资料站。在线后台使用 PHP/Hyperf，前端使用 Nuxt 3；Python 只用于离线资料提取、去重和 OCR。
 
-当前版本：`V0.1-dev.4`（开发分支：`feature/content-api`；基线 Git tag：`v0.1`）
+当前版本：`V0.1-dev.5`（开发分支：`feature/content-api`；基线 Git tag：`v0.1`）
 
 ## 当前首版
 
@@ -183,7 +183,7 @@ api 容器启动链为 `migrate --force`（等待 MySQL 就绪的重试循环）
 ### 当前基线
 
 - 项目名称：观澜｜考研政治知识库
-- 当前版本：`V0.1-dev.4`
+- 当前版本：`V0.1-dev.5`
 - Git 显示版本：`v0.1`
 - 稳定分支：`main`
 - 当前首版记录：见 [CHANGELOG.md](CHANGELOG.md)
