@@ -167,8 +167,8 @@ class MistakeSeeder extends Seeder
     }
 
     /**
-     * 初始管理员：admin@guanlan.local / guanlan2027。
-     * 首次登录后请在后台改密（见 CHANGELOG「已知限制」）。
+     * 初始管理员凭据由 AdminCredentials 从环境变量解析。
+     * 本地环境使用文档化的测试账号；生产环境要求显式配置。
      */
     private function seedAdmin(): void
     {
@@ -187,6 +187,6 @@ class MistakeSeeder extends Seeder
             'status' => 'active',
         ]);
 
-        echo '[MistakeSeeder] 已创建管理员 admin@guanlan.local' . PHP_EOL;
+        echo '[MistakeSeeder] 已创建管理员 ' . $email . PHP_EOL;
     }
 }
