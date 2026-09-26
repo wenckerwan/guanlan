@@ -2,7 +2,10 @@ services:
   api:
     build: ./apps/api
     environment:
-      APP_ENV: production
+      APP_ENV: local
+      ADMIN_EMAIL: admin@guanlan.local
+      ADMIN_PASSWORD: guanlan2027
+      ADMIN_DISPLAY_NAME: 管理员
       DB_HOST: mysql
       DB_PORT: 3306
       DB_DATABASE: guanlan

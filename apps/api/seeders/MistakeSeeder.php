@@ -8,6 +8,7 @@ use App\Model\MistakeStudent;
 use App\Model\User;
 use App\Seeder\DatasetReader;
 use App\Seeder\DatasetManifestVerifier;
+use App\Seeder\AdminCredentials;
 use Hyperf\Database\Seeders\Seeder;
 
 /**
@@ -171,7 +172,8 @@ class MistakeSeeder extends Seeder
      */
     private function seedAdmin(): void
     {
-        $email = 'admin@guanlan.local';
+        $credentials = AdminCredentials::fromEnvironment($_ENV + $_SERVER);
+        $email = $credentials['email'];
         if (User::query()->where('email', $email)->exists()) {
             echo '[MistakeSeeder] 管理员已存在，跳过' . PHP_EOL;
             return;
@@ -179,8 +181,8 @@ class MistakeSeeder extends Seeder
 
         User::create([
             'email' => $email,
-            'password_hash' => password_hash('guanlan2027', PASSWORD_DEFAULT),
-            'display_name' => '管理员',
+            'password_hash' => password_hash($credentials['password'], PASSWORD_DEFAULT),
+            'display_name' => $credentials['displayName'],
             'role' => 'admin',
             'status' => 'active',
         ]);
