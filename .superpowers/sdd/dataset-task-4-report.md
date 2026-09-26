@@ -13,7 +13,7 @@ Implemented Task 4 only.
 
 ## Commit
 
-Implementation commit: recorded after commit creation.
+Implementation commit: `7394b11` (`fix: block database startup on dataset drift`).
 
 ## Commands and outputs
 
