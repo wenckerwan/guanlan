@@ -7,3 +7,12 @@ storage/previews/
 .env
 .npm-cache/
 audit.json
+
+# 生产环境变量（真实密钥）。本文件不入库，服务器上 chmod 600。
+.env.production
+
+# 部署备份与临时脚本
+tools/deploy/backup/
+tools/deploy/*.bak
+tools/deploy/*.tar.gz
+*.sql.gz

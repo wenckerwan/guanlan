@@ -1,0 +1,11 @@
+node_modules
+.nuxt
+.output
+.npm-cache
+tests
+.npm
+.cache
+dist
+audit.json
+npm-debug.log*
+.env*
