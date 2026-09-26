@@ -22,7 +22,7 @@ Implemented Task 5 documentation only.
 
 ## Commit
 
-Recorded after commit creation.
+Implementation commit: `e97780e` (`docs: document dataset integrity workflow`).
 
 ## Concerns
 
