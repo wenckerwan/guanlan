@@ -63,8 +63,23 @@ try {
 
     $builder = dirname(__DIR__, 3) . '/tools/ingest/dataset_manifest.py';
     $manifestPath = $datasetRoot . '/../dataset-manifest.json';
+    $builderCode = <<<'PYTHON'
+import importlib.util
+import sys
+from pathlib import Path
+
+builder_path = Path(sys.argv[1])
+spec = importlib.util.spec_from_file_location('dataset_manifest', builder_path)
+if spec is None or spec.loader is None:
+    raise RuntimeError('unable to load dataset_manifest.py')
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+manifest = module.build_manifest(Path(sys.argv[2]), Path(sys.argv[3]))
+module.write_manifest(Path(sys.argv[4]), manifest)
+PYTHON;
     $command = sprintf(
-        'python3 %s --dataset-dir %s --source-manifest %s --output %s',
+        'python3 -c %s %s %s %s %s',
+        escapeshellarg($builderCode),
         escapeshellarg($builder),
         escapeshellarg($datasetRoot),
         escapeshellarg($sourceManifestPath),
