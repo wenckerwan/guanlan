@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 
 DEPLOY_DIR="$ROOT/tools/deploy"
-SCRIPTS=(common.sh deploy.sh healthcheck.sh test_config.sh)
+SCRIPTS=(common.sh deploy.sh healthcheck.sh backup.sh restore.sh update.sh test_config.sh)
 
 fail() { echo "FAIL: $1"; exit 1; }
 
@@ -43,6 +43,45 @@ grep -q '200' "$DEPLOY_DIR/healthcheck.sh" \
   || fail "healthcheck.sh must assert HTTP 200 for health and home"
 grep -q '401' "$DEPLOY_DIR/healthcheck.sh" \
   || fail "healthcheck.sh must assert HTTP 401 for unauthenticated /api/v1/auth/me"
+
+# --- backup.sh 契约断言 ---
+grep -q 'mysqldump --single-transaction --routines --triggers' "$DEPLOY_DIR/backup.sh" \
+  || fail "backup.sh must use mysqldump --single-transaction --routines --triggers"
+for member in database.sql VERSION git-sha.txt dataset-manifest.json; do
+  grep -q "$member" "$DEPLOY_DIR/backup.sh" \
+    || fail "backup.sh must include archive member $member"
+done
+grep -q 'exclude .env.production' "$DEPLOY_DIR/backup.sh" \
+  || fail "backup.sh must document that .env.production is excluded"
+if grep -qE 'cp[[:space:]]+"?\$ENV_FILE' "$DEPLOY_DIR/backup.sh"; then
+  fail "backup.sh must not copy the env file into the archive"
+fi
+
+# --- restore.sh 契约断言 ---
+grep -q 'restore requires an archive argument' "$DEPLOY_DIR/restore.sh" \
+  || fail "restore.sh must require an archive argument"
+grep -q '"$SCRIPT_DIR/backup.sh"' "$DEPLOY_DIR/restore.sh" \
+  || fail "restore.sh must run a safety backup"
+grep -q 'compose exec -T mysql' "$DEPLOY_DIR/restore.sh" \
+  || fail "restore.sh must pipe database.sql into the MySQL container"
+SAFETY_LINE="$(grep -n '"$SCRIPT_DIR/backup.sh"' "$DEPLOY_DIR/restore.sh" | head -n 1 | cut -d: -f1)"
+MYSQL_LINE="$(grep -n 'compose exec -T mysql' "$DEPLOY_DIR/restore.sh" | head -n 1 | cut -d: -f1)"
+[ -n "$SAFETY_LINE" ] && [ -n "$MYSQL_LINE" ] && [ "$SAFETY_LINE" -lt "$MYSQL_LINE" ] \
+  || fail "restore.sh must run a safety backup before touching MySQL"
+
+# --- update.sh 契约断言 ---
+grep -q 'git rev-parse HEAD' "$DEPLOY_DIR/update.sh" \
+  || fail "update.sh must record git rev-parse HEAD"
+grep -q 'git pull --ff-only origin main' "$DEPLOY_DIR/update.sh" \
+  || fail "update.sh must pull with --ff-only origin main"
+grep -q 'git checkout "$OLD_SHA"' "$DEPLOY_DIR/update.sh" \
+  || fail "update.sh must restore the old SHA on failure"
+grep -q 'healthcheck.sh' "$DEPLOY_DIR/update.sh" \
+  || fail "update.sh must health-check before completing"
+UPDATE_BACKUP_LINE="$(grep -n '"$SCRIPT_DIR/backup.sh"' "$DEPLOY_DIR/update.sh" | head -n 1 | cut -d: -f1)"
+UPDATE_PULL_LINE="$(grep -n 'git pull --ff-only origin main' "$DEPLOY_DIR/update.sh" | head -n 1 | cut -d: -f1)"
+[ -n "$UPDATE_BACKUP_LINE" ] && [ -n "$UPDATE_PULL_LINE" ] && [ "$UPDATE_BACKUP_LINE" -lt "$UPDATE_PULL_LINE" ] \
+  || fail "update.sh must back up before git pull --ff-only origin main"
 
 # --- Docker 相关断言（Task 2 保留） ---
 if ! command -v docker >/dev/null 2>&1; then
