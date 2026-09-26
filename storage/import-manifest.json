@@ -1,8 +1,8 @@
 {
   "generated_at": "2026-09-07",
-  "asset_count": 177,
-  "logical_document_count": 151,
-  "duplicate_groups": 26,
+  "asset_count": 548,
+  "logical_document_count": 418,
+  "duplicate_groups": 88,
   "assets": [
     {
       "sha256": "07dfe1b5bcb1f3e84b98f13a2b95b568d3ee83f7515e074e5fb89025316368c4",
@@ -19,64 +19,260 @@
       ]
     },
     {
-      "sha256": "f865f282847c4c48d4e45f6f6371022de2392c17abf11ae20e6cebb2e6ff57bf",
-      "bytes": 46972,
+      "sha256": "c45b3357447f0f2acb0ef3d1c5072beeff338399618dfa5531d955bab9ce75cc",
+      "bytes": 5905,
       "paths": [
-        "2027考研政治模拟卷（一）.docx"
+        "个人错题分析\\README.md"
       ]
     },
     {
-      "sha256": "f38bb072077725232fa96092f05b94e43fbc7ea1915e23789a44591d920529ef",
-      "bytes": 18058,
+      "sha256": "f526f0f7e489c6d726eb984fc8c8b17053cc80cd09393c321b8c13ba82fe7a5d",
+      "bytes": 35531,
       "paths": [
-        "2027考研政治模拟卷（一）.md"
+        "个人错题分析\\index\\错题总索引.csv"
       ]
     },
     {
-      "sha256": "5fea78316b96fab83a76969e5aa6be86e133c8d6c5d01baf5aa0d70726ccddae",
-      "bytes": 50587,
+      "sha256": "14dc693aea03b077e62bbef344f8d36e8ddddfeee93954f697f26b1ba3368072",
+      "bytes": 5759,
       "paths": [
-        "2027考研政治模拟卷（一）答案与解析.docx"
+        "个人错题分析\\工作流.md"
       ]
     },
     {
-      "sha256": "e665ababf8e9dae22edeb10dd0ee38ebfe816a04e9ada928166510a545cc5875",
-      "bytes": 27841,
+      "sha256": "8d890ebf1a9f6364306c9a924c2ebf69605e9f5e4099e681995eb86bbdbaadf9",
+      "bytes": 64242,
       "paths": [
-        "2027考研政治模拟卷（一）答案与解析.md"
+        "个人错题分析\\徐丽丹\\回访清单_史纲.md"
+      ]
+    },
+    {
+      "sha256": "24309549752f6ef534c07044008bdf3e3d6041e89162eb6785889d2da8058478",
+      "bytes": 32295,
+      "paths": [
+        "个人错题分析\\徐丽丹\\回访清单_毛概.md"
+      ]
+    },
+    {
+      "sha256": "39f7fc8d5ec36c0bfb2049d47b2b57f24c9ba6a1138679276f647dd9e8b69bf1",
+      "bytes": 69320,
+      "paths": [
+        "个人错题分析\\徐丽丹\\回访清单_马原.md"
+      ]
+    },
+    {
+      "sha256": "e2023b6f5aa2a36f5ac53646054db14852fd3308ab2bc48052ab8f466ac6e687",
+      "bytes": 531828,
+      "paths": [
+        "个人错题分析\\徐丽丹\\徐丽丹720近代史.pdf"
+      ]
+    },
+    {
+      "sha256": "f2c9ff978ff0a22e4185446f75b697944c1bfad3867a9eaf0f89734c2de9c719",
+      "bytes": 578359,
+      "paths": [
+        "个人错题分析\\徐丽丹\\徐丽丹720马原.pdf"
+      ]
+    },
+    {
+      "sha256": "200e7a6c38c847f18b809d3addd270fd3930e0127bbe272f4e29807ce2001797",
+      "bytes": 88003,
+      "paths": [
+        "个人错题分析\\徐丽丹\\提分手册_史纲.md"
+      ]
+    },
+    {
+      "sha256": "53abe397a53b1d9b861bc2f3ba7cfdc571e9200a97336e59e69f1715a0d0079e",
+      "bytes": 72863,
+      "paths": [
+        "个人错题分析\\徐丽丹\\提分手册_毛概.md"
+      ]
+    },
+    {
+      "sha256": "6d19ad12daea701f6f01bffc5810c5fe74433eb4da4d40142e275c5b5eb52acf",
+      "bytes": 91575,
+      "paths": [
+        "个人错题分析\\徐丽丹\\提分手册_马原.md"
+      ]
+    },
+    {
+      "sha256": "cbc9fef1276a551e447dba5a9f431d6842299fabec650a5ca8e9607cc00eea1a",
+      "bytes": 93278,
+      "paths": [
+        "个人错题分析\\徐丽丹\\毛概720.md"
+      ]
+    },
+    {
+      "sha256": "4567e3b8d3c3796298efb48a285281076ca443097b8050e946ba78a9478161cc",
+      "bytes": 316474,
+      "paths": [
+        "个人错题分析\\徐丽丹\\毛概720.pdf"
+      ]
+    },
+    {
+      "sha256": "3a7e03157b2221fd7d2e9aeb71cbe8e627c962e63a19bce61d1a2b1c0c9fde4a",
+      "bytes": 5668129,
+      "paths": [
+        "个人错题分析\\徐丽丹\\错题分析毛概720.pdf"
+      ]
+    },
+    {
+      "sha256": "5491c2c9f5c66eb2fc0cdfbd2dbe97bd16138d4d20e725ed62da3e10bea2ba3b",
+      "bytes": 7091984,
+      "paths": [
+        "个人错题分析\\徐丽丹\\错题分析近代史720.pdf"
+      ]
+    },
+    {
+      "sha256": "bd90382f581b96e268c6bda71b35690bbede549ce11d11f65581b0a604cdf37f",
+      "bytes": 7014170,
+      "paths": [
+        "个人错题分析\\徐丽丹\\错题分析马原720.pdf"
+      ]
+    },
+    {
+      "sha256": "9aca43e405f807d3fc947a36112c15adc68312bfc0a473ac1c9edff5d4666c4f",
+      "bytes": 31798,
+      "paths": [
+        "个人错题分析\\徐丽丹\\错题明细.md"
+      ]
+    },
+    {
+      "sha256": "dee82ade912308bbd729ef7b444d615ab8733367f2f86c13d621c118e80e59c7",
+      "bytes": 46942,
+      "paths": [
+        "个人错题分析\\本人_wencker\\_旧版_提分手册_马原_长段落版.md"
+      ]
+    },
+    {
+      "sha256": "41ead76549b1697a5cc543d3aa7e8b70a762ead34e5d6662784e3fa959acad5e",
+      "bytes": 379195,
+      "paths": [
+        "个人错题分析\\本人_wencker\\原始投入\\720近代史部分.pdf"
+      ]
+    },
+    {
+      "sha256": "7b1082481a2e74a5fe49fcc70425cde1d8d567858ba8670b7f7a81043f5902eb",
+      "bytes": 194654,
+      "paths": [
+        "个人错题分析\\本人_wencker\\原始投入\\720马原.md"
+      ]
+    },
+    {
+      "sha256": "5cef78f8ba0d7625700a742833d7c9d9dc265039c7888e34e799f30fa1b0a400",
+      "bytes": 498807,
+      "paths": [
+        "个人错题分析\\本人_wencker\\原始投入\\720马原.pdf"
+      ]
+    },
+    {
+      "sha256": "a48f46981f8544c202679786e3a84bb3d56ac0385f19f013537b9a56ebdbed19",
+      "bytes": 48683,
+      "paths": [
+        "个人错题分析\\本人_wencker\\回访清单.md"
+      ]
+    },
+    {
+      "sha256": "88e374899e1fbf88a47ad33a02fdfde99076ebcbead67f95a3c8a170d90862ad",
+      "bytes": 31004,
+      "paths": [
+        "个人错题分析\\本人_wencker\\回访清单_史纲.md"
+      ]
+    },
+    {
+      "sha256": "80d0a9fa7d7ed0b2039f9957c96fe83ef5214f560fec87e8b573ba16182dfaf7",
+      "bytes": 58798,
+      "paths": [
+        "个人错题分析\\本人_wencker\\提分手册.md"
+      ]
+    },
+    {
+      "sha256": "8a341de2b9b9751e4c8085d9bc3f14e74331fbe637325fc0c93a6db288850af4",
+      "bytes": 31008,
+      "paths": [
+        "个人错题分析\\本人_wencker\\提分手册_史纲.md"
+      ]
+    },
+    {
+      "sha256": "b4979479258baa2a444dde23aa064f6149f797c1f308a5d1a0b0e525f604be8c",
+      "bytes": 10416,
+      "paths": [
+        "个人错题分析\\本人_wencker\\错题明细.md"
+      ]
+    },
+    {
+      "sha256": "bd54a57704b297b01c5dc3f3729a645f9601010b8cc8dbca2ed57e89cf4fd25f",
+      "bytes": 14675,
+      "paths": [
+        "个人错题分析\\项目规范.md"
+      ]
+    },
+    {
+      "sha256": "5b4915709bd0157dd3dc123a650e1f687462ce754f9cacd35f64ad067270a512",
+      "bytes": 38756,
+      "paths": [
+        "时政热点\\时政考点_2026年1-6月.md"
+      ]
+    },
+    {
+      "sha256": "d7f1867e5c31b207bed97185032184d9e4263d146faa4aa1b95b2083f5ea9a4b",
+      "bytes": 36833,
+      "paths": [
+        "时政热点\\时政考点_2026年7-8月.md"
+      ]
+    },
+    {
+      "sha256": "87a348b39ef0b5b5cacc93466f6819ab65003144fd08fc3401818548d1fda07b",
+      "bytes": 38252,
+      "paths": [
+        "时政热点\\时政考点_2026年9月.md"
+      ]
+    },
+    {
+      "sha256": "706a42d43bec33fbce9b91cf1156c5956e2063cfa1d7ddf9071ba62906312c3e",
+      "bytes": 31536,
+      "paths": [
+        "时政热点\\时政考点预测_真题反推\\2027时政考点预测_纯真题反推.md"
       ]
     },
     {
       "sha256": "56c12d97a1b513225dd76360c29737dbf7388d5a75d9c43b5888a703958b4b21",
       "bytes": 168458307,
       "paths": [
-        "《中国近现代史纲要》（2023版）.pdf"
+        "本科教材\\《中国近现代史纲要》（2023版）.pdf"
       ]
     },
     {
       "sha256": "8222d2444dc81750c1130178654d5e7ed80125bcbbbad90441a0811143da981a",
       "bytes": 4521094,
       "paths": [
-        "习近平新时代中国特色社会主义思想概论 (本书编写组) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+        "本科教材\\习近平新时代中国特色社会主义思想概论 (本书编写组) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
       ]
     },
     {
       "sha256": "25c86db01cdc01b6712cabacdbd56a6ef00e164ae16d5c1710e9e5095a789487",
       "bytes": 103627816,
       "paths": [
-        "思想道德与法治(2023)优化版 (《思想道德与法治》编写组) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+        "本科教材\\思想道德与法治(2023)优化版 (《思想道德与法治》编写组) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
       ]
     },
     {
       "sha256": "3d43a8375c0448e68738e6cde0779a86acf7bc784fb2a0ed5736d40bc1147356",
       "bytes": 159295564,
       "paths": [
-        "毛泽东思想和中国特色社会主义理论体系概论（2023版） (本书编写组) (Z-Library).pdf"
+        "本科教材\\毛泽东思想和中国特色社会主义理论体系概论（2023版） (本书编写组) (Z-Library).pdf"
       ]
     },
     {
-      "sha256": "a4bd960b78bc4ae66ceadbd45c7f7231eb550da5892b2113eb5c5ae7d18cb01a",
-      "bytes": 21029,
+      "sha256": "7a95701bb3a74fa739df3d288f963a14c85533d8eacb347d9c4afba061f50084",
+      "bytes": 30550336,
+      "paths": [
+        "本科教材\\马克思主义基本原理（2023版） (马克思主义基本原理（2023版）编写组) (Z-Library).pdf"
+      ]
+    },
+    {
+      "sha256": "54988e4edb4c17c535f6c60ca0988098d2bf885d84817c652e2f2584ce5e0678",
+      "bytes": 25950,
       "paths": [
         "真题分析_2012-2026\\2027考研政治时政热点预测.md"
       ]
@@ -198,6 +394,27 @@
       "bytes": 34050,
       "paths": [
         "真题分析_2012-2026\\_extracted\\2026.json"
+      ]
+    },
+    {
+      "sha256": "f1126748a35a430679a47d25723520cf865a0edbc10b66ec85a7d5c59a020481",
+      "bytes": 43038,
+      "paths": [
+        "真题分析_2012-2026\\_extracted\\2026_new_ocr.json"
+      ]
+    },
+    {
+      "sha256": "3aa7baeb75d510ad934d4d2911d1dc8377600bc4dd81afe9ef90f13ebaba0e9e",
+      "bytes": 40920,
+      "paths": [
+        "真题分析_2012-2026\\_extracted\\2026_new_parsed.json"
+      ]
+    },
+    {
+      "sha256": "ba28e36c8c1a2d46998dc918d1716f3da5254e5cfb1900701bd859801a0da6fe",
+      "bytes": 123,
+      "paths": [
+        "真题分析_2012-2026\\_extracted\\2026_new_pdf.json"
       ]
     },
     {
@@ -369,8 +586,155 @@
       ]
     },
     {
-      "sha256": "c6fbc7f95b7dedbe8ddd14fdd68c7ff07edfca934393dcb25e00d4b84a5b106b",
-      "bytes": 37756,
+      "sha256": "b1c1269f9e165e58269edd5a2854faae9cea633e11bca3091d7b5c1c22f55c8e",
+      "bytes": 653708,
+      "paths": [
+        "真题分析_2012-2026\\_rendered\\2026new\\p01.png"
+      ]
+    },
+    {
+      "sha256": "bf628f4e3e8bb07d8b2b37f89da7d3608ac94bd28c55bf6dd57f151999b9f442",
+      "bytes": 418121,
+      "paths": [
+        "真题分析_2012-2026\\_rendered\\2026new\\p02.png"
+      ]
+    },
+    {
+      "sha256": "3eadea8fb26960679a5f216762dd35b9c31f503cc7769d81c660b7170001790c",
+      "bytes": 335611,
+      "paths": [
+        "真题分析_2012-2026\\_rendered\\2026new\\p03.png"
+      ]
+    },
+    {
+      "sha256": "a604ef37eba05c83e0464d755c7cee1c8766f592471fdfc61bebd79838eae801",
+      "bytes": 318979,
+      "paths": [
+        "真题分析_2012-2026\\_rendered\\2026new\\p04.png"
+      ]
+    },
+    {
+      "sha256": "e2b84f81bede9ca78056b981de08dd2f14ae5858e5271071f1c806cfd2ba8e98",
+      "bytes": 224734,
+      "paths": [
+        "真题分析_2012-2026\\_rendered\\2026new\\p05.png"
+      ]
+    },
+    {
+      "sha256": "64704705a75b1f33b857658faf2a3ebd23b52b397315ca17bf5e8bdfb093a2c5",
+      "bytes": 301862,
+      "paths": [
+        "真题分析_2012-2026\\_rendered\\2026new\\p06.png"
+      ]
+    },
+    {
+      "sha256": "72ba1887278baf5b7c3b6327b723c5f71b7df24c642b0e4a1b90b03923f45e4f",
+      "bytes": 314364,
+      "paths": [
+        "真题分析_2012-2026\\_rendered\\2026new\\p07.png"
+      ]
+    },
+    {
+      "sha256": "feada355e3e93bddd051f12dac45ad290da940b0b3d3a2a86fee154f1014805f",
+      "bytes": 296841,
+      "paths": [
+        "真题分析_2012-2026\\_rendered\\2026new\\p08.png"
+      ]
+    },
+    {
+      "sha256": "700785758def4db9697a81c48db6f3fa758c10302d5669aadc4acddc942fd5c1",
+      "bytes": 290002,
+      "paths": [
+        "真题分析_2012-2026\\_rendered\\2026new\\p09.png"
+      ]
+    },
+    {
+      "sha256": "4e63fa4125901898f6cf76aae50ad6ea615fa5c5bb48fabfef1d777e7fdb3726",
+      "bytes": 430879,
+      "paths": [
+        "真题分析_2012-2026\\_rendered\\2026new\\p10.png"
+      ]
+    },
+    {
+      "sha256": "038fff952d756fc150d15d4ea597b604bcd3733c85c787e3cba5b16c752a433c",
+      "bytes": 400032,
+      "paths": [
+        "真题分析_2012-2026\\_rendered\\2026new\\p11.png"
+      ]
+    },
+    {
+      "sha256": "87f9aaf54028ca6c9da99ad54ffe00ac0f892337a58a9a644a1796f1c49c57f0",
+      "bytes": 379989,
+      "paths": [
+        "真题分析_2012-2026\\_rendered\\2026new\\p12.png"
+      ]
+    },
+    {
+      "sha256": "4ebafbf5cead8816fd735401cba6b2160a55232b048b647e0055c7d9d822f2f6",
+      "bytes": 294451,
+      "paths": [
+        "真题分析_2012-2026\\_rendered\\2026new\\p13.png"
+      ]
+    },
+    {
+      "sha256": "1c600aa9cc9270cf813296d89336681e314b0ff7c1e1cef07dcb7be969c12392",
+      "bytes": 325048,
+      "paths": [
+        "真题分析_2012-2026\\_rendered\\2026new\\p14.png"
+      ]
+    },
+    {
+      "sha256": "be4bceb130604cc8e9c9806ac921462e483674a41393861008639979bc4f5035",
+      "bytes": 318063,
+      "paths": [
+        "真题分析_2012-2026\\_rendered\\2026new\\p15.png"
+      ]
+    },
+    {
+      "sha256": "a7faf6eeb7ba0eb5057fef1050edbb292fec1eaebd49ca73b88ec943191c579c",
+      "bytes": 274674,
+      "paths": [
+        "真题分析_2012-2026\\_rendered\\2026new\\p16.png"
+      ]
+    },
+    {
+      "sha256": "41206c33a0377d21ba07f245ba79c87c8733fed90796ce252c49cbafefb3f061",
+      "bytes": 325509,
+      "paths": [
+        "真题分析_2012-2026\\_rendered\\2026new\\p17.png"
+      ]
+    },
+    {
+      "sha256": "d821f81cded1018d8a6386f90304071f41b5b4fc4a23f633bd4d43acaf6efb52",
+      "bytes": 367967,
+      "paths": [
+        "真题分析_2012-2026\\_rendered\\2026new\\p18.png"
+      ]
+    },
+    {
+      "sha256": "1f0f2188c0461e72cca7604cbe1597b008903fd6ac678b0b66f64e856fbac29b",
+      "bytes": 441923,
+      "paths": [
+        "真题分析_2012-2026\\_rendered\\2026new\\p19.png"
+      ]
+    },
+    {
+      "sha256": "bc76370edfed110c8703c92857ec97a6d3ed2521c79a601005668f95ffe76641",
+      "bytes": 204561,
+      "paths": [
+        "真题分析_2012-2026\\_rendered\\2026new\\p20.png"
+      ]
+    },
+    {
+      "sha256": "4530a4669331f00a0d3e3aec7494238fabd35408523b91be72214024b841e3aa",
+      "bytes": 24215,
+      "paths": [
+        "真题分析_2012-2026\\上合组织专题_2026.md"
+      ]
+    },
+    {
+      "sha256": "1e701804b29bf7af8201e1138b968a111ffe8775796a638b876eff13cc889c03",
+      "bytes": 62846,
       "paths": [
         "真题分析_2012-2026\\人民网2026考研政治时政精选.md"
       ]
@@ -418,6 +782,34 @@
       ]
     },
     {
+      "sha256": "033756f9d6b51b48f6762d0b3ed924de32df9accbad331d32705143ec444db96",
+      "bytes": 13750,
+      "paths": [
+        "真题分析_2012-2026\\国际会议真题分析报告.md"
+      ]
+    },
+    {
+      "sha256": "11fa668e0cc825a52d7d3d57c98e19040cb923d88cc8d20093d11fbf52a5c39f",
+      "bytes": 6898,
+      "paths": [
+        "真题分析_2012-2026\\早期真题分析_1994-2011.md"
+      ]
+    },
+    {
+      "sha256": "9681242a76377f89191808a2a9d5206166b4f8a63c8b9d5d7dc77255b49c2341",
+      "bytes": 67414,
+      "paths": [
+        "真题分析_2012-2026\\时政增补_20260922.md"
+      ]
+    },
+    {
+      "sha256": "fa1ca60ddafb1deebff5e7ed2bed0180df710a8e783369946a644d23ff080178",
+      "bytes": 10891,
+      "paths": [
+        "真题分析_2012-2026\\真题分析复盘_OCR与答案错位_20260922.md"
+      ]
+    },
+    {
       "sha256": "046e7180f2e3d0dc3b1204b1e104c7ebbde8eb3bc7c0863664f11e0d9a9fde9d",
       "bytes": 2999,
       "paths": [
@@ -432,6 +824,27 @@
       ]
     },
     {
+      "sha256": "a5163f7d36f45c565f97913484e1e0e4a3bdec58be0ff215f5402bf4d7b4dab4",
+      "bytes": 18676,
+      "paths": [
+        "真题分析_2012-2026\\选择题绝对错误选项规律.md"
+      ]
+    },
+    {
+      "sha256": "1cebfa8ebd30e4c4a237cf12c9e43ee86d362113c4a761416bdc0c8bb1bb1f38",
+      "bytes": 50290,
+      "paths": [
+        "真题分析_2012-2026\\选择题绝对错误选项规律v2.md"
+      ]
+    },
+    {
+      "sha256": "07bcd7084da82873ba0b90118fe2a8418915fe77ca73b6ad20d8cdfc3e8b40d3",
+      "bytes": 47117,
+      "paths": [
+        "真题分析_2012-2026\\选择题绝对错误选项规律v2_发行版.md"
+      ]
+    },
+    {
       "sha256": "20246fc1a4e5636d6a28b693050c502e8c010923a64c268a0a3e52eb01e6547a",
       "bytes": 217908,
       "paths": [
@@ -443,6 +856,1545 @@
       "bytes": 49974,
       "paths": [
         "真题分析_2012-2026\\重要会议与真题切合度.md"
+      ]
+    },
+    {
+      "sha256": "ba46c263fabb020be733e6f94ca9438335152c10ee69dc916e48f2bd7937bb93",
+      "bytes": 9427,
+      "paths": [
+        "真题分析_2012-2026\\错项核对_2024-2026.md"
+      ]
+    },
+    {
+      "sha256": "9695905b80716dc68c993d00e022040de3b8115182b21d82e56dbd0fb5fddafc",
+      "bytes": 2027,
+      "paths": [
+        "真题库v2\\_cache\\need_ocr.json"
+      ]
+    },
+    {
+      "sha256": "1949224eb04844c83ad278fbf6f4ca4f08f03af435aafdc6dc2d2a042ee18f62",
+      "bytes": 238,
+      "paths": [
+        "真题库v2\\_cache\\text\\1994年政治考研真题_文科_及参考答案_1__45b21d379902_doc.json"
+      ]
+    },
+    {
+      "sha256": "6730a7c8d7d628f595a88f8d392048450bdfe4550c3b4d199ca52c5065354f39",
+      "bytes": 235,
+      "paths": [
+        "真题库v2\\_cache\\text\\1994年政治考研真题_文科_及参考答案_45b21d379902_doc.json",
+        "真题库v2\\_cache\\text\\1994年政治考研真题_文科_及参考答案_45b21d379902_doc2.json",
+        "真题库v2\\_cache\\text\\1994年政治考研真题_文科_及参考答案_45b21d379902_doc4.json"
+      ]
+    },
+    {
+      "sha256": "ab238be6174c3e519bdea56ef9ef318e3d70d4dec2657b29fb4643c71db643cc",
+      "bytes": 199,
+      "paths": [
+        "真题库v2\\_cache\\text\\1994年政治考研真题_文科_及参考答案_be72d9e7051f.json"
+      ]
+    },
+    {
+      "sha256": "61aeed31ba4ca0ee3cb7bc2a845bf483649fbfec0da7f768e799643a6b2e49af",
+      "bytes": 238,
+      "paths": [
+        "真题库v2\\_cache\\text\\1994年政治考研真题_理科_及参考答案_1__4d0a46f47a23_doc.json"
+      ]
+    },
+    {
+      "sha256": "8e56c193d119a14e9dc4980711526ab4a6d0bb91ff179d4e3fcea692fa953e64",
+      "bytes": 235,
+      "paths": [
+        "真题库v2\\_cache\\text\\1994年政治考研真题_理科_及参考答案_4d0a46f47a23_doc.json",
+        "真题库v2\\_cache\\text\\1994年政治考研真题_理科_及参考答案_4d0a46f47a23_doc2.json",
+        "真题库v2\\_cache\\text\\1994年政治考研真题_理科_及参考答案_4d0a46f47a23_doc4.json"
+      ]
+    },
+    {
+      "sha256": "45de75f12c13554acdddaa61231f2cd0beb9d43aad0044317d9a7527e2e18569",
+      "bytes": 199,
+      "paths": [
+        "真题库v2\\_cache\\text\\1994年政治考研真题_理科_及参考答案_e1de21ae95dc.json"
+      ]
+    },
+    {
+      "sha256": "8e55a8629df6be8deef8e584a6a1efaa65661d6f682414dfb0797d6db9f359cd",
+      "bytes": 235,
+      "paths": [
+        "真题库v2\\_cache\\text\\1995年政治考研真题_文科_及参考答案_1ffec9794d65_doc.json",
+        "真题库v2\\_cache\\text\\1995年政治考研真题_文科_及参考答案_1ffec9794d65_doc2.json",
+        "真题库v2\\_cache\\text\\1995年政治考研真题_文科_及参考答案_1ffec9794d65_doc4.json"
+      ]
+    },
+    {
+      "sha256": "f88fa0e43bfe58dedaf4015fd6804a27ea8c0d06ae69bf45087d2c62a2bc1cee",
+      "bytes": 199,
+      "paths": [
+        "真题库v2\\_cache\\text\\1995年政治考研真题_文科_及参考答案_2392b3114bda.json"
+      ]
+    },
+    {
+      "sha256": "a67132ab078c7bb0138cfe29703fd95df75ded1322e0c0a39a512621fa67acd9",
+      "bytes": 236,
+      "paths": [
+        "真题库v2\\_cache\\text\\1995年政治考研真题_理科_及参考答案_34014ce7a7a4_doc.json",
+        "真题库v2\\_cache\\text\\1995年政治考研真题_理科_及参考答案_34014ce7a7a4_doc2.json",
+        "真题库v2\\_cache\\text\\1995年政治考研真题_理科_及参考答案_34014ce7a7a4_doc4.json"
+      ]
+    },
+    {
+      "sha256": "879d808ef9da1cdfaa1d8859312164a13ec82bd19409561b3ebdfe5a7274e079",
+      "bytes": 200,
+      "paths": [
+        "真题库v2\\_cache\\text\\1995年政治考研真题_理科_及参考答案_aa97388da851.json"
+      ]
+    },
+    {
+      "sha256": "3b25124914865368b3ff33ccefa5b524c68a9fa2b2d39cb4efcd14cad84bd65a",
+      "bytes": 199,
+      "paths": [
+        "真题库v2\\_cache\\text\\1996年政治考研真题_文科_及参考答案_57a61c9fb71f.json"
+      ]
+    },
+    {
+      "sha256": "4fcc950b7da00ab22877a6a93b7cb4d88d7d6ac886f7277301dd4273fc4c5d6c",
+      "bytes": 235,
+      "paths": [
+        "真题库v2\\_cache\\text\\1996年政治考研真题_文科_及参考答案_d61ce56c5689_doc.json",
+        "真题库v2\\_cache\\text\\1996年政治考研真题_文科_及参考答案_d61ce56c5689_doc2.json",
+        "真题库v2\\_cache\\text\\1996年政治考研真题_文科_及参考答案_d61ce56c5689_doc4.json"
+      ]
+    },
+    {
+      "sha256": "d94bee60dafab97687473670d2bad81568b620928ce80f25865939dacc96a3fb",
+      "bytes": 235,
+      "paths": [
+        "真题库v2\\_cache\\text\\1996年政治考研真题_理科_及参考答案_720cec5641c6_doc.json",
+        "真题库v2\\_cache\\text\\1996年政治考研真题_理科_及参考答案_720cec5641c6_doc2.json",
+        "真题库v2\\_cache\\text\\1996年政治考研真题_理科_及参考答案_720cec5641c6_doc4.json"
+      ]
+    },
+    {
+      "sha256": "c076790f72e97a9f5779436bcd7437b8c4ed78a943a4d73220920e8523a6a7f8",
+      "bytes": 199,
+      "paths": [
+        "真题库v2\\_cache\\text\\1996年政治考研真题_理科_及参考答案_c2debdd93f24.json"
+      ]
+    },
+    {
+      "sha256": "47c59971137cfd29b4e55f85f23eb1548662b8a13f3aba3c642a113602a6768d",
+      "bytes": 199,
+      "paths": [
+        "真题库v2\\_cache\\text\\1997年政治考研真题_文科_及参考答案_e727eb272cdc.json"
+      ]
+    },
+    {
+      "sha256": "e866f128447a0143a7dccde1b386d942b13072c7c1addf1020f7fcdb6c9054f1",
+      "bytes": 235,
+      "paths": [
+        "真题库v2\\_cache\\text\\1997年政治考研真题_文科_及参考答案_f69f835146fe_doc.json",
+        "真题库v2\\_cache\\text\\1997年政治考研真题_文科_及参考答案_f69f835146fe_doc2.json",
+        "真题库v2\\_cache\\text\\1997年政治考研真题_文科_及参考答案_f69f835146fe_doc4.json"
+      ]
+    },
+    {
+      "sha256": "b859fbdb227da9e29fa0aa01f58f9861050c3f1e58c7223dc96461b4d397a856",
+      "bytes": 235,
+      "paths": [
+        "真题库v2\\_cache\\text\\1997年政治考研真题_理科_及参考答案_929330cf4e6a_doc.json",
+        "真题库v2\\_cache\\text\\1997年政治考研真题_理科_及参考答案_929330cf4e6a_doc2.json",
+        "真题库v2\\_cache\\text\\1997年政治考研真题_理科_及参考答案_929330cf4e6a_doc4.json"
+      ]
+    },
+    {
+      "sha256": "1ec43e768ddd6c1bb2ce2101dae813437b15b283be3be9c62a20d693af3b4e6f",
+      "bytes": 199,
+      "paths": [
+        "真题库v2\\_cache\\text\\1997年政治考研真题_理科_及参考答案_956c3672801e.json"
+      ]
+    },
+    {
+      "sha256": "5a1e01b22e4a3ebad228c4468ec36b5e17ae77ea51d6a25e8df228030404e623",
+      "bytes": 238,
+      "paths": [
+        "真题库v2\\_cache\\text\\1998年政治考研真题_文科_及参考答案_1__b0a2d79a6e3a_doc.json"
+      ]
+    },
+    {
+      "sha256": "7f308a6bb840e28d5c5f9002e4f46e4f6ae4c69ae752063331c87c201e4914f7",
+      "bytes": 202,
+      "paths": [
+        "真题库v2\\_cache\\text\\1998年政治考研真题_文科_及参考答案_1__b4e46e98563a.json"
+      ]
+    },
+    {
+      "sha256": "a6e350ab6d986b1ccd58ed7c2d8905d36d7fa4c1864492940a338f89ecbc020b",
+      "bytes": 235,
+      "paths": [
+        "真题库v2\\_cache\\text\\1998年政治考研真题_文科_及参考答案_b0a2d79a6e3a_doc.json",
+        "真题库v2\\_cache\\text\\1998年政治考研真题_文科_及参考答案_b0a2d79a6e3a_doc2.json",
+        "真题库v2\\_cache\\text\\1998年政治考研真题_文科_及参考答案_b0a2d79a6e3a_doc4.json",
+        "真题库v2\\_cache\\text\\1998年政治考研真题_文科_及参考答案_d92c5799a911.json"
+      ]
+    },
+    {
+      "sha256": "2aca57a30fd3d6d82be925be4b30345203c71c6f7e67ed29405a40b451634049",
+      "bytes": 238,
+      "paths": [
+        "真题库v2\\_cache\\text\\1998年政治考研真题_理科_及参考答案_1__215d5c1753a1_doc.json"
+      ]
+    },
+    {
+      "sha256": "67a79884962585bfd0edb1682ca01ba130769164ceb3a0d24411aafef1ce6d77",
+      "bytes": 235,
+      "paths": [
+        "真题库v2\\_cache\\text\\1998年政治考研真题_理科_及参考答案_215d5c1753a1_doc.json",
+        "真题库v2\\_cache\\text\\1998年政治考研真题_理科_及参考答案_215d5c1753a1_doc2.json",
+        "真题库v2\\_cache\\text\\1998年政治考研真题_理科_及参考答案_215d5c1753a1_doc4.json",
+        "真题库v2\\_cache\\text\\1998年政治考研真题_理科_及参考答案_c95a2557afb2.json"
+      ]
+    },
+    {
+      "sha256": "7b752165f371e173130639023c01edecce0791c014d533caa2d40d621cd60d82",
+      "bytes": 235,
+      "paths": [
+        "真题库v2\\_cache\\text\\1999年政治考研真题_文科_及参考答案_8a7546f014d3_doc.json",
+        "真题库v2\\_cache\\text\\1999年政治考研真题_文科_及参考答案_8a7546f014d3_doc2.json",
+        "真题库v2\\_cache\\text\\1999年政治考研真题_文科_及参考答案_8a7546f014d3_doc4.json",
+        "真题库v2\\_cache\\text\\1999年政治考研真题_文科_及参考答案_e46176f74667.json"
+      ]
+    },
+    {
+      "sha256": "55ca3a52da3fbb6a6818248add733a1606828f4f79306fa195d6fbd7273e01c5",
+      "bytes": 235,
+      "paths": [
+        "真题库v2\\_cache\\text\\1999年政治考研真题_理科_及参考答案_08af51b82c17_doc.json",
+        "真题库v2\\_cache\\text\\1999年政治考研真题_理科_及参考答案_08af51b82c17_doc2.json",
+        "真题库v2\\_cache\\text\\1999年政治考研真题_理科_及参考答案_08af51b82c17_doc3.json",
+        "真题库v2\\_cache\\text\\1999年政治考研真题_理科_及参考答案_d82ba0c7b80c.json"
+      ]
+    },
+    {
+      "sha256": "75e71182b41e31d066405d5774e8057d3c4025d48a85807d68ded328f33cceab",
+      "bytes": 235,
+      "paths": [
+        "真题库v2\\_cache\\text\\1999年政治考研真题_理科_及参考答案_08af51b82c17_doc4.json"
+      ]
+    },
+    {
+      "sha256": "fd20c0bc6351f6772c5e9cc518e57fb0e1ebbf22ed99dded452900d6e1ac9be7",
+      "bytes": 236,
+      "paths": [
+        "真题库v2\\_cache\\text\\2000年政治考研真题_文科_及参考答案_51c263a6f7b7_doc.json",
+        "真题库v2\\_cache\\text\\2000年政治考研真题_文科_及参考答案_51c263a6f7b7_doc2.json",
+        "真题库v2\\_cache\\text\\2000年政治考研真题_文科_及参考答案_51c263a6f7b7_doc4.json",
+        "真题库v2\\_cache\\text\\2000年政治考研真题_文科_及参考答案_db4796f7e0ba.json"
+      ]
+    },
+    {
+      "sha256": "ad6cbbc84cb0b4ec52778a3c172f786186468c0828fea32aeb2632fd00dfc582",
+      "bytes": 236,
+      "paths": [
+        "真题库v2\\_cache\\text\\2000年政治考研真题_理科_及参考答案_5e79d7cc8de4_doc.json",
+        "真题库v2\\_cache\\text\\2000年政治考研真题_理科_及参考答案_5e79d7cc8de4_doc2.json",
+        "真题库v2\\_cache\\text\\2000年政治考研真题_理科_及参考答案_5e79d7cc8de4_doc4.json",
+        "真题库v2\\_cache\\text\\2000年政治考研真题_理科_及参考答案_8b5769729457.json"
+      ]
+    },
+    {
+      "sha256": "1fdd054461c9028a42b1a86f5bcb1e56c626b977b2f56b692d72a635d414489b",
+      "bytes": 236,
+      "paths": [
+        "真题库v2\\_cache\\text\\2001年政治考研真题_文科_及参考答案_5177a7526086.json",
+        "真题库v2\\_cache\\text\\2001年政治考研真题_文科_及参考答案_bd6f118fb486_doc.json",
+        "真题库v2\\_cache\\text\\2001年政治考研真题_文科_及参考答案_bd6f118fb486_doc2.json",
+        "真题库v2\\_cache\\text\\2001年政治考研真题_文科_及参考答案_bd6f118fb486_doc4.json"
+      ]
+    },
+    {
+      "sha256": "34cf46a1094f897bb1757ad41ae439e1f451de4450511815af7d93a30969e52f",
+      "bytes": 235,
+      "paths": [
+        "真题库v2\\_cache\\text\\2001年政治考研真题_理科_及参考答案_3ae0d7e879cc_doc.json",
+        "真题库v2\\_cache\\text\\2001年政治考研真题_理科_及参考答案_3ae0d7e879cc_doc2.json",
+        "真题库v2\\_cache\\text\\2001年政治考研真题_理科_及参考答案_3ae0d7e879cc_doc4.json",
+        "真题库v2\\_cache\\text\\2001年政治考研真题_理科_及参考答案_6a431d35e519.json"
+      ]
+    },
+    {
+      "sha256": "e519db454da2b6adaab9a0684d016a5a423cd914c121adc7526749afd3b7c9fd",
+      "bytes": 235,
+      "paths": [
+        "真题库v2\\_cache\\text\\2002年政治考研真题_文科_及参考答案_5e508afbaf21.json",
+        "真题库v2\\_cache\\text\\2002年政治考研真题_文科_及参考答案_94e0a15c7e88_doc.json",
+        "真题库v2\\_cache\\text\\2002年政治考研真题_文科_及参考答案_94e0a15c7e88_doc2.json",
+        "真题库v2\\_cache\\text\\2002年政治考研真题_文科_及参考答案_94e0a15c7e88_doc4.json"
+      ]
+    },
+    {
+      "sha256": "8a6b5a610556be516ea56706a3748b70f323b7a382254cb42a79487ed487cd68",
+      "bytes": 235,
+      "paths": [
+        "真题库v2\\_cache\\text\\2002年政治考研真题_理科_及参考答案_0e08cdc9ed88.json",
+        "真题库v2\\_cache\\text\\2002年政治考研真题_理科_及参考答案_121826d76c90_doc.json",
+        "真题库v2\\_cache\\text\\2002年政治考研真题_理科_及参考答案_121826d76c90_doc2.json",
+        "真题库v2\\_cache\\text\\2002年政治考研真题_理科_及参考答案_121826d76c90_doc4.json"
+      ]
+    },
+    {
+      "sha256": "7c0c895c5668e4bfa6675f6feb8ebc4d2c78bf8476722da9c179e5bec443b9ca",
+      "bytes": 228,
+      "paths": [
+        "真题库v2\\_cache\\text\\2003年考研政治真题及答案解析_2f25799c0901.json",
+        "真题库v2\\_cache\\text\\2003年考研政治真题及答案解析_f880a7ada06c_doc.json",
+        "真题库v2\\_cache\\text\\2003年考研政治真题及答案解析_f880a7ada06c_doc2.json",
+        "真题库v2\\_cache\\text\\2003年考研政治真题及答案解析_f880a7ada06c_doc4.json"
+      ]
+    },
+    {
+      "sha256": "b751a911d99559246b5bdd2833329cbc7e0981551e050e7dfeb5d9c21809fe00",
+      "bytes": 225,
+      "paths": [
+        "真题库v2\\_cache\\text\\2004年考研政治真题及答案解析_9ebe9fdeecfc_docx.json"
+      ]
+    },
+    {
+      "sha256": "068acbbf59bf72b88fbf55adf337d34acaa9df8f9e4b605aeabad2c56a6416de",
+      "bytes": 228,
+      "paths": [
+        "真题库v2\\_cache\\text\\2005年考研政治真题及答案解析_1__4b30c1fc880e_docx.json"
+      ]
+    },
+    {
+      "sha256": "11c00859df3f5c17b28648304c26161855763ca2370f69465c226acefdba25d3",
+      "bytes": 225,
+      "paths": [
+        "真题库v2\\_cache\\text\\2005年考研政治真题及答案解析_4b30c1fc880e_docx.json"
+      ]
+    },
+    {
+      "sha256": "adc151c2c4e91d53c61eabb4d4e0cb00da8ed9aab590799f23c36b44096d272a",
+      "bytes": 228,
+      "paths": [
+        "真题库v2\\_cache\\text\\2006年考研政治真题及答案解析_3d9a4d705f81_doc.json",
+        "真题库v2\\_cache\\text\\2006年考研政治真题及答案解析_3d9a4d705f81_doc2.json",
+        "真题库v2\\_cache\\text\\2006年考研政治真题及答案解析_3d9a4d705f81_doc4.json",
+        "真题库v2\\_cache\\text\\2006年考研政治真题及答案解析_60ff183ca6ad.json"
+      ]
+    },
+    {
+      "sha256": "6b0a8188a36295305fbd54611b61a3c6bf38d9ebc4603c744c75619f289099cf",
+      "bytes": 228,
+      "paths": [
+        "真题库v2\\_cache\\text\\2007年考研政治真题及答案解析_082f5696b2fc_doc.json",
+        "真题库v2\\_cache\\text\\2007年考研政治真题及答案解析_082f5696b2fc_doc2.json",
+        "真题库v2\\_cache\\text\\2007年考研政治真题及答案解析_082f5696b2fc_doc4.json",
+        "真题库v2\\_cache\\text\\2007年考研政治真题及答案解析_bf1895455a65.json"
+      ]
+    },
+    {
+      "sha256": "f0c80feb690ff8e9e641dbcc45c59393726f69cf6a44570cc79eb4c78b3230f7",
+      "bytes": 228,
+      "paths": [
+        "真题库v2\\_cache\\text\\2008年考研政治真题及答案解析_799f06975480.json",
+        "真题库v2\\_cache\\text\\2008年考研政治真题及答案解析_c1e9ba3ebbd4_doc.json",
+        "真题库v2\\_cache\\text\\2008年考研政治真题及答案解析_c1e9ba3ebbd4_doc2.json",
+        "真题库v2\\_cache\\text\\2008年考研政治真题及答案解析_c1e9ba3ebbd4_doc4.json"
+      ]
+    },
+    {
+      "sha256": "b23fdb02b47defc3c7007b077989a81e5e416871e3f7bb2ee4e1c9ff7484983b",
+      "bytes": 187,
+      "paths": [
+        "真题库v2\\_cache\\text\\2009-2023考研政治真题合并版_699e6f3613e9.json",
+        "真题库v2\\_cache\\text\\2009-2023考研政治真题合并版_93bbcc27cee0_layer.json"
+      ]
+    },
+    {
+      "sha256": "a139d444f5f36465e9c62c15a08e466da14be1be180446fd16931e09ed4d8963",
+      "bytes": 304,
+      "paths": [
+        "真题库v2\\_cache\\text\\2009年考研政治真题_可复制可搜索__5d74f81315b2.json",
+        "真题库v2\\_cache\\text\\2009年考研政治真题_可复制可搜索__c68a64f8e89a_layer.json"
+      ]
+    },
+    {
+      "sha256": "d8812fb056342d8f063efb15f8b5107a886a650710947de134cd4a91635ab2a7",
+      "bytes": 273,
+      "paths": [
+        "真题库v2\\_cache\\text\\2009年考研政治真题及答案解析_ae8cd1fb7f6a.json",
+        "真题库v2\\_cache\\text\\2009年考研政治真题及答案解析_bc74f627f0a5_doc.json",
+        "真题库v2\\_cache\\text\\2009年考研政治真题及答案解析_bc74f627f0a5_doc4.json"
+      ]
+    },
+    {
+      "sha256": "53096fb970adeb59e4c4b8341876ac4b1335ccfd6c1a3d73a4375ff978bf1771",
+      "bytes": 304,
+      "paths": [
+        "真题库v2\\_cache\\text\\2010年考研政治真题_可复制可搜索__9faab396c242_layer.json",
+        "真题库v2\\_cache\\text\\2010年考研政治真题_可复制可搜索__cff886382d5d.json"
+      ]
+    },
+    {
+      "sha256": "840a89c56918ed825d5e2e6ed72e4bfc96e4c060f0f7f2283b20b3d9b3fce5a3",
+      "bytes": 270,
+      "paths": [
+        "真题库v2\\_cache\\text\\2010年考研政治真题及答案解析_a6a526f15bfe_docx.json"
+      ]
+    },
+    {
+      "sha256": "091bcae6fa75b947b45a3aac8abd694bd9f8da4d10d00cfdab061cfb107e8bdf",
+      "bytes": 232,
+      "paths": [
+        "真题库v2\\_cache\\text\\2011年全国研究生招生考试思想政治理论试题_8c6b88d230c1_layer.json",
+        "真题库v2\\_cache\\text\\2011年全国研究生招生考试思想政治理论试题_c642a17f41ac.json"
+      ]
+    },
+    {
+      "sha256": "ce67258a920a0203f898d0e8252498e7530e7cafd4b85a89e3ba3c63985d1f62",
+      "bytes": 303,
+      "paths": [
+        "真题库v2\\_cache\\text\\2011年考研政治真题_可复制可搜索__0f04b1986a62_layer.json",
+        "真题库v2\\_cache\\text\\2011年考研政治真题_可复制可搜索__fb79f20ab3ff.json"
+      ]
+    },
+    {
+      "sha256": "a4c98455e2d0adee5a3ff74149c9d91f852e5d190cab07c45cdacfc2871c2cfb",
+      "bytes": 273,
+      "paths": [
+        "真题库v2\\_cache\\text\\2011年考研政治真题及答案解析_9f84875b7cc5.json",
+        "真题库v2\\_cache\\text\\2011年考研政治真题及答案解析_db47dd3ba9a4_doc.json",
+        "真题库v2\\_cache\\text\\2011年考研政治真题及答案解析_db47dd3ba9a4_doc4.json"
+      ]
+    },
+    {
+      "sha256": "edd294a574669922993d6287eaefdc55e342a2f5dc1a3a6a2ded23081c1a35f3",
+      "bytes": 232,
+      "paths": [
+        "真题库v2\\_cache\\text\\2012年全国研究生招生考试思想政治理论试题_5e2d526797e1.json",
+        "真题库v2\\_cache\\text\\2012年全国研究生招生考试思想政治理论试题_98af82eac348_layer.json"
+      ]
+    },
+    {
+      "sha256": "09a356a2cca5640f8ddb44aa2a48de90e6628f98e2b9a790f54a3b4dcbe38bb9",
+      "bytes": 304,
+      "paths": [
+        "真题库v2\\_cache\\text\\2012年考研政治真题_可复制可搜索__9dfa609c4972.json",
+        "真题库v2\\_cache\\text\\2012年考研政治真题_可复制可搜索__f2bc822be276_layer.json"
+      ]
+    },
+    {
+      "sha256": "b9fb5d86594b58312d5982d2bc197c45a5cf969dc9de7ae7880dea2a5b117693",
+      "bytes": 273,
+      "paths": [
+        "真题库v2\\_cache\\text\\2012年考研政治真题及答案解析_3932501e030b.json",
+        "真题库v2\\_cache\\text\\2012年考研政治真题及答案解析_4b1420a1330d_doc.json",
+        "真题库v2\\_cache\\text\\2012年考研政治真题及答案解析_4b1420a1330d_doc4.json"
+      ]
+    },
+    {
+      "sha256": "7640b5c66e40744c26a8428082c80491a0e33617d0718b0673fec3f92d2da920",
+      "bytes": 242,
+      "paths": [
+        "真题库v2\\_cache\\text\\2013年全国研究生招生考试思想政治理论试题__368fc0c098e4_layer.json"
+      ]
+    },
+    {
+      "sha256": "0399dd018a86f461f50e1af4885c33b979d07fcfecf315a969ee6f1a2c6f621b",
+      "bytes": 254,
+      "paths": [
+        "真题库v2\\_cache\\text\\2013年全国研究生招生考试思想政治理论试题__368fc0c098e4_ocr300-642e92e.json"
+      ]
+    },
+    {
+      "sha256": "0deb27463bac5e2bf5827b3c8ec8a1cf31121d8fcaeb018759f86240ff817c97",
+      "bytes": 304,
+      "paths": [
+        "真题库v2\\_cache\\text\\2013年考研政治真题_可复制可搜索__4460bcc92c15.json",
+        "真题库v2\\_cache\\text\\2013年考研政治真题_可复制可搜索__a6f4d669ffb4_layer.json"
+      ]
+    },
+    {
+      "sha256": "d989be5249ce020e86c5cc93e1709d8a4e3e6b2b49632b810c432a4e76e4a566",
+      "bytes": 273,
+      "paths": [
+        "真题库v2\\_cache\\text\\2013年考研政治真题及答案解析_431c29bace91_doc.json",
+        "真题库v2\\_cache\\text\\2013年考研政治真题及答案解析_431c29bace91_doc4.json",
+        "真题库v2\\_cache\\text\\2013年考研政治真题及答案解析_7754286ab06e.json"
+      ]
+    },
+    {
+      "sha256": "bd31e01ca2a2be4e150e5f576329dbb3b740fb22873570e717900f48e96a3f8b",
+      "bytes": 232,
+      "paths": [
+        "真题库v2\\_cache\\text\\2014年全国研究生招生考试思想政治理论试题_75493b428221.json",
+        "真题库v2\\_cache\\text\\2014年全国研究生招生考试思想政治理论试题_aa6a065ee499_layer.json"
+      ]
+    },
+    {
+      "sha256": "7fc8c9e3182d413c32b0aeb76c53bf749e0914c09bb9b5abcbfecdbd5f1e44f0",
+      "bytes": 304,
+      "paths": [
+        "真题库v2\\_cache\\text\\2014年考研政治真题_可复制可搜索__ee075280ec6a_layer.json",
+        "真题库v2\\_cache\\text\\2014年考研政治真题_可复制可搜索__f9663f2b9302.json"
+      ]
+    },
+    {
+      "sha256": "16c157f8b8a1dfeda1fdef93d842977a6da98e7de06632400f9e4dc6d661dd85",
+      "bytes": 273,
+      "paths": [
+        "真题库v2\\_cache\\text\\2014年考研政治真题及答案解析_3875f8e41a4f.json",
+        "真题库v2\\_cache\\text\\2014年考研政治真题及答案解析_86ca3a1b3dbd_doc.json",
+        "真题库v2\\_cache\\text\\2014年考研政治真题及答案解析_86ca3a1b3dbd_doc4.json"
+      ]
+    },
+    {
+      "sha256": "190c12b9d1fb96ee66e0c25fad88e1dfd18800cf3f3280d0e1a9abbd8efff1f9",
+      "bytes": 232,
+      "paths": [
+        "真题库v2\\_cache\\text\\2015年全国研究生招生考试思想政治理论试题_51a6f37c2481.json",
+        "真题库v2\\_cache\\text\\2015年全国研究生招生考试思想政治理论试题_5ad3c161f240_layer.json"
+      ]
+    },
+    {
+      "sha256": "7b0dec5978ff0695ff0526c4f126fbadd9cea1180ed9d7b3bb42510cef535219",
+      "bytes": 304,
+      "paths": [
+        "真题库v2\\_cache\\text\\2015年考研政治真题_可复制可搜索__334963353834_layer.json",
+        "真题库v2\\_cache\\text\\2015年考研政治真题_可复制可搜索__a5e986f7e499.json"
+      ]
+    },
+    {
+      "sha256": "8f8c6114c1c0c219267ccdbc45528055fd248c2b8ec772cde0b9cdee716c3464",
+      "bytes": 270,
+      "paths": [
+        "真题库v2\\_cache\\text\\2015年考研政治真题及答案解析_43483cb881ad_docx.json"
+      ]
+    },
+    {
+      "sha256": "ff4e862fd8bb934cec1cf06646152734d3e609fbec29f782774f22ccd090d905",
+      "bytes": 251,
+      "paths": [
+        "真题库v2\\_cache\\text\\2016年全国研究生招生考试思想政治理论试题_官方标答___d9effb061e67_layer.json",
+        "真题库v2\\_cache\\text\\2016年全国研究生招生考试思想政治理论试题_官方标答___f5d6710f4379.json"
+      ]
+    },
+    {
+      "sha256": "bd9e9bab9201d461d59a042070e5d1e89ff29f5f8e3123f380f7b4603d822696",
+      "bytes": 258,
+      "paths": [
+        "真题库v2\\_cache\\text\\2016年考研政治真题_204f38f17321.json",
+        "真题库v2\\_cache\\text\\2016年考研政治真题_f82c2efd04ec_doc.json",
+        "真题库v2\\_cache\\text\\2016年考研政治真题_f82c2efd04ec_doc4.json"
+      ]
+    },
+    {
+      "sha256": "2c91d4ca8a61e94568a12f8d1881fa7efd1da775170283fa602d030cd3fd0c6f",
+      "bytes": 304,
+      "paths": [
+        "真题库v2\\_cache\\text\\2016年考研政治真题_可复制可搜索__2be0078a54c1_layer.json",
+        "真题库v2\\_cache\\text\\2016年考研政治真题_可复制可搜索__3b5a4ec38486.json"
+      ]
+    },
+    {
+      "sha256": "2683d5bf42c3b53f36a01591b6f4087345b3cafef54476739dcee800ac84a6a8",
+      "bytes": 261,
+      "paths": [
+        "真题库v2\\_cache\\text\\2016年考研政治答案解析_481c45bceafb_docx.json"
+      ]
+    },
+    {
+      "sha256": "0491a4c6ba6df048bde8d9642c90dbb6be0abca42e6bae84a3753f4597e56e1c",
+      "bytes": 250,
+      "paths": [
+        "真题库v2\\_cache\\text\\2017年全国研究生招生考试思想政治理论试题_官方标答__3fb4fa11f063.json",
+        "真题库v2\\_cache\\text\\2017年全国研究生招生考试思想政治理论试题_官方标答__422fcb9200bf_layer.json"
+      ]
+    },
+    {
+      "sha256": "b289eba840c4c93fb17490ddc7955efb9aaea49af399995f9e939755e2105648",
+      "bytes": 304,
+      "paths": [
+        "真题库v2\\_cache\\text\\2017年考研政治真题_可复制可搜索__a48b2beea95c_layer.json",
+        "真题库v2\\_cache\\text\\2017年考研政治真题_可复制可搜索__df5377ed0eac.json"
+      ]
+    },
+    {
+      "sha256": "1e814ded60a99b21d8f1c6a017eec21aea00c0bd4f6b1b5478182e330aef49cd",
+      "bytes": 252,
+      "paths": [
+        "真题库v2\\_cache\\text\\2017考研政治真题_3e031bce4c66_docx.json",
+        "真题库v2\\_cache\\text\\2017考研政治真题_d553973bf0fe.json"
+      ]
+    },
+    {
+      "sha256": "8afe3f222013e5a4e0302d1f38e653ca2453af20fd6cb935c5392dee197996bf",
+      "bytes": 257,
+      "paths": [
+        "真题库v2\\_cache\\text\\2017考研政治答案解析_9c70f504f83f_docx.json"
+      ]
+    },
+    {
+      "sha256": "a78f4ec5be586d8c72c334449cb114ffa57d70465de9d8efd18bfd33f3dc4fbd",
+      "bytes": 251,
+      "paths": [
+        "真题库v2\\_cache\\text\\2018年全国研究生招生考试思想政治理论试题_官方标答___6499861fe224_layer.json",
+        "真题库v2\\_cache\\text\\2018年全国研究生招生考试思想政治理论试题_官方标答___c8c2ea9b9359.json"
+      ]
+    },
+    {
+      "sha256": "da4651ca6a57c84689c6864c18f2c8775284065a23f32c3397cf8cb9eade576b",
+      "bytes": 304,
+      "paths": [
+        "真题库v2\\_cache\\text\\2018年考研政治真题_可复制可搜索__261c173a9372.json",
+        "真题库v2\\_cache\\text\\2018年考研政治真题_可复制可搜索__890076b896d6_layer.json"
+      ]
+    },
+    {
+      "sha256": "9df438d856eedc7670db9d1b5b53b24b19408e66fcc94c8a0e5d9d5f925e156d",
+      "bytes": 252,
+      "paths": [
+        "真题库v2\\_cache\\text\\2018考研政治真题_a23f4924e39d_docx.json"
+      ]
+    },
+    {
+      "sha256": "c8b48bb370fc1faa42809c8ad9f27d0b2a67879792d21e139f152f0e4a8570ce",
+      "bytes": 260,
+      "paths": [
+        "真题库v2\\_cache\\text\\2019年全国研究生招生考试思想政治理论试题_官方标答___7ce776e83225.json",
+        "真题库v2\\_cache\\text\\2019年全国研究生招生考试思想政治理论试题_官方标答___e2b767a34209_layer.json"
+      ]
+    },
+    {
+      "sha256": "ee24bdabf0822a64167007fc71224cc7851c4ed5ff11290f7873ffea7672452b",
+      "bytes": 271,
+      "paths": [
+        "真题库v2\\_cache\\text\\2019年全国研究生招生考试思想政治理论试题_官方标答___e2b767a34209_ocr300-072b030.json"
+      ]
+    },
+    {
+      "sha256": "ae2327e1731f4420242a098855cf915d76e339e808570f5e759b76aa8e052b5e",
+      "bytes": 304,
+      "paths": [
+        "真题库v2\\_cache\\text\\2019年考研政治真题_可复制可搜索__0322f9eb6207_layer.json",
+        "真题库v2\\_cache\\text\\2019年考研政治真题_可复制可搜索__a12aa08c3f6e.json"
+      ]
+    },
+    {
+      "sha256": "264d1a4aada60cf963cd1e12666a68070d1df1b0828f2dc6d4dfce4c6e42b440",
+      "bytes": 252,
+      "paths": [
+        "真题库v2\\_cache\\text\\2019考研政治真题_a6d222ba75a4_docx.json"
+      ]
+    },
+    {
+      "sha256": "606325d64848b80a83a229acc8cdb81129747d9a001e3b253eccf64c1193155b",
+      "bytes": 253,
+      "paths": [
+        "真题库v2\\_cache\\text\\2020年全国研究生招生考试思想政治理论试题_完整估分版__96c221240132.json",
+        "真题库v2\\_cache\\text\\2020年全国研究生招生考试思想政治理论试题_完整估分版__e19a6d31c5c8_layer.json"
+      ]
+    },
+    {
+      "sha256": "be50f3d800f9cd55cf876cfa02f97eeb38ab66cda150c015dab3209aeb8ef0d0",
+      "bytes": 255,
+      "paths": [
+        "真题库v2\\_cache\\text\\2020年考研政治真题_c27a21754d55_docx.json"
+      ]
+    },
+    {
+      "sha256": "17b8530a4cde99091163b454a8e090325ce740eeea30d763c2cdaad527aa4d63",
+      "bytes": 304,
+      "paths": [
+        "真题库v2\\_cache\\text\\2020年考研政治真题_可复制可搜索__3cba40d8e325_layer.json",
+        "真题库v2\\_cache\\text\\2020年考研政治真题_可复制可搜索__533c61f00e9c.json"
+      ]
+    },
+    {
+      "sha256": "a7fbe22f9da1314474ef05bb6741ec4dcf414e59973a540c81145de56292fa1b",
+      "bytes": 247,
+      "paths": [
+        "真题库v2\\_cache\\text\\2021年全国研究生招生考试思想政治理论试题_估分版__284a1a536d2c_layer.json",
+        "真题库v2\\_cache\\text\\2021年全国研究生招生考试思想政治理论试题_估分版__ce73e58d3a1e.json"
+      ]
+    },
+    {
+      "sha256": "619be098a2c2b411a8ff2cf110b397fc1be5a1a40c1f0c7c25b2e0c666efa999",
+      "bytes": 279,
+      "paths": [
+        "真题库v2\\_cache\\text\\2021年考研政治真题_可复制可搜索__2648000ba289_docx.json"
+      ]
+    },
+    {
+      "sha256": "393cdbf6b630710c7bb32999e09093e7f26f338e4e25a61e4cbf9aeb91364a3a",
+      "bytes": 305,
+      "paths": [
+        "真题库v2\\_cache\\text\\2021年考研政治真题_可复制可搜索__bf270ef8ae97_layer.json",
+        "真题库v2\\_cache\\text\\2021年考研政治真题_可复制可搜索__c5093bfcac97.json"
+      ]
+    },
+    {
+      "sha256": "44ebde5c12ffe2492f1db18076ec94cac40bb2167b5885bb7bed45c639b941df",
+      "bytes": 305,
+      "paths": [
+        "真题库v2\\_cache\\text\\2022年考研政治真题_可复制可搜索__36576a2d549d_layer.json",
+        "真题库v2\\_cache\\text\\2022年考研政治真题_可复制可搜索__c16f3f348f54.json"
+      ]
+    },
+    {
+      "sha256": "ed1e71c015328b3887d7742f36cc3c837a933d4e50e04d803559f6d930e46548",
+      "bytes": 355,
+      "paths": [
+        "真题库v2\\_cache\\text\\2022年考研政治真题解析_0c419666b64b_layer.json",
+        "真题库v2\\_cache\\text\\2022年考研政治真题解析_fbfa55fe3d31.json"
+      ]
+    },
+    {
+      "sha256": "ebaca8f28d7f48e4a2a56c7fd85aa078f30fcf82436a8025631765785e88b70b",
+      "bytes": 373,
+      "paths": [
+        "真题库v2\\_cache\\text\\2022年考研政治真题解析_0c419666b64b_ocr300-a181a60.json"
+      ]
+    },
+    {
+      "sha256": "8236fd660567976c54ba29aa3e2e0bb3e93bee9d8c8459e3f1568fde4e5806cd",
+      "bytes": 305,
+      "paths": [
+        "真题库v2\\_cache\\text\\2023年考研政治真题_可复制可搜索__7967bbf4a17e_layer.json",
+        "真题库v2\\_cache\\text\\2023年考研政治真题_可复制可搜索__d65c82800e03.json"
+      ]
+    },
+    {
+      "sha256": "0cfa36dbad3486fde5f6320750be1a31672a0dedfb7007f66a0af2e3c175eed0",
+      "bytes": 397,
+      "paths": [
+        "真题库v2\\_cache\\text\\2023年考研政治真题解析_10ae282ca7c1.json",
+        "真题库v2\\_cache\\text\\2023年考研政治真题解析_768493100f5d_layer.json"
+      ]
+    },
+    {
+      "sha256": "2709dddf706d0d577636d498b4726503d45b4620b8dce6dbd50200292f16fc94",
+      "bytes": 415,
+      "paths": [
+        "真题库v2\\_cache\\text\\2023年考研政治真题解析_768493100f5d_ocr300-a181a60.json"
+      ]
+    },
+    {
+      "sha256": "64c948856df492636a74d4c7d09c0aaa53fb84aa16e557fb717979db09ee1427",
+      "bytes": 380,
+      "paths": [
+        "真题库v2\\_cache\\text\\2024年考研政治真题_可复制可搜索__3c1a77f5ed5f.json",
+        "真题库v2\\_cache\\text\\2024年考研政治真题_可复制可搜索__9c5594e6652c_layer.json"
+      ]
+    },
+    {
+      "sha256": "96783a5e7c16b94535097b4586186ee0a8ec2266d14f90e33287d8469fc3ae6c",
+      "bytes": 273,
+      "paths": [
+        "真题库v2\\_cache\\text\\2024年考研政治真题_可复制可搜索__570669894fbb.json"
+      ]
+    },
+    {
+      "sha256": "e802e0022aec59512ac2c987d4eb7fd989685766dd9ab4c1e32527db97e83ef4",
+      "bytes": 398,
+      "paths": [
+        "真题库v2\\_cache\\text\\2024年考研政治真题_可复制可搜索__9c5594e6652c_ocr300-a181a60.json"
+      ]
+    },
+    {
+      "sha256": "1b3e00ab910a2d16cc6b8d43e5b29ecd133ba084c6f64aed6eb4584978426b7e",
+      "bytes": 196,
+      "paths": [
+        "真题库v2\\_cache\\text\\2024年考研政治真题解析_431db93bcc7e.json"
+      ]
+    },
+    {
+      "sha256": "64c55b71677d6780204c0c2b1e52ce8a5ef3c20e7fb551a93aa70dedea2e7bfb",
+      "bytes": 303,
+      "paths": [
+        "真题库v2\\_cache\\text\\2024年考研政治真题解析_a409a3eed26c_layer.json",
+        "真题库v2\\_cache\\text\\2024年考研政治真题解析_e245c2e72fca.json"
+      ]
+    },
+    {
+      "sha256": "e9bad9978e9be9ae736b8c018cab786dec929ac0bd03ee7b2fd6080f345399c6",
+      "bytes": 320,
+      "paths": [
+        "真题库v2\\_cache\\text\\2024年考研政治真题解析_a409a3eed26c_ocr300-a181a60.json"
+      ]
+    },
+    {
+      "sha256": "d5006a0eb3b70ee46b30d8d95609b89d23c3ec7a0f4795d99a487b1831583b3c",
+      "bytes": 170,
+      "paths": [
+        "真题库v2\\_cache\\text\\2025考研政治真题_3a0f58bd6eff.json",
+        "真题库v2\\_cache\\text\\2025考研政治真题_fca45ba801c0_layer.json"
+      ]
+    },
+    {
+      "sha256": "5f8d51af6bae0729c8e8b77d742876b8f87280398a027e50cf016bfcc7e5ecdc",
+      "bytes": 191,
+      "paths": [
+        "真题库v2\\_cache\\text\\2025考研政治真题标准答案_32b82113ed10_layer.json",
+        "真题库v2\\_cache\\text\\2025考研政治真题标准答案_9fc8866a1a01.json"
+      ]
+    },
+    {
+      "sha256": "9c7cdc58c183ec24b186a978892f16ebd56ac675301c22b3712167ad1eefdc14",
+      "bytes": 204,
+      "paths": [
+        "真题库v2\\_cache\\text\\2025考研政治真题标准答案_32b82113ed10_ocr300-6512bd4.json"
+      ]
+    },
+    {
+      "sha256": "7c919e875a3956eb3ace052121d661694bc3ef9c93a011dd16689d1b0e2a55eb",
+      "bytes": 175,
+      "paths": [
+        "真题库v2\\_cache\\text\\26考研政治_真题_1__482821030d2c.json",
+        "真题库v2\\_cache\\text\\26考研政治_真题_1__8d529b855d5f_layer.json"
+      ]
+    },
+    {
+      "sha256": "94de0d059b45e355c9e7f1b6904f50adab89d1cb07ac5cc6c7cefe952a4d6727",
+      "bytes": 20595,
+      "paths": [
+        "真题库v2\\corpus\\1994·文科.md"
+      ]
+    },
+    {
+      "sha256": "afcaabc503a9bdb740e0c773db476d3eea81f855da50521bfe9ac5b56b336c4d",
+      "bytes": 19064,
+      "paths": [
+        "真题库v2\\corpus\\1994·理科.md"
+      ]
+    },
+    {
+      "sha256": "aae1f4f38bc4bdbb1f7229c4d9df0e9e01d864b42307dc31fcd15b25f42d3648",
+      "bytes": 25357,
+      "paths": [
+        "真题库v2\\corpus\\1995·文科.md"
+      ]
+    },
+    {
+      "sha256": "a187eecca584a2e6206dbdd92d4a563e8c3965ededa07f243754a4254efa7779",
+      "bytes": 38895,
+      "paths": [
+        "真题库v2\\corpus\\1995·理科.md"
+      ]
+    },
+    {
+      "sha256": "f58e56b817c1dde18ec2b438906a2fa672670af7609b779f5f0b83d29d734e0a",
+      "bytes": 20023,
+      "paths": [
+        "真题库v2\\corpus\\1996·文科.md"
+      ]
+    },
+    {
+      "sha256": "d42888d60003add6a34884609d69741ee6536928594dceb36cfa8b6745f466b1",
+      "bytes": 20559,
+      "paths": [
+        "真题库v2\\corpus\\1996·理科.md"
+      ]
+    },
+    {
+      "sha256": "d0c6c9a3deee6978314be213c600c4576535e9558ab6b8c14c3324eaffe1b92c",
+      "bytes": 30749,
+      "paths": [
+        "真题库v2\\corpus\\1997·文科.md"
+      ]
+    },
+    {
+      "sha256": "ef069c42808cb6e7e19ba2777099d6d56e7088e7633279e8e0eb7dc6b7a16004",
+      "bytes": 14621,
+      "paths": [
+        "真题库v2\\corpus\\1997·理科.md"
+      ]
+    },
+    {
+      "sha256": "5a39600a5c18bbd3de96e7b6ba7e236518ab959015bd8480911c09c7962da745",
+      "bytes": 25679,
+      "paths": [
+        "真题库v2\\corpus\\1998·文科.md"
+      ]
+    },
+    {
+      "sha256": "d40e97f971c51d70c70c9b7c35b6f657c5689c2db64b69ebccf04c309d30a234",
+      "bytes": 25458,
+      "paths": [
+        "真题库v2\\corpus\\1998·理科.md"
+      ]
+    },
+    {
+      "sha256": "363bb9a6391f27aaae79dea49659ce000f9523b86556f2d192d249e2d9dac705",
+      "bytes": 27829,
+      "paths": [
+        "真题库v2\\corpus\\1999·文科.md"
+      ]
+    },
+    {
+      "sha256": "802af9bd7e380a4c0cba19b931a6be214c5e8779dca54506a65364ff844e0d49",
+      "bytes": 26210,
+      "paths": [
+        "真题库v2\\corpus\\1999·理科.md"
+      ]
+    },
+    {
+      "sha256": "9e7e4c0d56520346a522c10853f53fe892cbc4629a916543b7a43cb1369d72a1",
+      "bytes": 38810,
+      "paths": [
+        "真题库v2\\corpus\\2000·文科.md"
+      ]
+    },
+    {
+      "sha256": "df7816adb484680a6262f3f6fb350a6383dbedc44e8fc0345e27c9b2112220bf",
+      "bytes": 35686,
+      "paths": [
+        "真题库v2\\corpus\\2000·理科.md"
+      ]
+    },
+    {
+      "sha256": "8d608e6ff6e24949adfab85d95c17e02f1a2f7ee2ded17307842f8db134da05a",
+      "bytes": 51797,
+      "paths": [
+        "真题库v2\\corpus\\2001·文科.md"
+      ]
+    },
+    {
+      "sha256": "32e19ce76b7f13128fbda7819c6f77c454a822231273b71d178bc184195b0670",
+      "bytes": 28805,
+      "paths": [
+        "真题库v2\\corpus\\2001·理科.md"
+      ]
+    },
+    {
+      "sha256": "836fc7fb9dd7c149fb5bfbb2bb99def72b05fba08506cfb4835d664751a31a67",
+      "bytes": 28104,
+      "paths": [
+        "真题库v2\\corpus\\2002·文科.md"
+      ]
+    },
+    {
+      "sha256": "05257696832566c55b4d9a071862366ea2fb23eac84027d9df567927c2582519",
+      "bytes": 28411,
+      "paths": [
+        "真题库v2\\corpus\\2002·理科.md"
+      ]
+    },
+    {
+      "sha256": "e2383e1d0f7f86dca31fde57c5e82bbc6fa03d23b96e26851365d0957dc8fbcd",
+      "bytes": 68907,
+      "paths": [
+        "真题库v2\\corpus\\2003.md"
+      ]
+    },
+    {
+      "sha256": "2a4fe6aad559c1f08ec1354bafe3756965c684140544d567fb7ae63f2d7c5eb8",
+      "bytes": 118568,
+      "paths": [
+        "真题库v2\\corpus\\2004.md"
+      ]
+    },
+    {
+      "sha256": "bfbd4c022baf753a6b658828e6c7c7de32822132689431f97ca51b995bfd868a",
+      "bytes": 157077,
+      "paths": [
+        "真题库v2\\corpus\\2005.md"
+      ]
+    },
+    {
+      "sha256": "a3b3e36c3568c521408d7fe6e07222829a07c4c32061ec21fe32fe7f2856c777",
+      "bytes": 119723,
+      "paths": [
+        "真题库v2\\corpus\\2006.md"
+      ]
+    },
+    {
+      "sha256": "44f8851dd2386577eab8314a7cfa63ed6dd9765fff1d4c8809650aa8e148e1fb",
+      "bytes": 114570,
+      "paths": [
+        "真题库v2\\corpus\\2007.md"
+      ]
+    },
+    {
+      "sha256": "2d954f9e61165d48acf8b89c91b51f99a6254445c4c6963c18f4b027bbb79c9c",
+      "bytes": 118533,
+      "paths": [
+        "真题库v2\\corpus\\2008.md"
+      ]
+    },
+    {
+      "sha256": "f780b5d5768e2889af61b25b1979384f071f68a1734e65a5a06590a088c5908f",
+      "bytes": 130359,
+      "paths": [
+        "真题库v2\\corpus\\2009.md"
+      ]
+    },
+    {
+      "sha256": "1e42a7577bf3688bb30c29cf04c2c3f64751c4a62a6eadca306a80da6b904376",
+      "bytes": 79145,
+      "paths": [
+        "真题库v2\\corpus\\2010.md"
+      ]
+    },
+    {
+      "sha256": "4472baaf807d108cd4417409ccce9ea7ba9ff329afcaa369ae7551602514ba77",
+      "bytes": 63134,
+      "paths": [
+        "真题库v2\\corpus\\2011.md"
+      ]
+    },
+    {
+      "sha256": "43e54c9db252fed24e4e7e1f02093db1473733b45f49e1a04c49196444aabab9",
+      "bytes": 99159,
+      "paths": [
+        "真题库v2\\corpus\\2012.md"
+      ]
+    },
+    {
+      "sha256": "6bf24c81f6fa460e3337f0b5744fae89317bad6ca5d8f62ceab312964416e1c9",
+      "bytes": 67360,
+      "paths": [
+        "真题库v2\\corpus\\2013.md"
+      ]
+    },
+    {
+      "sha256": "9d369a9aba0f2d2d1ccb35036751ac7143b9e6eb0a643e6a26ab1ec0faade20e",
+      "bytes": 65825,
+      "paths": [
+        "真题库v2\\corpus\\2014.md"
+      ]
+    },
+    {
+      "sha256": "d9767baf3e3f068afd49dfb4db8cce5028d2e5cad6b43913143d670f19855757",
+      "bytes": 75605,
+      "paths": [
+        "真题库v2\\corpus\\2015.md"
+      ]
+    },
+    {
+      "sha256": "2ad173d590222c7039b2abab22ffa290860e50fddc51cf61ce9017bc9e4248bc",
+      "bytes": 73295,
+      "paths": [
+        "真题库v2\\corpus\\2016.md"
+      ]
+    },
+    {
+      "sha256": "ccd9e1f64778a2a86987389f48f09b157c434bf7d425254d013bfe6cbf58b941",
+      "bytes": 69774,
+      "paths": [
+        "真题库v2\\corpus\\2017.md"
+      ]
+    },
+    {
+      "sha256": "a902ab2308054a2e174134058415c17854ce369db38891137e2b05186256505d",
+      "bytes": 55381,
+      "paths": [
+        "真题库v2\\corpus\\2018.md"
+      ]
+    },
+    {
+      "sha256": "0b4e341810523fd1d05a71acc0b5d35e2fb2b88e5661d2099f112b1b490eefa4",
+      "bytes": 47876,
+      "paths": [
+        "真题库v2\\corpus\\2019.md"
+      ]
+    },
+    {
+      "sha256": "3f0df8b38faf7e260f85bd7ec3896371eba4a1043011eeabb1e08e168a02357c",
+      "bytes": 36659,
+      "paths": [
+        "真题库v2\\corpus\\2020.md"
+      ]
+    },
+    {
+      "sha256": "d57e95dfa5f446c4dc5d435267b23fee374434ffd42c4baabddcad5dcc119d44",
+      "bytes": 31853,
+      "paths": [
+        "真题库v2\\corpus\\2021.md"
+      ]
+    },
+    {
+      "sha256": "cb896dde229d78b38fe7533979ae7a09afbf7fe55ea596d4eb82706ac7d21ca3",
+      "bytes": 74777,
+      "paths": [
+        "真题库v2\\corpus\\2022.md"
+      ]
+    },
+    {
+      "sha256": "38cb344ef58f542e2da91147d72a8690d7224320dab727a224f15d143912b675",
+      "bytes": 97415,
+      "paths": [
+        "真题库v2\\corpus\\2023.md"
+      ]
+    },
+    {
+      "sha256": "f5fd6f5f914fe9534f2a05f4c817c131d65b9fd4b56a7508d8405405c5df9ba2",
+      "bytes": 23817,
+      "paths": [
+        "真题库v2\\corpus\\2024.md"
+      ]
+    },
+    {
+      "sha256": "055cad73f2455843433c0ec2802025bb2db9269e8b018c692186fb0292f04d04",
+      "bytes": 28657,
+      "paths": [
+        "真题库v2\\corpus\\2025.md"
+      ]
+    },
+    {
+      "sha256": "2ab61c0e5cb311a837e277af7080a4e5efaec675af42bba880da14e4c19c7a3b",
+      "bytes": 37705,
+      "paths": [
+        "真题库v2\\corpus\\2026.md"
+      ]
+    },
+    {
+      "sha256": "9536a778dc235981465722ef271b03cc5f3936686ec5abeff5cfa209c5b8bb85",
+      "bytes": 4722,
+      "paths": [
+        "真题库v2\\corpus\\_索引.md"
+      ]
+    },
+    {
+      "sha256": "f43615fbbd05c9c325583e5d06ffa04af6d56a4b248113ea24b2d90e3dc92ffc",
+      "bytes": 3682,
+      "paths": [
+        "真题库v2\\data\\papers.csv"
+      ]
+    },
+    {
+      "sha256": "b7818d0f2c0c65aa95d1c7eff9bbd9ed4d17387bb79dd2176c4f30653081d959",
+      "bytes": 37638,
+      "paths": [
+        "真题库v2\\data\\quality.csv"
+      ]
+    },
+    {
+      "sha256": "3a7e9ecf50f243c6fb314ebc592e9f2bbc8abd5bff21d5d976a9e09b2d0cffc9",
+      "bytes": 2520878,
+      "paths": [
+        "真题库v2\\data\\questions.csv"
+      ]
+    },
+    {
+      "sha256": "df0795ee9fef1d89aaa9286dcd91611d8264f0a29ca5225b0c52f7b24b3408f6",
+      "bytes": 631,
+      "paths": [
+        "真题库v2\\data\\stats_analyse_position.csv"
+      ]
+    },
+    {
+      "sha256": "f61f73c9d614a1c266c1fe7d44d0b264faf22b79da0823795d62b0815b71dd08",
+      "bytes": 1544,
+      "paths": [
+        "真题库v2\\data\\stats_coverage.csv"
+      ]
+    },
+    {
+      "sha256": "4b2c7587be50b86223d844a5266893d1e050adcb82fb0eb7c8b2dfaaf1bde4fc",
+      "bytes": 242,
+      "paths": [
+        "真题库v2\\data\\stats_difficulty_group.csv"
+      ]
+    },
+    {
+      "sha256": "d0786ca1638b371066ac162eef006b8cb5fd9d17fc2d871dd8c356abcf871713",
+      "bytes": 2594,
+      "paths": [
+        "真题库v2\\data\\stats_difficulty_hard.csv"
+      ]
+    },
+    {
+      "sha256": "bec87a7718f460ed02be951ce131a3b53ed320bb1095c0bb943a33f933a0e550",
+      "bytes": 142,
+      "paths": [
+        "真题库v2\\data\\stats_difficulty_nanswer.csv"
+      ]
+    },
+    {
+      "sha256": "b2aeefdda791cc4f1db224c228d8232e6be3108f469e071de856e9bce2807e59",
+      "bytes": 8489,
+      "paths": [
+        "真题库v2\\data\\stats_kaodian_all.csv"
+      ]
+    },
+    {
+      "sha256": "bd41e79ed99f7aaa71ac1bb8c353e64169fb7f96c933286f1f41c478fe36c2c1",
+      "bytes": 2841,
+      "paths": [
+        "真题库v2\\data\\stats_kaodian_top.csv"
+      ]
+    },
+    {
+      "sha256": "2a964100e6d031411c2bcd59840449359c8a3505a2e29938846d888efae9cc32",
+      "bytes": 510,
+      "paths": [
+        "真题库v2\\data\\stats_module_by_year.csv"
+      ]
+    },
+    {
+      "sha256": "5fe959129e449460edea48c8222830497939017949412196f25cb712f2ebdbb8",
+      "bytes": 557,
+      "paths": [
+        "真题库v2\\data\\stats_module_by_year_all.csv"
+      ]
+    },
+    {
+      "sha256": "8b4ffb2d91c463983d3fa1cd95deefaa003832efc0cb22ab7cd74f26384833ff",
+      "bytes": 356,
+      "paths": [
+        "真题库v2\\data\\stats_module_total.csv"
+      ]
+    },
+    {
+      "sha256": "5f32dae19a8f08dc4523eb8e3ca4e0eaf45d64c4038fe7ea946ef75d213809d7",
+      "bytes": 300,
+      "paths": [
+        "真题库v2\\data\\stats_multi_by_year.csv"
+      ]
+    },
+    {
+      "sha256": "97b28e2e42140aa074b942db3854e5598eb52c33a7ece5ae91f62d7670ebb804",
+      "bytes": 173,
+      "paths": [
+        "真题库v2\\data\\stats_multi_combo.csv"
+      ]
+    },
+    {
+      "sha256": "b99327ac84d139809a4c3694605e63f1da5066a825d71e2ec5d98c8d1dca02c9",
+      "bytes": 314,
+      "paths": [
+        "真题库v2\\data\\stats_shishi_topics.csv"
+      ]
+    },
+    {
+      "sha256": "1c70d55782c3c8e955a59ede86dafd256bf743a56abc55f4b83bb806787c0f8b",
+      "bytes": 1324,
+      "paths": [
+        "真题库v2\\data\\stats_structure_by_year.csv"
+      ]
+    },
+    {
+      "sha256": "4dfa689bda97b441baeb717fe4af2688a8cc403308c732488c71a72e2b6273e9",
+      "bytes": 419,
+      "paths": [
+        "真题库v2\\data\\stats_wording_单选.csv"
+      ]
+    },
+    {
+      "sha256": "975cb3843ff677d43c3743337246442f2c9085e56017ede90edbd580dd1fcdb4",
+      "bytes": 353,
+      "paths": [
+        "真题库v2\\data\\stats_wording_多选.csv"
+      ]
+    },
+    {
+      "sha256": "4f184f831c9dc6bf2b8c286e7ab8c321a985b8368ce783ae4bf3dbcc0f97dd52",
+      "bytes": 29890,
+      "paths": [
+        "真题库v2\\papers\\1994文科.json"
+      ]
+    },
+    {
+      "sha256": "4385ebfa3e1383972025d0978a4f8c8d95e9ea66a898ef37149219985bb30ccd",
+      "bytes": 27446,
+      "paths": [
+        "真题库v2\\papers\\1994理科.json"
+      ]
+    },
+    {
+      "sha256": "7ea083c0c487a1808efe9d2a1b8a5d26ce08ba9763088018ad636be310c91114",
+      "bytes": 34960,
+      "paths": [
+        "真题库v2\\papers\\1995文科.json"
+      ]
+    },
+    {
+      "sha256": "2af99da85a519f162bd41596a353b779194afbb6c835ac733036119e86676f04",
+      "bytes": 48095,
+      "paths": [
+        "真题库v2\\papers\\1995理科.json"
+      ]
+    },
+    {
+      "sha256": "1ae3a5f98cc8d17d9ac0949a3e8af7e4e6c777061d8214f5ac546a2d3388d29d",
+      "bytes": 28430,
+      "paths": [
+        "真题库v2\\papers\\1996文科.json"
+      ]
+    },
+    {
+      "sha256": "d6396f6b6cba52dc88c14868500d58e1a8fbe336b4753b08e5b3625b5a4d2988",
+      "bytes": 30289,
+      "paths": [
+        "真题库v2\\papers\\1996理科.json"
+      ]
+    },
+    {
+      "sha256": "c5bc79cdb9edc882da6040544e0a37674f393c0f227a87c7db54431d0b12f23b",
+      "bytes": 40255,
+      "paths": [
+        "真题库v2\\papers\\1997文科.json"
+      ]
+    },
+    {
+      "sha256": "0eb995249c899de6089f2ba2f68389b1ac9fd044013f2108e4b3d3e9896a767b",
+      "bytes": 22855,
+      "paths": [
+        "真题库v2\\papers\\1997理科.json"
+      ]
+    },
+    {
+      "sha256": "db73018ce6ab60cabb449ff9df00e284253e21eaf96f669e12c2f86cc76f18fe",
+      "bytes": 35349,
+      "paths": [
+        "真题库v2\\papers\\1998文科.json"
+      ]
+    },
+    {
+      "sha256": "ea02b428a235d229b83a60005d23316b34945568e1fc16168369c18657b12285",
+      "bytes": 35118,
+      "paths": [
+        "真题库v2\\papers\\1998理科.json"
+      ]
+    },
+    {
+      "sha256": "371d6bd70e692c54c61048bafd1488e62ba805e0060f39bcdecea888fad94b34",
+      "bytes": 37849,
+      "paths": [
+        "真题库v2\\papers\\1999文科.json"
+      ]
+    },
+    {
+      "sha256": "65bb64d6cff9102a8e0c10f0a5ed884a3e30eac0037211f085c82a85ccc32dde",
+      "bytes": 36807,
+      "paths": [
+        "真题库v2\\papers\\1999理科.json"
+      ]
+    },
+    {
+      "sha256": "ca6297b02e1801fd97c4741494f97b258016c1b502b15c2b8ddfc1e0f952933f",
+      "bytes": 48874,
+      "paths": [
+        "真题库v2\\papers\\2000文科.json"
+      ]
+    },
+    {
+      "sha256": "5df7cf890e9e4e63b6eba9bd7023dcea554a550076934200cb9ab328d68369f8",
+      "bytes": 47230,
+      "paths": [
+        "真题库v2\\papers\\2000理科.json"
+      ]
+    },
+    {
+      "sha256": "267375bb4093d973b17b59c6e41c667fae52228899dcb343d91957250e7527cf",
+      "bytes": 62019,
+      "paths": [
+        "真题库v2\\papers\\2001文科.json"
+      ]
+    },
+    {
+      "sha256": "fdb64decee47925dd10d798023a3a89836806a4c4d36e77b842f1989028d1500",
+      "bytes": 39791,
+      "paths": [
+        "真题库v2\\papers\\2001理科.json"
+      ]
+    },
+    {
+      "sha256": "f1ab8495d4e3001b34ed33644849bb3c43f1c22fd9c84eb639ca8fcb11125e6a",
+      "bytes": 38125,
+      "paths": [
+        "真题库v2\\papers\\2002文科.json"
+      ]
+    },
+    {
+      "sha256": "2bfef32da50444539b3e0543fec0661b776fd3d833ec1aed34fb428a10a61a59",
+      "bytes": 38444,
+      "paths": [
+        "真题库v2\\papers\\2002理科.json"
+      ]
+    },
+    {
+      "sha256": "b28690fcf0175c695adb64b5c5f17cfec8280d593cc547327761d8beb076f215",
+      "bytes": 77600,
+      "paths": [
+        "真题库v2\\papers\\2003.json"
+      ]
+    },
+    {
+      "sha256": "56649c143213f0feedab920c2dc0bd852c698203898e1408f2695e0fd304d188",
+      "bytes": 128129,
+      "paths": [
+        "真题库v2\\papers\\2004.json"
+      ]
+    },
+    {
+      "sha256": "0d196b496c193ad45fa8efd8054740594e0bf18e2d7add695637cdc1be9ba59e",
+      "bytes": 166701,
+      "paths": [
+        "真题库v2\\papers\\2005.json"
+      ]
+    },
+    {
+      "sha256": "298cb404d9a443edfd102611151899b59f61c3ef55d0be094571218bde9dae38",
+      "bytes": 128955,
+      "paths": [
+        "真题库v2\\papers\\2006.json"
+      ]
+    },
+    {
+      "sha256": "c1e450cbcc02bee1d57b65c92ddf22b3fde314251fa14958dad836f82e6ce3fa",
+      "bytes": 123842,
+      "paths": [
+        "真题库v2\\papers\\2007.json"
+      ]
+    },
+    {
+      "sha256": "1df1f4486f04e4c2d21233e1678aeee16548204c80407f83a8bafa6b5144a3e2",
+      "bytes": 128129,
+      "paths": [
+        "真题库v2\\papers\\2008.json"
+      ]
+    },
+    {
+      "sha256": "1c0f524638995f866e803e24b940d1db871d55188a0a9ee9e01a645b3206a5ba",
+      "bytes": 149199,
+      "paths": [
+        "真题库v2\\papers\\2009.json"
+      ]
+    },
+    {
+      "sha256": "083d74eb8a696b80e6362ca094616c27b12d9b77af9403902a891bdb68255fea",
+      "bytes": 88273,
+      "paths": [
+        "真题库v2\\papers\\2010.json"
+      ]
+    },
+    {
+      "sha256": "2463513e97ad04c4d5517b9d046b60c22d83db145a3f2992c2fa8c009c9c6c3d",
+      "bytes": 77685,
+      "paths": [
+        "真题库v2\\papers\\2011.json"
+      ]
+    },
+    {
+      "sha256": "69763c1e24061a1502c9bd52135d4e01779af712b8a64535b0e37f943904ab4a",
+      "bytes": 114863,
+      "paths": [
+        "真题库v2\\papers\\2012.json"
+      ]
+    },
+    {
+      "sha256": "54ba089fdc863f1263e88129bc3697b61415fd3d1fe860498ded4e3746604fde",
+      "bytes": 82905,
+      "paths": [
+        "真题库v2\\papers\\2013.json"
+      ]
+    },
+    {
+      "sha256": "1eb1f6a28a64ed71e415ea465109fc5a0a38536c41f2e8f2d00a3adfa922760f",
+      "bytes": 80397,
+      "paths": [
+        "真题库v2\\papers\\2014.json"
+      ]
+    },
+    {
+      "sha256": "d6f6cdd26551718a2a02786363299313076483791405af5c4cfa190a5f886cd0",
+      "bytes": 90632,
+      "paths": [
+        "真题库v2\\papers\\2015.json"
+      ]
+    },
+    {
+      "sha256": "9ec4bc52509cb367bcd8b9ed00f46abcfe3f9c65d5a136683368a493aa6130a8",
+      "bytes": 89798,
+      "paths": [
+        "真题库v2\\papers\\2016.json"
+      ]
+    },
+    {
+      "sha256": "1a18587d55fa31d92ef5fc82da8af463646b3d518e0af6de98fa34e73cbfbf67",
+      "bytes": 86044,
+      "paths": [
+        "真题库v2\\papers\\2017.json"
+      ]
+    },
+    {
+      "sha256": "19cde91400ad9fa58e7a5f81d3569ca0bd672d4621a3e6a033f24ddac3923958",
+      "bytes": 71903,
+      "paths": [
+        "真题库v2\\papers\\2018.json"
+      ]
+    },
+    {
+      "sha256": "1159e6ccb84798dfa6a6718f8f2977387d3a71941e1200c4bc7eee8ab49f6525",
+      "bytes": 64477,
+      "paths": [
+        "真题库v2\\papers\\2019.json"
+      ]
+    },
+    {
+      "sha256": "c1452bdf75882e7eea908c075fa66c8dbb18aa30e5e8a4314cd0127bbc20425f",
+      "bytes": 53337,
+      "paths": [
+        "真题库v2\\papers\\2020.json"
+      ]
+    },
+    {
+      "sha256": "a88ae0d622b418b6eb352ee7db24b811a368194031e6903d4ddcf50e72b3eb2b",
+      "bytes": 48006,
+      "paths": [
+        "真题库v2\\papers\\2021.json"
+      ]
+    },
+    {
+      "sha256": "51f0100f65a6285ddab7ba30979a95ffaf7b83c251416df6a337f4d2036a029c",
+      "bytes": 84480,
+      "paths": [
+        "真题库v2\\papers\\2022.json"
+      ]
+    },
+    {
+      "sha256": "ca5b31a2619ad78e5c29dcd6d27ab5eb341d58271aff90e2aded6426860ca3ff",
+      "bytes": 108783,
+      "paths": [
+        "真题库v2\\papers\\2023.json"
+      ]
+    },
+    {
+      "sha256": "6538f7623153eed44443984a6094816eb6710cd4ab7ad005b80fab8fd6ee289a",
+      "bytes": 31084,
+      "paths": [
+        "真题库v2\\papers\\2024.json"
+      ]
+    },
+    {
+      "sha256": "c713c6d252be56d06280031e4d6770bea37ebc3f942ad03eb8308ef6244419c2",
+      "bytes": 37417,
+      "paths": [
+        "真题库v2\\papers\\2025.json"
+      ]
+    },
+    {
+      "sha256": "7d4c35e5998c19bed9a2b7bed8c0a972d9935e23771a993d5af2ca5f972c810d",
+      "bytes": 45873,
+      "paths": [
+        "真题库v2\\papers\\2026.json"
+      ]
+    },
+    {
+      "sha256": "24d98a5776bc104e8d8fec489b9d55a9137c81663746d57177b4f44f6c324167",
+      "bytes": 89701,
+      "paths": [
+        "真题库v2\\papers\\_index.json"
+      ]
+    },
+    {
+      "sha256": "8a788f911bcd5420203faf9fc157e69a19b560946997bd415c1b99cb8da73da4",
+      "bytes": 46144,
+      "paths": [
+        "真题库v2\\report\\考研政治真题规律统计.md"
       ]
     },
     {
@@ -1081,38 +3033,33 @@
       ]
     },
     {
-      "sha256": "7a95701bb3a74fa739df3d288f963a14c85533d8eacb347d9c4afba061f50084",
-      "bytes": 30550336,
+      "sha256": "f865f282847c4c48d4e45f6f6371022de2392c17abf11ae20e6cebb2e6ff57bf",
+      "bytes": 46972,
       "paths": [
-        "马克思主义基本原理（2023版） (马克思主义基本原理（2023版）编写组) (Z-Library).pdf"
+        "船\\2027考研政治模拟卷（一）.docx"
+      ]
+    },
+    {
+      "sha256": "f38bb072077725232fa96092f05b94e43fbc7ea1915e23789a44591d920529ef",
+      "bytes": 18058,
+      "paths": [
+        "船\\2027考研政治模拟卷（一）.md"
+      ]
+    },
+    {
+      "sha256": "5fea78316b96fab83a76969e5aa6be86e133c8d6c5d01baf5aa0d70726ccddae",
+      "bytes": 50587,
+      "paths": [
+        "船\\2027考研政治模拟卷（一）答案与解析.docx"
+      ]
+    },
+    {
+      "sha256": "e665ababf8e9dae22edeb10dd0ee38ebfe816a04e9ada928166510a545cc5875",
+      "bytes": 27841,
+      "paths": [
+        "船\\2027考研政治模拟卷（一）答案与解析.md"
       ]
     }
   ],
-  "excluded_technical_files": [
-    "docs\\superpowers\\plans\\2026-09-06-anniversary-meeting-fit-plan.md",
-    "docs\\superpowers\\plans\\2026-09-06-people-2026-politics-curation-plan.md",
-    "docs\\superpowers\\specs\\2026-09-06-anniversary-meeting-fit-design.md",
-    "docs\\superpowers\\specs\\2026-09-06-people-2026-politics-curation-design.md",
-    "guanlan\\.gitignore",
-    "guanlan\\docker-compose.yml",
-    "guanlan\\README.md",
-    "guanlan\\apps\\api\\composer.json",
-    "guanlan\\apps\\api\\Dockerfile",
-    "guanlan\\apps\\api\\config\\routes.php",
-    "guanlan\\apps\\api\\src\\Controller\\HealthController.php",
-    "guanlan\\apps\\web\\app.vue",
-    "guanlan\\apps\\web\\nuxt.config.ts",
-    "guanlan\\apps\\web\\package.json",
-    "guanlan\\apps\\web\\assets\\css\\main.css",
-    "guanlan\\apps\\web\\data\\home.ts",
-    "guanlan\\apps\\web\\tests\\home.test.mjs",
-    "guanlan\\apps\\web\\utils\\home.mjs",
-    "guanlan\\docker\\nginx\\default.conf",
-    "guanlan\\docs\\superpowers-plan.md",
-    "guanlan\\storage\\import-manifest.json",
-    "guanlan\\tools\\ingest\\manifest.py",
-    "guanlan\\tools\\ingest\\test_manifest.py",
-    "guanlan\\tools\\ingest\\__pycache__\\manifest.cpython-311.pyc",
-    "guanlan\\tools\\ingest\\__pycache__\\test_manifest.cpython-311.pyc"
-  ]
+  "excluded_technical_files": []
 }

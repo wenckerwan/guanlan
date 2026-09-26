@@ -2,6 +2,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from tools.ingest import build_all, dataset_manifest
 
@@ -56,6 +57,13 @@ class DatasetManifestTest(unittest.TestCase):
             list(manifest["datasets"]), sorted(dataset_manifest.REQUIRED_DATASETS)
         )
         self.assertEqual(manifest["source_manifest"]["asset_count"], 2)
+        self.assertEqual(
+            manifest["source_manifest"]["path"], "storage/import-manifest.json"
+        )
+        self.assertEqual(
+            manifest["source_manifest"]["sha256"],
+            dataset_manifest.digest(self.source_path),
+        )
         self.assertEqual(manifest["totals"]["files"], 8)
 
     def test_hash_changes_when_dataset_changes(self):
@@ -87,6 +95,104 @@ class DatasetManifestTest(unittest.TestCase):
         )
         self.assertEqual(result["totals"]["files"], 8)
         self.assertTrue(self.output.is_file())
+
+    def test_main_runs_builders_in_declared_order(self):
+        calls = []
+
+        def run(command, cwd):
+            calls.append(Path(command[1]).name)
+            return mock.Mock(returncode=0)
+
+        with (
+            mock.patch.object(
+                build_all,
+                "STEPS",
+                [("first.py", "first.json"), ("second.py", "second.json")],
+            ),
+            mock.patch.object(build_all.subprocess, "run", side_effect=run),
+            mock.patch.object(
+                build_all,
+                "publish_manifest",
+                return_value={
+                    "datasets": {},
+                    "totals": {"bytes": 0, "files": 8, "items": 0},
+                },
+            ),
+        ):
+            result = build_all.main()
+
+        self.assertEqual(result, 0)
+        self.assertEqual(calls[:2], ["first.py", "second.py"])
+
+    def test_main_refreshes_source_manifest_before_publish(self):
+        events = []
+
+        def run(command, cwd):
+            events.append(Path(command[1]).name)
+            return mock.Mock(returncode=0)
+
+        def publish(dataset_dir, source_manifest, output):
+            events.append("publish")
+            return {
+                "datasets": {},
+                "totals": {"bytes": 0, "files": 8, "items": 0},
+            }
+
+        with (
+            mock.patch.object(build_all, "STEPS", [("builder.py", "data.json")]),
+            mock.patch.object(build_all.subprocess, "run", side_effect=run),
+            mock.patch.object(build_all, "publish_manifest", side_effect=publish),
+        ):
+            result = build_all.main()
+
+        self.assertEqual(result, 0)
+        self.assertEqual(events, ["builder.py", "manifest.py", "publish"])
+
+    def test_manifest_failure_preserves_previous_official_manifest(self):
+        self.output.write_text("previous-manifest\n", encoding="utf-8")
+        calls = []
+
+        def run(command, cwd):
+            calls.append(Path(command[1]).name)
+            return mock.Mock(returncode=0 if calls[-1] == "builder.py" else 1)
+
+        with (
+            mock.patch.object(build_all, "STEPS", [("builder.py", "data.json")]),
+            mock.patch.object(build_all, "DATASET_MANIFEST", self.output),
+            mock.patch.object(build_all.subprocess, "run", side_effect=run),
+            mock.patch.object(build_all, "publish_manifest") as publish,
+        ):
+            result = build_all.main()
+
+        self.assertEqual(result, 1)
+        self.assertEqual(calls, ["builder.py", "manifest.py"])
+        self.assertEqual(self.output.read_text(encoding="utf-8"), "previous-manifest\n")
+        publish.assert_not_called()
+
+    def test_builder_failure_preserves_previous_official_manifest(self):
+        self.output.write_text("previous-manifest\n", encoding="utf-8")
+        calls = []
+
+        def run(command, cwd):
+            calls.append(Path(command[1]).name)
+            return mock.Mock(returncode=1)
+
+        with (
+            mock.patch.object(
+                build_all,
+                "STEPS",
+                [("fails.py", "failed.json"), ("must-not-run.py", "other.json")],
+            ),
+            mock.patch.object(build_all, "DATASET_MANIFEST", self.output),
+            mock.patch.object(build_all.subprocess, "run", side_effect=run),
+            mock.patch.object(build_all, "publish_manifest") as publish,
+        ):
+            result = build_all.main()
+
+        self.assertEqual(result, 1)
+        self.assertEqual(calls, ["fails.py"])
+        self.assertEqual(self.output.read_text(encoding="utf-8"), "previous-manifest\n")
+        publish.assert_not_called()
 
 
 if __name__ == "__main__":

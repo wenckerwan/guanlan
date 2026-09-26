@@ -4,6 +4,11 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+RAW_ROOT = PROJECT_ROOT / "storage" / "raw"
+DATASET_ROOT = PROJECT_ROOT / "storage" / "dataset"
+
 import markdown
 
 MD = markdown.Markdown(extensions=["tables", "fenced_code", "sane_lists", "nl2br"])

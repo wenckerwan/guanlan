@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SOURCE_ROOT = ROOT.parent
+SOURCE_ROOT = ROOT / "storage" / "raw"
 OUTPUT = ROOT / "storage" / "import-manifest.json"
 EXCLUDED_DIRS = {"docs", ".git", "node_modules", ".nuxt", ".superpowers"}
 STUDY_EXTENSIONS = {".pdf", ".doc", ".docx", ".md", ".csv", ".json", ".png"}
@@ -21,16 +21,13 @@ def digest(path: Path) -> str:
     return value.hexdigest()
 
 
-def build_manifest() -> dict:
+def build_manifest(source_root: Path = SOURCE_ROOT) -> dict:
     grouped: dict[str, dict] = {}
     excluded = []
-    for path in SOURCE_ROOT.rglob("*"):
+    for path in source_root.rglob("*"):
         if not path.is_file():
             continue
-        relative = path.relative_to(SOURCE_ROOT)
-        if path.is_relative_to(ROOT):
-            excluded.append(str(relative))
-            continue
+        relative = path.relative_to(source_root)
         if any(part in EXCLUDED_DIRS for part in relative.parts):
             excluded.append(str(relative))
             continue

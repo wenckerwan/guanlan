@@ -31,16 +31,12 @@ def publish_manifest(dataset_dir: Path, source_manifest: Path, output: Path) -> 
 
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
-    failed = []
     for script, produces in STEPS:
         print(f"== {script} -> {produces}")
         result = subprocess.run([sys.executable, str(HERE / script)], cwd=HERE)
         if result.returncode != 0:
-            failed.append(script)
-
-    if failed:
-        print("\nFAILED:", ", ".join(failed))
-        return 1
+            print(f"\nFAILED: {script}")
+            return 1
 
     print("\n== manifest.py -> import-manifest.json")
     result = subprocess.run([sys.executable, str(HERE / "manifest.py")], cwd=HERE)

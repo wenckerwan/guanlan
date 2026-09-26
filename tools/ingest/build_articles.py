@@ -3,14 +3,21 @@ from __future__ import annotations
 
 import json
 import re
-from pathlib import Path
+from common import (
+    DATASET_ROOT,
+    RAW_ROOT,
+    clean,
+    md_to_html,
+    read_text,
+    slugify,
+    split_all_headings,
+    star_priority,
+)
 
-from common import clean, md_to_html, read_text, slugify, split_all_headings, star_priority
-
-ROOT = Path(r"F:\2027考研资料\考研政治")
+ROOT = RAW_ROOT
 ANALYSIS_DIR = ROOT / "真题分析_2012-2026"
 HOTSPOT_DIR = ROOT / "时政热点"
-OUT = Path(__file__).resolve().parents[2] / "storage" / "dataset"
+OUT = DATASET_ROOT
 
 ANALYSIS_CATEGORY = {
     "选择题分析.md": "选择题规律",
@@ -156,4 +163,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

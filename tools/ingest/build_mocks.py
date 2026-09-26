@@ -6,12 +6,12 @@ import json
 import re
 from pathlib import Path
 
-from common import clean, md_to_html, read_text, slugify, split_all_headings
+from common import DATASET_ROOT, RAW_ROOT, clean, md_to_html, read_text, slugify, split_all_headings
 
-ROOT = Path(r"F:\2027考研资料\考研政治")
+ROOT = RAW_ROOT
 SHIP = ROOT / "船"
 V2 = ROOT / "真题库v2" / "data"
-OUT = Path(__file__).resolve().parents[2] / "storage" / "dataset"
+OUT = DATASET_ROOT
 
 QUESTION_RE = re.compile(r"^###\s*(\d+)\.\s*(.*)$", re.M)
 OPTION_RE = re.compile(r"^([A-D])[.．、]\s*(.*)$")

@@ -5,10 +5,10 @@ import json
 import re
 from pathlib import Path
 
-from common import clean, md_to_html, read_text, split_all_headings
+from common import DATASET_ROOT, RAW_ROOT, clean, md_to_html, read_text, split_all_headings
 
-ROOT = Path(r"F:\2027考研资料\考研政治\个人错题分析")
-OUT = Path(__file__).resolve().parents[2] / "storage" / "dataset"
+ROOT = RAW_ROOT / "个人错题分析"
+OUT = DATASET_ROOT
 
 STUDENTS = [
     {"code": "A", "name": "考生 A", "relation": "本人", "dir": "本人_wencker"},

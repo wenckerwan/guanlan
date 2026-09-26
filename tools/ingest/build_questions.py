@@ -2,12 +2,10 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
+from common import DATASET_ROOT, RAW_ROOT, clean, read_text
 
-from common import clean, read_text
-
-SOURCE = Path(r"F:\2027考研资料\考研政治\真题库v2")
-OUT = Path(__file__).resolve().parents[2] / "storage" / "dataset"
+SOURCE = RAW_ROOT / "真题库v2"
+OUT = DATASET_ROOT
 
 MODULE_LABEL = {
     "my": "马克思主义基本原理",

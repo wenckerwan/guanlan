@@ -67,6 +67,8 @@ def build_manifest(dataset_dir: Path, source_manifest_path: Path) -> dict:
         "source_manifest": {
             "asset_count": source["asset_count"],
             "logical_document_count": source["logical_document_count"],
+            "path": "storage/import-manifest.json",
+            "sha256": digest(source_manifest_path),
         },
         "totals": {
             "bytes": total_bytes,

@@ -67,8 +67,10 @@
   },
   "schema_version": 1,
   "source_manifest": {
-    "asset_count": 177,
-    "logical_document_count": 151
+    "asset_count": 548,
+    "logical_document_count": 418,
+    "path": "storage/import-manifest.json",
+    "sha256": "07414b2a5bc11efa3db844a63cc73f8df38ddc693eefa9aa89506a4b6a68c464"
   },
   "totals": {
     "bytes": 4893281,
