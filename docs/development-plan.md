@@ -100,11 +100,23 @@
 
 ### 1.4 数据导入闭环
 
+状态：`进行中`
+
 | 项 | 内容 |
 |---|---|
-| 现状 | Seeder 直接读 `storage/dataset/*.json`，无对账，缺文件时报错不明确 |
+| 现状 | 已有摘要生成、运行时校验和写库前阻断；仍需完成最终生产集成验证 |
 | 完成标准 | ① `build_all.py` 产出后自动写校验摘要（条数 + sha256）；② Seeder 启动时比对，不一致时打印明确差异并退出非 0；③ `manifest.py` 产物与数据集对账 |
 | 备注 | 目标是「源目录变了能立刻发现」，不是「让导入更快」 |
+
+已实现的 artifacts：`tools/ingest/build_all.py` 生成
+`storage/dataset-manifest.json`；`apps/api/src/Seeder/DatasetManifestVerifier.php` 校验
+8 个数据集及 `storage/import-manifest.json`；`apps/api/bin/verify-dataset.php` 提供容器入口；
+`DatasetReader`、三个数据 Seeder 和 API Docker 启动链均在写库前调用校验。
+
+已执行的离线验证：`python tools/doclink.py`、`python tools/phpcheck.py`、
+`python tools/phpcheck_selftest.py`、`python -m unittest discover -s tools/ingest -p "test_*.py" -v`
+和 `git diff --check`。当前主机没有 PHP，未执行 PHP lint/可执行测试；按环境约束未启动 Docker，
+因此 1.4 保持 `进行中`，待最终生产集成验证完成后再标记 `已完成`。
 
 ### 1.5 搜索增强
 

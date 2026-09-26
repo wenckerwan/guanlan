@@ -1,5 +1,27 @@
 # 更新记录
 
+## 文档补充 - 2026-09-26
+
+### 变更
+
+- 记录数据集完整性工作流：工作区只读 `storage/raw/` 副本经 `build_all.py` 生成 8 个数据集与
+  `storage/dataset-manifest.json`，API 在 migration/Seeder 前校验摘要与来源清单。
+- 明确 F 盘资料只作为只读来源，需复制到被忽略的工作区存储，且不挂载到 Docker。
+- 开发规划 1.4「数据导入闭环」保持 `进行中`，等待最终生产集成验证。
+
+### 验证
+
+- `python tools/doclink.py`：`checked 21 relative links in 6 files`，`OK`。
+- `python tools/phpcheck.py`：`checked=100 files, classes=67, tables=20`，`OK`。
+- `python tools/phpcheck_selftest.py`：7 个案例全部 `PASS`，`SELFTEST OK`。
+- `python -m unittest discover -s tools/ingest -p "test_*.py" -v`：20/20 通过。
+- `git diff --check`：通过。
+
+### 已知限制
+
+- 当前主机没有 PHP，未执行 PHP lint 或可执行 PHP 测试；按当前环境约束未启动 Docker，
+  因此未记录容器负向/正向冒烟结果。
+
 ## V0.1-dev.4 - 2026-09-23
 
 ### 修复与新增

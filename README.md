@@ -38,9 +38,20 @@ npm run dev
 
 ```bash
 python tools/ingest/manifest.py   # 本地资料清单（SHA-256 去重）
-python tools/ingest/build_all.py  # 只读源目录 -> storage/dataset/*.json
+python tools/ingest/build_all.py  # 工作区只读 raw 副本 -> storage/dataset/*.json + storage/dataset-manifest.json
 docker compose up --build
 ```
+
+`build_all.py` 只读取工作区内的 `storage/raw/` 副本，生成 8 个数据集 JSON 和
+`storage/dataset-manifest.json`。摘要记录每个文件的字节数、SHA-256、条数和分组，
+并关联 `storage/import-manifest.json` 的来源哈希与统计。
+
+API 在 migration 和 Seeder 写库前运行 `php bin/verify-dataset.php`。遇到
+`missing file` 时，先重新运行 `python tools/ingest/build_all.py`；遇到 `sha256`
+或 `bytes/items/groups` mismatch 时，说明数据集被改动或摘要过期，应重新生成数据集和摘要，
+不要手工修改摘要；遇到 `source_manifest` mismatch 时，先运行 `python tools/ingest/manifest.py`
+刷新来源清单，再运行 `python tools/ingest/build_all.py`。校验失败会汇总差异并以非零退出，
+不会继续 migration 或 Seeder 写入。
 
 ### 离线验证
 
@@ -54,7 +65,8 @@ powershell -ExecutionPolicy Bypass -File tools/verify.ps1
 模型列引用 / 路由方法存在性 / PHP 链式语法风险）、`tools/phpcheck_selftest.py`（反向注入 6 类错误，
 必须全部被抓到）、`build_all.py` 数据集重生成、以及 `apps/web` 的 `npm test`。
 
-原始资料应放在 `storage/raw/`，不要提交到版本库。
+原始资料应放在工作区的 `storage/raw/`，不要提交到版本库。`F:\\2027考研资料\\考研政治`
+是只读来源资料；需要导入时先复制到被忽略的工作区存储，再由离线工具读取。F 盘资料不会挂载到 Docker。
 
 ## 本机 Docker 工作流（WSL2，无 Docker Desktop）
 
