@@ -23,7 +23,7 @@ OLD_SHA="$(cd "$REPO_ROOT" && git rev-parse HEAD)"
 log "current HEAD: $OLD_SHA"
 
 # 3. 拉取前先备份。
-UPDATE_BACKUP="$( "$SCRIPT_DIR/backup.sh" "$ENV_FILE" "${BACKUP_SAFETY_DIR:-/www/backup/guanlan}" | tail -n 1 )"
+UPDATE_BACKUP="$( "$SCRIPT_DIR/backup.sh" "$ENV_FILE" "${BACKUP_SAFETY_DIR:-/www/backup/guanlan}" )"
 [ -n "$UPDATE_BACKUP" ] && [ -f "$UPDATE_BACKUP" ] || fail "pre-update backup failed"
 log "pre-update backup created: $UPDATE_BACKUP"
 

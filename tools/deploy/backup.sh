@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/common.sh"
 resolve_env_file "${1:-}"
 
-log()  { echo "[backup] $*"; }
+log()  { echo "[backup] $*" >&2; }
 fail() { echo "FAIL: $1" >&2; exit 1; }
 
 BACKUP_DIR="${2:-/www/backup/guanlan}"

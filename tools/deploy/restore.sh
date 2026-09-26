@@ -35,7 +35,7 @@ grep -qE '^[0-9a-f]{64}[[:space:]]+database\.sql$' "$TMP_DIR/SHA256SUMS" \
 ( cd "$TMP_DIR" && sha256sum -c SHA256SUMS ) || fail "archive checksum validation failed"
 
 # 2. 灌库前先做安全备份；只有备份成功才触碰 MySQL。
-SAFETY_ARCHIVE="$("$SCRIPT_DIR/backup.sh" "$ENV_FILE" "${BACKUP_SAFETY_DIR:-/www/backup/guanlan}" | tail -n 1)"
+SAFETY_ARCHIVE="$("$SCRIPT_DIR/backup.sh" "$ENV_FILE" "${BACKUP_SAFETY_DIR:-/www/backup/guanlan}")"
 [ -n "$SAFETY_ARCHIVE" ] && [ -f "$SAFETY_ARCHIVE" ] || fail "safety backup failed; aborting restore"
 log "safety backup created: $SAFETY_ARCHIVE"
 
