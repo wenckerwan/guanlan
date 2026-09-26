@@ -21,7 +21,7 @@ Implemented the explicit administrator credential contract only.
 
 ## Commit
 
-Recorded after commit creation.
+Implementation commit: `7a328c7` (`fix: require explicit production admin credentials`).
 
 ## Concerns
 
