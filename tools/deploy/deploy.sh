@@ -43,7 +43,7 @@ fi
 # 5. 环境文件权限告警：group/other 可读时警告（不阻断，密钥文件应 chmod 600）
 if [ "$(uname -s)" != "Darwin" ] && command -v stat >/dev/null 2>&1; then
   ENV_MODE="$(stat -c '%a' "$ENV_FILE" 2>/dev/null || true)"
-  if [ -n "$ENV_MODE" ] && [ "$((ENV_MODE & 077))" -ne 0 ]; then
+  if [ -n "$ENV_MODE" ] && [[ "$ENV_MODE" =~ ^[0-7]+$ ]] && [ "$((8#$ENV_MODE & 077))" -ne 0 ]; then
     echo "[deploy] WARNING: env file is group/other readable ($ENV_MODE); run: chmod 600 $ENV_FILE" >&2
   fi
 fi
