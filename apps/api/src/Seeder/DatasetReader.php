@@ -14,6 +14,7 @@ class DatasetReader
     /** @return array<int, array<string, mixed>> */
     public static function list(string $name): array
     {
+        (new DatasetManifestVerifier())->verify();
         $path = BASE_PATH . '/storage/dataset/' . $name;
         if (! is_file($path)) {
             return [];
@@ -31,6 +32,7 @@ class DatasetReader
 
     public static function missing(string $name): bool
     {
+        (new DatasetManifestVerifier())->verify();
         return ! is_file(BASE_PATH . '/storage/dataset/' . $name);
     }
 

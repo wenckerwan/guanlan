@@ -102,6 +102,44 @@ PYTHON;
         assert(str_contains($exception->getMessage(), 'sha256'));
     }
 
+    $seederPaths = [
+        dirname(__DIR__) . '/seeders/ArticleSeeder.php',
+        dirname(__DIR__) . '/seeders/MistakeSeeder.php',
+        dirname(__DIR__) . '/seeders/PaperQuestionSeeder.php',
+    ];
+    foreach ($seederPaths as $seederPath) {
+        $source = (string) file_get_contents($seederPath);
+        if (! preg_match('/public function run\(\): void\s*\{(?<body>.*?)\n    \}/s', $source, $matches)) {
+            throw new RuntimeException('missing run method in ' . basename($seederPath));
+        }
+
+        $runBody = $matches['body'];
+        $verificationPosition = strpos($runBody, '(new DatasetManifestVerifier())->verify();');
+        if ($verificationPosition === false) {
+            throw new RuntimeException('missing dataset verification in ' . basename($seederPath));
+        }
+
+        $firstOperationPosition = strlen($runBody);
+        foreach (['$this->', 'Db::', 'DatasetReader::', '->query', 'file_get_contents'] as $operation) {
+            $position = strpos($runBody, $operation);
+            if ($position !== false) {
+                $firstOperationPosition = min($firstOperationPosition, $position);
+            }
+        }
+        if ($verificationPosition > $firstOperationPosition) {
+            throw new RuntimeException('dataset verification occurs after first operation in ' . basename($seederPath));
+        }
+    }
+
+    $dockerfile = (string) file_get_contents(dirname(__DIR__) . '/Dockerfile');
+    $verificationCommand = 'php bin/verify-dataset.php &&';
+    $migrationCommand = 'php bin/hyperf.php migrate --force';
+    $verificationPosition = strpos($dockerfile, $verificationCommand);
+    $migrationPosition = strpos($dockerfile, $migrationCommand);
+    if ($verificationPosition === false || $migrationPosition === false || $verificationPosition > $migrationPosition) {
+        throw new RuntimeException('Dockerfile must verify dataset before migration');
+    }
+
     echo "DatasetManifestVerifierTest: PASS\n";
 } finally {
     $removeDirectory($fixtureRoot);

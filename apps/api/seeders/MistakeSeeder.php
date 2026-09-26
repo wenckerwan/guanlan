@@ -7,6 +7,7 @@ use App\Model\MistakeItem;
 use App\Model\MistakeStudent;
 use App\Model\User;
 use App\Seeder\DatasetReader;
+use App\Seeder\DatasetManifestVerifier;
 use Hyperf\Database\Seeders\Seeder;
 
 /**
@@ -16,6 +17,7 @@ class MistakeSeeder extends Seeder
 {
     public function run(): void
     {
+        (new DatasetManifestVerifier())->verify();
         $this->seedMistakes();
         $this->seedMocks();
         $this->seedAdmin();

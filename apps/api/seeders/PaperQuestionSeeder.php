@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Model\Paper;
 use App\Model\Question;
+use App\Seeder\DatasetManifestVerifier;
 use Hyperf\Database\Seeders\Seeder;
 use Hyperf\DbConnection\Db;
 
@@ -17,6 +18,7 @@ class PaperQuestionSeeder extends Seeder
 
     public function run(): void
     {
+        (new DatasetManifestVerifier())->verify();
         $papers = $this->read('papers.json');
         $questions = $this->read('questions.json');
 
