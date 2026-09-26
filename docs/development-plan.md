@@ -134,6 +134,17 @@
 | 完成标准 | ① 试卷、预测、错题可查看；② 支持状态字段调整（发布/隐藏）；③ 所有写操作有 `role=admin` 校验 |
 | 备注 | 编辑富文本超出本阶段范围，只做状态与元数据 |
 
+### 1.7 生产部署（V0.1-dev.5）
+
+状态：`进行中`
+
+| 项 | 内容 |
+|---|---|
+| 目标 | 在宝塔 + Docker 的目标服务器上完成首次生产部署与配套运维文档 |
+| 服务器基线 | 2 vCPU / 4 GB RAM / 100 GB 磁盘 / 8 Mbps 上行 / Debian 12 / 宝塔 10.0（LNMP）/ Docker 已安装；部署目录 `/www/wwwroot/guanlan`；2 GB swap 且 `vm.swappiness=10` |
+| 完成标准 | ① 应用全容器化，宝塔自带 MySQL/PHP/Redis 均不被使用，宝塔只做域名/Let's Encrypt/HTTPS 终止/反向代理；② 应用只绑定 `127.0.0.1:8080`，公网仅放行 22/80/443；③ 真实密钥留在服务器 `.env.production`（`chmod 600`），不进 Git 与备份归档；④ 备份/恢复/更新/健康检查/回滚工具链已产出并记录；⑤ 宝塔反向代理目标与转发头/超时已在 `docs/deployment.md` 写明 |
+| 备注 | 部署手册见 [deployment.md](deployment.md)；脚本为 `tools/deploy/*.sh`；版本号升级与最终生产集成验证留待 Task 6 |
+
 ## 三、阶段 2：资料阅读（V0.1-beta.1）
 
 分支：`feature/document-reader`

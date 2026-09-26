@@ -27,6 +27,7 @@
 
 站点现状与内容来源映射见 [docs/website-roadmap.md](docs/website-roadmap.md)；
 **下一步开发计划与验收标准见 [docs/development-plan.md](docs/development-plan.md)**。
+**生产部署（宝塔 + Docker）见 [docs/deployment.md](docs/deployment.md)**。
 
 ## 开发
 
