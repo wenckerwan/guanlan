@@ -74,7 +74,7 @@ grep -q 'git rev-parse HEAD' "$DEPLOY_DIR/update.sh" \
   || fail "update.sh must record git rev-parse HEAD"
 grep -q 'git pull --ff-only origin main' "$DEPLOY_DIR/update.sh" \
   || fail "update.sh must pull with --ff-only origin main"
-grep -q 'git checkout "$OLD_SHA"' "$DEPLOY_DIR/update.sh" \
+grep -q 'git reset --hard "$OLD_SHA"' "$DEPLOY_DIR/update.sh" \
   || fail "update.sh must restore the old SHA on failure"
 grep -q 'healthcheck.sh' "$DEPLOY_DIR/update.sh" \
   || fail "update.sh must health-check before completing"

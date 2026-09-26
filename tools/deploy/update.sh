@@ -14,7 +14,7 @@ fail() { echo "FAIL: $1" >&2; exit 1; }
 [ -f "$ENV_FILE" ] || fail "env file not found: $ENV_FILE"
 
 # 1. 拒绝脏 Git 工作树。
-if ! (cd "$REPO_ROOT" && git diff-index --quiet HEAD --); then
+if [ -n "$(cd "$REPO_ROOT" && git status --porcelain)" ]; then
   fail "Git working tree is dirty; commit or stash changes before updating"
 fi
 
@@ -23,13 +23,15 @@ OLD_SHA="$(cd "$REPO_ROOT" && git rev-parse HEAD)"
 log "current HEAD: $OLD_SHA"
 
 # 3. 拉取前先备份。
-UPDATE_BACKUP="$( "$SCRIPT_DIR/backup.sh" "$ENV_FILE" "${BACKUP_SAFETY_DIR:-/www/backup/guanlan}" )"
+UPDATE_BACKUP="$( "$SCRIPT_DIR/backup.sh" "$ENV_FILE" "${BACKUP_SAFETY_DIR:-/www/backup/guanlan}" | tail -n 1 )"
 [ -n "$UPDATE_BACKUP" ] && [ -f "$UPDATE_BACKUP" ] || fail "pre-update backup failed"
 log "pre-update backup created: $UPDATE_BACKUP"
 
 rollback() {
-  log "ROLLBACK: checking out recorded SHA $OLD_SHA"
-  (cd "$REPO_ROOT" && git checkout "$OLD_SHA" -- .) || log "WARN: checkout failed; manual recovery required"
+  log "ROLLBACK: resetting repository to recorded SHA $OLD_SHA"
+  (cd "$REPO_ROOT" && git reset --hard "$OLD_SHA") || log "WARN: reset failed; manual recovery required"
+  log "ROLLBACK: removing untracked files left by the failed update"
+  (cd "$REPO_ROOT" && git clean -fd) || log "WARN: clean failed; manual recovery required"
   compose build || log "WARN: rebuild of previous images failed"
   compose up -d --remove-orphans || log "WARN: previous stack start failed"
 }
