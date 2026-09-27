@@ -26,6 +26,7 @@ RUN composer install --no-dev --prefer-dist --no-interaction --no-progress
 
 COPY apps/api/. .
 COPY storage/dataset ./storage/dataset
+COPY storage/dataset-manifest.json ./storage/dataset-manifest.json
 RUN mkdir -p runtime
 
 EXPOSE 9501
