@@ -21,10 +21,11 @@ WORKDIR /opt/guanlan
 # 境内加速：使用 Aliyun packagist 镜像
 RUN composer config -g repo.packagist composer https://mirrors.aliyun.com/composer/
 
-COPY composer.json composer.lock ./
+COPY apps/api/composer.json apps/api/composer.lock ./
 RUN composer install --no-dev --prefer-dist --no-interaction --no-progress
 
-COPY . .
+COPY apps/api/. .
+COPY storage/dataset ./storage/dataset
 RUN mkdir -p runtime
 
 EXPOSE 9501

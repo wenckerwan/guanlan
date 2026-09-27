@@ -57,7 +57,9 @@ services:
           memory: 512M
 
   api:
-    build: ./apps/api
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
     restart: unless-stopped
     environment:
       APP_ENV: ${APP_ENV:-production}
