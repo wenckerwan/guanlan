@@ -99,35 +99,41 @@ async function submitRedo(item: MistakeItem) {
   const correct = displayAnswer(item.correctAnswer)
   const right = isCorrect(chosen, correct)
   redoResults[item.id] = right
-  const action = right
-    ? '本次重练正确，继续保持并定期回访。'
-    : `本次重练仍未掌握，复习原错因（${item.errorType || '未记录'}）后再练。`
 
   if (!isLoggedIn.value) {
-    redoNotices[item.id] = '已完成判分；登录后可保存重练记录和行动建议。'
+    redoNotices[item.id] = '已完成判分；登录后可保存重练记录并自动安排下次复习。'
     return
   }
 
   try {
-    await request(`/mistakes/items/${item.id}/action`, {
-      method: 'PATCH',
-      body: { action },
-    })
-    await request('/study/attempts', {
+    // 使用新的复习 API 提交答题记录
+    const reviewResult = await request(`/mistakes/items/${item.id}/review`, {
       method: 'POST',
-      body: {
-        source: 'mistake',
-        sourceRef: code,
-        questionRef: item.sourceNo,
-        module: item.module,
-        chosen,
-        correct,
-      },
+      body: { chosen },
     })
+
+    const action = reviewResult.isCorrect
+      ? `本次重练正确！下次复习时间：${reviewResult.nextReviewAt}（${reviewResult.status === 'mastered' ? '已掌握' : '继续巩固'}）`
+      : `本次答错，1 天后再次复习。已复习 ${reviewResult.reviewCount} 次，答对 ${reviewResult.correctCount} 次。`
+
     redoActions[item.id] = action
-    redoNotices[item.id] = '已保存重练记录，并更新下次行动建议。'
-  } catch {
-    redoNotices[item.id] = '已完成判分，但保存失败，请稍后重试。'
+    redoNotices[item.id] = '已保存复习记录，系统已自动计算下次复习时间。'
+  } catch (err: any) {
+    // 降级到原有逻辑
+    const action = right
+      ? '本次重练正确，继续保持并定期回访。'
+      : `本次重练仍未掌握，复习原错因（${item.errorType || '未记录'}）后再练。`
+
+    try {
+      await request(`/mistakes/items/${item.id}/action`, {
+        method: 'PATCH',
+        body: { action },
+      })
+      redoActions[item.id] = action
+      redoNotices[item.id] = '已保存行动建议（复习系统暂不可用）。'
+    } catch {
+      redoNotices[item.id] = '已完成判分，但保存失败，请稍后重试。'
+    }
   }
 }
 </script>
@@ -145,6 +151,7 @@ async function submitRedo(item: MistakeItem) {
           <p>共 {{ student.itemCount }} 道错题，按模块与错因归类，配提分手册。</p>
         </div>
         <div class="quiz-head-actions">
+          <NuxtLink v-if="isLoggedIn" class="primary-button" :to="`/mistakes/${code}/review`"><RotateCcw :size="15" />复习概览</NuxtLink>
           <NuxtLink v-if="handbooks.length" class="primary-button" :to="`/mistakes/${code}/${handbooks[0].id}`"><BookOpen :size="15" />看提分手册</NuxtLink>
         </div>
       </section>
