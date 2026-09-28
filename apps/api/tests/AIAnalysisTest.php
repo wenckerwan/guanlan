@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AppTest;
+namespace App\Test;
 
 use App\Model\MistakeStudent;
 use App\Service\AIAnalysisService;

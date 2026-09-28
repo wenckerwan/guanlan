@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AppService;
+namespace App\Service;
 
-use AppModelUser;
-use HyperfDbConnectionDb;
+use App\Model\User;
+use Hyperf\DbConnection\Db;
+use Throwable;
 
 /** 认证、注册以及账号对应错题本的原子创建。 */
 class AuthService

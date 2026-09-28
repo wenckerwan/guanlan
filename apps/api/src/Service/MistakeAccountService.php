@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AppService;
+namespace App\Service;
 
-use AppModelMistakeAccount;
-use AppModelMistakeStudent;
-use AppModelUser;
-use AppSupportAccountId;
+use App\Model\MistakeAccount;
+use App\Model\MistakeStudent;
+use App\Model\User;
+use App\Support\AccountId;
 
 class MistakeAccountService
 {

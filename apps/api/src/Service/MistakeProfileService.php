@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AppService;
+namespace App\Service;
 
-use AppModelMistakeProfile;
-use AppModelMistakeStudent;
-use AppModelUser;
+use App\Model\MistakeProfile;
+use App\Model\MistakeStudent;
+use App\Model\User;
 
 class MistakeProfileService
 {

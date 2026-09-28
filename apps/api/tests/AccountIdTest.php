@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace {
     require dirname(__DIR__) . '/src/Support/AccountId.php';
 
-    use AppSupportAccountId;
+    use App\Support\AccountId;
 
     $failures = [];
     $check = static function (string $label, mixed $actual, mixed $expected) use (&$failures): void {
