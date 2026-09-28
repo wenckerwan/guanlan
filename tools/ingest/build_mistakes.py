@@ -12,10 +12,9 @@ OUT = DATASET_ROOT
 
 STUDENTS = [
     {"code": "A", "name": "考生 A", "relation": "本人", "dir": "本人_wencker"},
-    {"code": "B", "name": "考生 B", "relation": "朋友", "dir": "徐丽丹"},
 ]
 
-# 文件名后缀 -> 模块名（两个考生的命名不完全一致，故按后缀统一）
+# 文件名后缀 -> 模块名（不同考生的命名不完全一致，故按后缀统一）
 MODULE_SUFFIX = {
     "": "马原",
     "_马原": "马原",
@@ -63,7 +62,7 @@ def chapter_number(title: str) -> int:
 def parse_state(text: str) -> dict:
     """解析 `**上次**：我选 **B** ｜ 正确 **D** ｜ 单选`。
 
-    考生 B 的马原批次导出时删掉了错选项，占位为「（导出时已删）」，
+    导出件可能删掉错选项并占位为「（导出时已删）」，
     此时 myAnswer 记为 `未记录`，但正确项与题型仍要解析出来。
     """
     m = re.search(
@@ -108,7 +107,7 @@ def error_type(chosen: str, correct: str) -> str:
     if not correct:
         return "未知"
     if not chosen:
-        # 考生 B 的马原批次：导出件删掉了错选项，错因不可判定
+        # 导出件删掉了错选项时，错因不可判定
         return "未记录"
     a, b = set(chosen), set(correct)
     if a == b:

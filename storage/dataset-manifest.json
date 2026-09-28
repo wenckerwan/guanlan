@@ -13,14 +13,14 @@
       "sha256": "e917edcfbea75f04e99d959750d74e9ccf6db1f252568466438a100c2cbcea39"
     },
     "mistakes.json": {
-      "bytes": 922590,
+      "bytes": 256453,
       "groups": {
-        "handbooks": 5,
-        "items": 292,
-        "students": 2
+        "handbooks": 2,
+        "items": 91,
+        "students": 1
       },
-      "items": 299,
-      "sha256": "202dbd80a8df0a124b4c5ce57de351808f6723613f63c0b983374efff93c1b15"
+      "items": 94,
+      "sha256": "1a86dc724e0726e36042c97c90d852fce0508c662258ef196acb1d065862efec"
     },
     "mocks.json": {
       "bytes": 23446,
@@ -73,8 +73,8 @@
     "sha256": "07414b2a5bc11efa3db844a63cc73f8df38ddc693eefa9aa89506a4b6a68c464"
   },
   "totals": {
-    "bytes": 4893281,
+    "bytes": 4227144,
     "files": 8,
-    "items": 2025
+    "items": 1820
   }
 }
