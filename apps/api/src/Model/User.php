@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AppModel;
+namespace App\Model;
 
-use HyperfDatabaseModelModel;
-use HyperfDatabaseModelRelationsHasMany;
-use HyperfDatabaseModelRelationsHasOne;
+use Hyperf\Database\Model\Model;
+use Hyperf\Database\Model\Relations\HasMany;
+use Hyperf\Database\Model\Relations\HasOne;
 
 class User extends Model
 {
