@@ -10,17 +10,25 @@ const code = String(route.params.code)
 const isDev = process.env.NODE_ENV === 'development'
 const mockLoggedIn = ref(isDev) // 开发环境模拟已登录
 
-// 获取考生信息（开发环境使用模拟数据）
-const mockStudent = {
-  code: code,
-  name: '测试考生',
-  relation: '本人',
-  itemCount: 6,
-}
+// 获取考生信息
+const student = ref<MistakeStudent | null>(null)
 
-const { data: student } = isDev
-  ? { data: ref(mockStudent) }
-  : await useApiFetch<MistakeStudent>(`/mistakes/students/${code}`, null)
+// 在客户端加载考生信息
+if (import.meta.client) {
+  if (isDev) {
+    // 开发环境使用模拟数据
+    student.value = {
+      code: code,
+      name: '测试考生',
+      relation: '本人',
+      itemCount: 6,
+    } as MistakeStudent
+  } else {
+    // 生产环境从 API 获取
+    const { data } = await useApiFetch<MistakeStudent>(`/mistakes/students/${code}`, null)
+    student.value = data.value
+  }
+}
 
 // AI 配置
 const aiConfig = reactive({
