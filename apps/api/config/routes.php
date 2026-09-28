@@ -24,7 +24,7 @@ use Hyperf\HttpServer\Router\Router;
 Router::get('/api/v1/health', [HealthController::class, 'index']);
 Router::get('/api/v1/home', [HomeController::class, 'index']);
 Router::get('/api/v1/stats/overview', [StatsController::class, 'overview']);
-Router::get('/api/v1/search', [SearchController::class, 'index']);
+Router::get('/api/v1/search', [SearchController::class, 'index'], ['middleware' => [AuthMiddleware::class]]);
 
 // 学科
 Router::get('/api/v1/subjects', [SubjectController::class, 'index']);
@@ -37,26 +37,30 @@ Router::get('/api/v1/papers/{pid}', [PaperController::class, 'show']);
 Router::get('/api/v1/questions', [QuestionController::class, 'index']);
 Router::get('/api/v1/questions/{id:\d+}', [QuestionController::class, 'show']);
 
-// 真题分析 / 时政热点 / 时政预测
-Router::get('/api/v1/analysis', [ArticleController::class, 'analysisIndex']);
-Router::get('/api/v1/analysis/{slug}', [ArticleController::class, 'analysisShow']);
-Router::get('/api/v1/hotspots', [ArticleController::class, 'hotspotIndex']);
-Router::get('/api/v1/hotspots/{slug}', [ArticleController::class, 'hotspotShow']);
-Router::get('/api/v1/predictions', [ArticleController::class, 'predictionIndex']);
-Router::get('/api/v1/predictions/{slug}', [ArticleController::class, 'predictionShow']);
+// 真题分析 / 时政热点 / 时政预测（AuthMiddleware 只解析身份，游客配额据此计算）
+Router::addGroup('/api/v1', function () {
+    Router::get('/analysis', [ArticleController::class, 'analysisIndex']);
+    Router::get('/analysis/{slug}', [ArticleController::class, 'analysisShow']);
+    Router::get('/hotspots', [ArticleController::class, 'hotspotIndex']);
+    Router::get('/hotspots/{slug}', [ArticleController::class, 'hotspotShow']);
+    Router::get('/predictions', [ArticleController::class, 'predictionIndex']);
+    Router::get('/predictions/{slug}', [ArticleController::class, 'predictionShow']);
+}, ['middleware' => [AuthMiddleware::class]]);
 
 // 模拟押题
 Router::get('/api/v1/mocks', [MockController::class, 'index']);
 Router::get('/api/v1/mocks/{slug}', [MockController::class, 'show']);
 
-// 个人错题分析
-Router::get('/api/v1/mistakes/students', [MistakeController::class, 'students']);
+// 个人错题分析（AuthMiddleware 解析身份；可见性在控制器内统一裁决）
+Router::addGroup('/api/v1/mistakes', function () {
+    Router::get('/students', [MistakeController::class, 'students']);
+    Router::get('/handbooks/{id:\d+}', [MistakeController::class, 'handbook']);
+    Router::get('/students/{code}/items', [MistakeController::class, 'items']);
+    Router::get('/students/{code}/handbooks', [MistakeController::class, 'handbooks']);
+    Router::get('/students/{code}/detail', [MistakeController::class, 'detail']);
+    Router::get('/students/{code}', [MistakeController::class, 'show']);
+}, ['middleware' => [AuthMiddleware::class]]);
 Router::patch('/api/v1/mistakes/items/{id:\d+}/action', [MistakeController::class, 'updateAction'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
-Router::get('/api/v1/mistakes/handbooks/{id:\d+}', [MistakeController::class, 'handbook']);
-Router::get('/api/v1/mistakes/students/{code}/items', [MistakeController::class, 'items']);
-Router::get('/api/v1/mistakes/students/{code}/handbooks', [MistakeController::class, 'handbooks']);
-Router::get('/api/v1/mistakes/students/{code}/detail', [MistakeController::class, 'detail']);
-Router::get('/api/v1/mistakes/students/{code}', [MistakeController::class, 'show']);
 
 // 认证
 Router::post('/api/v1/auth/register', [AuthController::class, 'register']);

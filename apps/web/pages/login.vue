@@ -48,7 +48,7 @@ async function submit() {
         </div>
 
         <h1>{{ mode === 'login' ? '欢迎回来' : '创建观澜账号' }}</h1>
-        <p class="auth-copy">{{ mode === 'login' ? '登录后可收藏题目、记录做题进度。' : '注册即可保存错题本与做题记录。' }}</p>
+        <p class="auth-copy">{{ mode === 'login' ? '登录后可收藏题目、记录做题进度。' : '注册即生成专属账号 ID，可交给管理员绑定你的错题本。' }}</p>
 
         <form class="auth-form" @submit.prevent="submit">
           <label v-if="mode === 'register'">

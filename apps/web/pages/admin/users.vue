@@ -6,9 +6,11 @@ const { request, restore } = useAuth()
 const items = ref<User[]>([])
 const keyword = ref('')
 const message = ref('')
+const draft = ref<Record<number, string>>({})
 
 async function load() {
   items.value = await request<User[]>(`/admin/users?q=${encodeURIComponent(keyword.value)}`)
+  draft.value = Object.fromEntries(items.value.map((user) => [user.id, user.mistakeCode ?? '']))
 }
 
 onMounted(async () => {
@@ -16,10 +18,20 @@ onMounted(async () => {
   await load()
 })
 
-async function update(user: User, patch: { role?: string; status?: string }) {
-  const updated = await request<User>(`/admin/users/${user.id}`, { method: 'PATCH', body: patch })
-  items.value = items.value.map((item) => (item.id === updated.id ? updated : item))
-  message.value = `已更新 ${updated.email}`
+async function update(user: User, patch: { role?: string; status?: string; mistakeCode?: string }) {
+  try {
+    const updated = await request<User>(`/admin/users/${user.id}`, { method: 'PATCH', body: patch })
+    items.value = items.value.map((item) => (item.id === updated.id ? updated : item))
+    draft.value[updated.id] = updated.mistakeCode ?? ''
+    message.value = `已更新 ${updated.email}`
+  } catch (exception) {
+    const data = (exception as { data?: { message?: string } })?.data
+    message.value = data?.message || '更新失败'
+  }
+}
+
+async function bind(user: User) {
+  await update(user, { mistakeCode: (draft.value[user.id] ?? '').trim() })
 }
 </script>
 
@@ -35,13 +47,17 @@ async function update(user: User, patch: { role?: string; status?: string }) {
     <p v-if="message" class="admin-meta">{{ message }}</p>
 
     <table class="admin-table">
-      <thead><tr><th>邮箱</th><th>昵称</th><th>角色</th><th>状态</th><th>操作</th></tr></thead>
+      <thead><tr><th>邮箱</th><th>昵称</th><th>角色</th><th>状态</th><th>账号 ID（绑定错题）</th><th>操作</th></tr></thead>
       <tbody>
         <tr v-for="user in items" :key="user.id">
           <td>{{ user.email }}</td>
           <td>{{ user.displayName }}</td>
           <td>{{ user.role }}</td>
           <td>{{ user.status }}</td>
+          <td class="admin-bind">
+            <input v-model="draft[user.id]" type="text" :placeholder="user.mistakeCode || '未绑定'" aria-label="账号 ID" />
+            <button type="button" class="ghost-button small" @click="bind(user)">保存</button>
+          </td>
           <td class="admin-actions">
             <button type="button" class="ghost-button small" @click="update(user, { role: user.role === 'admin' ? 'user' : 'admin' })">{{ user.role === 'admin' ? '取消管理员' : '设为管理员' }}</button>
             <button type="button" class="ghost-button small" @click="update(user, { status: user.status === 'active' ? 'disabled' : 'active' })">{{ user.status === 'active' ? '禁用' : '启用' }}</button>

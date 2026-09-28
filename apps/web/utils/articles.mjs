@@ -55,3 +55,20 @@ export function moduleTone(module) {
   }
   return map[module] ?? 'jade'
 }
+
+/**
+ * 把栏目条目按访客配额拆成「可阅读」与「需登录」两组。
+ *
+ * 顺序完全沿用服务端返回的顺序：locked 是后端按该顺序计算出来的，
+ * 前端若重排会让免费 / 锁定分界与提示错位。
+ */
+export function splitByLock(items) {
+  // 丢掉 null / 非对象项，避免脏数据渲染成空卡片
+  const list = (Array.isArray(items) ? items : []).filter(
+    (item) => item !== null && typeof item === 'object' && !Array.isArray(item),
+  )
+  return {
+    free: list.filter((item) => !item.locked),
+    locked: list.filter((item) => Boolean(item.locked)),
+  }
+}

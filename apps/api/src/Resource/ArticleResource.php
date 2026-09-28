@@ -49,12 +49,17 @@ class ArticleResource
         return $item;
     }
 
-    /** @param iterable<AnalysisArticle|Hotspot|Prediction> $models */
-    public static function collection(iterable $models): array
+    /**
+     * @param iterable<AnalysisArticle|Hotspot|Prediction> $models
+     * @param array<string, true> $lockedSlugs 访客超额、需登录才能阅读的 slug
+     */
+    public static function collection(iterable $models, array $lockedSlugs = []): array
     {
         $out = [];
         foreach ($models as $model) {
-            $out[] = self::listItem($model);
+            $item = self::listItem($model);
+            $item['locked'] = isset($lockedSlugs[(string) $model->slug]);
+            $out[] = $item;
         }
         return $out;
     }

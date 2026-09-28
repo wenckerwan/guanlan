@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { groupBy, moduleTone, outlineOf, sortByPriority, truncate } from '../utils/articles.mjs'
+import { groupBy, moduleTone, outlineOf, sortByPriority, splitByLock, truncate } from '../utils/articles.mjs'
 
 test('sorts by priority then period, newest first', () => {
   const items = [
@@ -68,4 +68,24 @@ test('sortByPriority does not mutate the input array', () => {
   const sorted = sortByPriority(items)
   assert.equal(items[0].slug, 'b')
   assert.equal(sorted[0].slug, 's')
+})
+
+test('splitByLock separates free and login-gated items without reordering', () => {
+  const items = [
+    { slug: 'a', locked: false },
+    { slug: 'b', locked: true },
+    { slug: 'c', locked: false },
+    { slug: 'd', locked: true },
+    { slug: 'e' },
+  ]
+  const { free, locked } = splitByLock(items)
+  assert.deepEqual(free.map((i) => i.slug), ['a', 'c', 'e'])
+  assert.deepEqual(locked.map((i) => i.slug), ['b', 'd'])
+})
+
+test('splitByLock treats a missing locked flag as readable and tolerates bad input', () => {
+  const { free, locked } = splitByLock([{ slug: 'x' }, null])
+  assert.deepEqual(free.map((i) => i.slug), ['x'])
+  assert.equal(locked.length, 0)
+  assert.deepEqual(splitByLock(undefined), { free: [], locked: [] })
 })

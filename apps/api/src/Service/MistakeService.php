@@ -10,7 +10,7 @@ use App\Model\MistakeStudent;
 use Hyperf\Database\Model\Builder;
 
 /**
- * 个人错题分析：考生之间完全隔离，查询一律带 student_id 约束。
+ * 个人错题分析：查询一律带 student_id 约束，可见性由 MistakeAccess 统一裁决。
  */
 class MistakeService
 {
@@ -18,6 +18,18 @@ class MistakeService
     public function students(): array
     {
         return MistakeStudent::query()->orderBy('sort_order')->orderBy('id')->get()->all();
+    }
+
+    /** @param array<int, string>|null $allowedCodes null 表示不限 */
+    /** @return array<int, MistakeStudent> */
+    public function studentsWithin(?array $allowedCodes): array
+    {
+        $query = MistakeStudent::query()->orderBy('sort_order')->orderBy('id');
+        if ($allowedCodes !== null) {
+            $query->whereIn('code', $allowedCodes);
+        }
+
+        return $query->get()->all();
     }
 
     public function student(string $code): ?MistakeStudent
@@ -92,12 +104,12 @@ class MistakeService
 
     public function handbook(int $id): ?MistakeHandbook
     {
-        return MistakeHandbook::find($id);
+        return MistakeHandbook::query()->with('student')->where('id', $id)->first();
     }
 
     public function item(int $id): ?MistakeItem
     {
-        return MistakeItem::find($id);
+        return MistakeItem::query()->with('student')->where('id', $id)->first();
     }
 
     public function updateAction(MistakeItem $item, string $action): MistakeItem

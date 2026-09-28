@@ -32,11 +32,19 @@ class AdminController
 
     public function updateUser(int $id): ResponseInterface
     {
-        $user = $this->service->updateUser(
-            $id,
-            (string) $this->request->input('role', ''),
-            (string) $this->request->input('status', '')
-        );
+        $mistakeCode = $this->request->input('mistakeCode');
+        $mistakeCode = $mistakeCode === null ? null : (string) $mistakeCode;
+
+        try {
+            $user = $this->service->updateUser(
+                $id,
+                (string) $this->request->input('role', ''),
+                (string) $this->request->input('status', ''),
+                $mistakeCode
+            );
+        } catch (\RuntimeException $exception) {
+            return ApiResponse::message($exception->getMessage(), 422);
+        }
 
         return $user
             ? ApiResponse::data(UserResource::make($user))

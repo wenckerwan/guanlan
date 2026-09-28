@@ -157,6 +157,7 @@ export type ArticleSummary = {
   type?: string
   tag?: string
   layer?: string
+  locked?: boolean
 }
 
 export type ArticleDetail = ArticleSummary & {
@@ -257,6 +258,7 @@ export type User = {
   displayName: string
   role: string
   status: string
+  mistakeCode?: string
   createdAt: string
 }
 

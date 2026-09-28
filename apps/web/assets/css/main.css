@@ -373,3 +373,41 @@ a.record-title:hover { color:var(--red); }
   .pagination { align-items:flex-start; flex-direction:column; }
   .pagination-actions { width:100%; justify-content:space-between; }
 }
+
+/* 登录引导弹窗（游客文章配额 / 私有错题本） */
+.gate-layer { position:fixed; inset:0; z-index:40; display:grid; place-items:center; padding:20px; background:rgba(36,37,34,.38); backdrop-filter:blur(2px); }
+.gate-card { position:relative; width:min(92vw,420px); padding:26px 24px 22px; border-radius:6px; background:#fff; box-shadow:0 24px 60px rgba(36,37,34,.24); text-align:center; }
+.gate-card h2 { margin:0 0 8px; font-size:19px; }
+.gate-card p { margin:0; color:var(--muted); font-size:13px; line-height:1.7; }
+.gate-close { position:absolute; top:10px; right:10px; display:grid; place-items:center; padding:6px; border:0; border-radius:4px; background:transparent; color:var(--muted); }
+.gate-close:hover { color:var(--ink); background:var(--line); }
+.gate-icon { display:grid; place-items:center; width:42px; height:42px; margin:0 auto 12px; border-radius:50%; color:var(--red); background:var(--red-soft); }
+.gate-actions { display:flex; justify-content:center; gap:10px; margin-top:18px; }
+
+/* 访客配额：锁定卡片 */
+.article-card.is-locked { position:relative; }
+.article-card.is-locked .article-copy { opacity:.72; }
+.lock-badge { display:inline-flex; align-items:center; gap:3px; margin-left:6px; padding:1px 6px; border-radius:3px; background:var(--gold-soft); color:var(--gold); font-size:10px; font-weight:500; vertical-align:middle; }
+.article-group.is-gated .article-group-head { color:var(--gold); }
+
+/* 错题页公告 */
+.notice-banner { display:flex; align-items:flex-start; gap:10px; margin:0 0 24px; padding:13px 16px; border:1px solid var(--gold); border-radius:4px; background:var(--gold-soft); color:var(--ink); font-size:13px; line-height:1.7; }
+.notice-banner svg { flex:none; margin-top:3px; color:var(--gold); }
+
+/* 错题列表：绑定说明区块 */
+.student-private { margin:34px 0 8px; padding:20px 22px; border:1px solid var(--line); border-radius:4px; background:#fff; }
+.student-private h2 { margin:0 0 8px; font-size:17px; }
+.student-private p { margin:0 0 14px; color:var(--muted); font-size:13px; line-height:1.75; }
+
+/* 个人中心：账号 ID 卡片 */
+.account-id { display:flex; align-items:center; gap:18px; margin:0 0 26px; padding:18px 20px; border:1px solid var(--jade); border-radius:4px; background:var(--jade-soft); }
+.account-id strong { display:block; margin:4px 0 4px; font-family:ui-monospace, SFMono-Regular, Consolas, monospace; font-size:24px; color:var(--jade); letter-spacing:.06em; }
+.account-id small { display:block; color:var(--muted); font-size:12px; line-height:1.7; }
+
+/* 后台：账号 ID 绑定 */
+.admin-bind { display:flex; align-items:center; gap:6px; }
+.admin-bind input { width:110px; height:32px; padding:0 9px; border:1px solid var(--line); border-radius:3px; font-size:12px; font-family:ui-monospace, SFMono-Regular, Consolas, monospace; }
+
+/* 访客配额：锁定分组标题 */
+.gated-heading { margin-top:22px; }
+.gated-heading .section-kicker { display:inline-flex; align-items:center; gap:4px; color:var(--gold); }

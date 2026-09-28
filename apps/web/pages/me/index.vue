@@ -5,15 +5,15 @@ import type { StudyStats } from '~/types/api'
 
 useHead({ title: '个人中心｜观澜考研政治知识库' })
 
-const router = useRouter()
 const { user, isLoggedIn, ready, restore, request } = useAuth()
 
-onMounted(async () => {
-  restore()
-  if (!localStorage.getItem('guanlan.token')) {
-    await router.push({ path: '/login', query: { redirect: '/me' } })
-  }
-})
+// SSR 已解析 Cookie 登录态，这里只做兜底跳转。
+await restore()
+if (!isLoggedIn.value) {
+  await navigateTo({ path: '/login', query: { redirect: '/me' } })
+}
+
+onMounted(() => restore())
 
 const { data: stats } = await useAsyncData('me-stats', async () => {
   if (!import.meta.client) return null
@@ -41,6 +41,14 @@ const cards = computed(() => [
         <div class="eyebrow"><UserRound :size="14" />个人中心</div>
         <h1>{{ user?.displayName || '我的观澜' }}</h1>
         <p>{{ user?.email || '登录后查看学习记录' }}</p>
+      </section>
+
+      <section class="account-id">
+        <div>
+          <span class="section-kicker">我的账号 ID</span>
+          <strong>{{ user?.mistakeCode || '未分配' }}</strong>
+          <small>把这串 ID 发给管理员，即可绑定你的专属错题本；绑定后仅你和管理员可见。</small>
+        </div>
       </section>
 
       <section class="stat-row">

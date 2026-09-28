@@ -7,8 +7,13 @@ const route = useRoute()
 const code = String(route.params.code)
 const id = String(route.params.id)
 
-const { data } = await useApiFetch<Handbook | null>(`/mistakes/handbooks/${id}`, null)
+const { data, error } = await useApiFetch<Handbook | null>(`/mistakes/handbooks/${id}`, null)
 const handbook = computed(() => data.value)
+
+// 非本人 / 未登录访问私有手册：回错题列表并提示登录。
+if ((error.value as { statusCode?: number } | null)?.statusCode === 403) {
+  await navigateTo({ path: '/mistakes', query: { login: 1 } })
+}
 
 useHead(() => ({ title: handbook.value ? `${handbook.value.title}｜观澜提分手册` : '提分手册｜观澜' }))
 </script>

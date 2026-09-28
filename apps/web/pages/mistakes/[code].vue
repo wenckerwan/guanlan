@@ -21,12 +21,17 @@ const itemsPath = computed(() => withQuery(`/mistakes/students/${code}/items`, {
   perPage,
   module: activeModule.value,
 }))
-const { data } = await useApiFetch<MistakeItemsPayload | null>(
+const { data, error } = await useApiFetch<MistakeItemsPayload | null>(
   itemsPath,
   null,
   { watch: [page, activeModule] },
 )
 const { data: handbooks } = await useApiFetch<Handbook[]>(`/mistakes/students/${code}/handbooks`, [])
+
+// 私有错题本对未登录/非绑定账号返回 403：回列表页并提示登录。
+if ((error.value as { statusCode?: number } | null)?.statusCode === 403) {
+  await navigateTo({ path: '/mistakes', query: { login: 1 } })
+}
 
 const student = computed(() => data.value?.student ?? null)
 const items = computed(() => data.value?.items ?? [])
@@ -140,7 +145,7 @@ async function submitRedo(item: MistakeItem) {
           <p>共 {{ student.itemCount }} 道错题，按模块与错因归类，配提分手册。</p>
         </div>
         <div class="quiz-head-actions">
-          <NuxtLink v-if="handbooks.length" class="primary-button" :to="`/mistakes/${code}/handbook/${handbooks[0].id}`"><BookOpen :size="15" />看提分手册</NuxtLink>
+          <NuxtLink v-if="handbooks.length" class="primary-button" :to="`/mistakes/${code}/${handbooks[0].id}`"><BookOpen :size="15" />看提分手册</NuxtLink>
         </div>
       </section>
 

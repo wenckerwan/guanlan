@@ -11,6 +11,7 @@ use App\Model\Mock;
 use App\Model\Paper;
 use App\Model\Prediction;
 use App\Model\Question;
+use App\Support\MistakeAccess;
 
 /**
  * 全站统一检索：把六类内容收敛成一个结果列表。
@@ -174,8 +175,13 @@ class SearchService
     /** @return array<int, array<string, string>> */
     private function mistakes(string $like): array
     {
+        $allowed = MistakeAccess::allowedCodes();
         $rows = MistakeItem::query()
             ->with('student')
+            ->when($allowed !== null, fn ($q) => $q->whereHas(
+                'student',
+                fn ($inner) => $inner->whereIn('code', $allowed)
+            ))
             ->where(function ($q) use ($like) {
                 $q->where('stem', 'like', $like)
                     ->orWhere('kaodian', 'like', $like)

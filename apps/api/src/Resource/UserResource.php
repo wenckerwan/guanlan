@@ -16,6 +16,7 @@ class UserResource
             'displayName' => (string) $user->display_name,
             'role' => (string) $user->role,
             'status' => (string) $user->status,
+            'mistakeCode' => (string) ($user->mistake_code ?? ''),
             'createdAt' => (string) ($user->created_at ?? ''),
         ];
     }

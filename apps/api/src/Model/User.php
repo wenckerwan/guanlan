@@ -29,4 +29,10 @@ class User extends Model
     {
         return $this->status === 'active';
     }
+
+    /** 绑定的考生 / 错题编号，未绑定时为空字符串。 */
+    public function mistakeCode(): string
+    {
+        return trim((string) ($this->mistake_code ?? ''));
+    }
 }

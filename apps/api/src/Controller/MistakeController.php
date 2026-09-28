@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Resource\MistakeResource;
 use App\Service\MistakeService;
 use App\Support\ApiResponse;
+use App\Support\MistakeAccess;
 use App\Support\Validator;
 use Hyperf\HttpServer\Contract\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -22,7 +23,7 @@ class MistakeController
     public function students(): ResponseInterface
     {
         $out = [];
-        foreach ($this->service->students() as $student) {
+        foreach ($this->service->studentsWithin(MistakeAccess::allowedCodes()) as $student) {
             $out[] = MistakeResource::student(
                 $student,
                 $this->service->moduleCounts((int) $student->id),
@@ -39,6 +40,9 @@ class MistakeController
         if (! $student) {
             return ApiResponse::message('考生不存在', 404);
         }
+        if (! MistakeAccess::canViewStudent($student)) {
+            return ApiResponse::message('该错题本仅对应账号和管理员可见', 403);
+        }
 
         return ApiResponse::data(MistakeResource::student(
             $student,
@@ -52,6 +56,9 @@ class MistakeController
         $student = $this->service->student($code);
         if (! $student) {
             return ApiResponse::message('考生不存在', 404);
+        }
+        if (! MistakeAccess::canViewStudent($student)) {
+            return ApiResponse::message('该错题本仅对应账号和管理员可见', 403);
         }
 
         $page = max(1, (int) $this->request->input('page', 1));
@@ -83,6 +90,9 @@ class MistakeController
         if (! $student) {
             return ApiResponse::message('考生不存在', 404);
         }
+        if (! MistakeAccess::canViewStudent($student)) {
+            return ApiResponse::message('该错题本仅对应账号和管理员可见', 403);
+        }
 
         return ApiResponse::data(MistakeResource::handbooks($this->service->handbooks((int) $student->id)));
     }
@@ -92,6 +102,11 @@ class MistakeController
         $item = $this->service->item($id);
         if (! $item) {
             return ApiResponse::message('错题不存在', 404);
+        }
+
+        $code = (string) ($item->student?->code ?? '');
+        if (! MistakeAccess::canViewCode($code)) {
+            return ApiResponse::message('该错题本仅对应账号和管理员可见', 403);
         }
 
         $validator = new Validator($this->request->all());
@@ -114,7 +129,9 @@ class MistakeController
             return ApiResponse::message('提分手册不存在', 404);
         }
 
-        $handbook->load('student');
+        if (! MistakeAccess::canViewCode((string) ($handbook->student?->code ?? ''))) {
+            return ApiResponse::message('该提分手册仅对应账号和管理员可见', 403);
+        }
 
         return ApiResponse::data(MistakeResource::handbook($handbook, true));
     }
@@ -124,6 +141,9 @@ class MistakeController
         $student = $this->service->student($code);
         if (! $student) {
             return ApiResponse::message('考生不存在', 404);
+        }
+        if (! MistakeAccess::canViewStudent($student)) {
+            return ApiResponse::message('该错题本仅对应账号和管理员可见', 403);
         }
 
         return ApiResponse::data([

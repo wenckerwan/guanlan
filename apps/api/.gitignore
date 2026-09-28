@@ -1,3 +1,4 @@
 /vendor/
 /runtime/*
+/storage/
 !/runtime/.gitignore

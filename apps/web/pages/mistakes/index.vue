@@ -1,16 +1,32 @@
 <script setup lang="ts">
-import { ClipboardList, ShieldCheck } from 'lucide-vue-next'
+import { ClipboardList, Info, KeyRound, ShieldCheck } from 'lucide-vue-next'
 import type { MistakeStudent } from '~/types/api'
-import { truncate } from '~/utils/articles.mjs'
 
 useHead({ title: '错题分析｜观澜考研政治知识库', meta: [{ name: 'description', content: '按考生隔离的错题分析与提分手册，含错因统计与重做清单。' }] })
 
+const route = useRoute()
+const router = useRouter()
 const { data } = await useApiFetch<MistakeStudent[]>('/mistakes/students', [])
 const students = computed(() => data.value ?? [])
+const gateOpen = ref(false)
 
 function topErrors(record: Record<string, number>) {
   return Object.entries(record).sort((a, b) => b[1] - a[1]).slice(0, 3)
 }
+
+function openGate() {
+  gateOpen.value = true
+}
+
+onMounted(() => {
+  // 私有错题本被 403 拦回时带 login=1，这里提示登录
+  if (String(route.query.login ?? '') === '1') {
+    gateOpen.value = true
+    const query = { ...route.query }
+    delete query.login
+    router.replace({ query })
+  }
+})
 </script>
 
 <template>
@@ -18,10 +34,16 @@ function topErrors(record: Record<string, number>) {
     <SiteHeader />
     <main class="page-wrap inner-page">
       <Breadcrumbs />
+
+      <div class="notice-banner" role="note">
+        <Info :size="16" />
+        <span>错题分析服务会消耗 token，暂不支持免费分析，有需要可以联系管理员 QQ 206405650</span>
+      </div>
+
       <section class="page-hero">
         <div class="eyebrow"><ClipboardList :size="14" />个人错题分析</div>
         <h1>不告诉你错了什么，<br class="mobile-only" />只告诉你下次怎么做</h1>
-        <p>每位考生独立目录、互不引用。已收录 {{ students.length }} 位考生的错题与提分手册。</p>
+        <p>下面 {{ students.length }} 份错题本对当前身份可见。每份数据在考生之间完全隔离，只有本人账号与管理员能打开自己的那一份。</p>
       </section>
 
       <section class="student-grid">
@@ -44,7 +66,20 @@ function topErrors(record: Record<string, number>) {
         </NuxtLink>
       </section>
       <div v-if="!students.length" class="empty-state">错题数据暂不可用。</div>
+
+      <section class="student-private">
+        <h2>没有看到自己的错题本？</h2>
+        <p>注册后系统会生成一个专属账号 ID，把它发给管理员完成绑定；绑定后只有你和管理员能打开，其他账号与游客都看不到。</p>
+        <button class="ghost-button" type="button" @click="openGate"><KeyRound :size="14" />查看绑定说明</button>
+      </section>
+
       <NuxtLink class="back-link" to="/">返回首页</NuxtLink>
+      <LoginGateModal
+        :open="gateOpen"
+        title="登录查看自己的错题本"
+        message="在个人中心可以看到系统分配的账号 ID，把它发给管理员绑定错题数据；绑定后仅你和管理员可见。"
+        @close="gateOpen = false"
+      />
     </main>
   </div>
 </template>

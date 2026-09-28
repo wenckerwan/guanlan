@@ -72,7 +72,7 @@ class AdminService
             ->all();
     }
 
-    public function updateUser(int $id, string $role = '', string $status = ''): ?User
+    public function updateUser(int $id, string $role = '', string $status = '', ?string $mistakeCode = null): ?User
     {
         $user = User::find($id);
         if (! $user) {
@@ -83,6 +83,19 @@ class AdminService
         }
         if (in_array($status, ['active', 'disabled'], true)) {
             $user->status = $status;
+        }
+        if ($mistakeCode !== null) {
+            $code = trim($mistakeCode);
+            if ($code !== '' && $code !== $user->mistake_code) {
+                $taken = User::query()
+                    ->where('mistake_code', $code)
+                    ->where('id', '!=', (int) $user->id)
+                    ->exists();
+                if ($taken) {
+                    throw new \RuntimeException('该考生编号已被其他账号绑定');
+                }
+            }
+            $user->mistake_code = $code === '' ? null : $code;
         }
         $user->save();
 
