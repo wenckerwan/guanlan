@@ -151,7 +151,7 @@ async function submitRedo(item: MistakeItem) {
           <p>共 {{ student.itemCount }} 道错题，按模块与错因归类，配提分手册。</p>
         </div>
         <div class="quiz-head-actions">
-          <NuxtLink class="ghost-button" :to="`/mistakes/${code}/analyze`"><Sparkles :size="15" />AI 分析</NuxtLink>
+          <NuxtLink class="ghost-button" :to="`/mistakes/analyze/${code}`"><Sparkles :size="15" />AI 分析</NuxtLink>
           <NuxtLink v-if="isLoggedIn" class="primary-button" :to="`/mistakes/${code}/review`"><RotateCcw :size="15" />复习概览</NuxtLink>
           <NuxtLink v-if="handbooks.length" class="primary-button" :to="`/mistakes/${code}/${handbooks[0].id}`"><BookOpen :size="15" />看提分手册</NuxtLink>
         </div>
