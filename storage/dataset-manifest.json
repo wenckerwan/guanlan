@@ -1,44 +1,51 @@
 {
+  "schema_version": 1,
+  "source_manifest": {
+    "asset_count": 548,
+    "logical_document_count": 418,
+    "path": "storage/import-manifest.json",
+    "sha256": "1fc5a0b20db722345d2849b83a0496ea42d041f5fbdf076871b3a3a7240f0ed9"
+  },
   "datasets": {
     "analysis_articles.json": {
-      "bytes": 405934,
+      "bytes": 404771,
       "groups": {},
       "items": 13,
-      "sha256": "8c5fa8e3f0bf9b57badcdfb68f74c79874aa28e0e87380ac32af8de60eeccb2e"
+      "sha256": "66fe110660f5fda24eeebb0798dd0a5397721480e421bf5d5a2532aa68f0e4cf"
     },
     "hotspots.json": {
-      "bytes": 171902,
+      "bytes": 171225,
       "groups": {},
       "items": 3,
-      "sha256": "e917edcfbea75f04e99d959750d74e9ccf6db1f252568466438a100c2cbcea39"
+      "sha256": "7e2b249e8c343dd8413e7ff13d3f93d70cd37b037e0915b65b7f37451405990c"
     },
     "mistakes.json": {
-      "bytes": 256453,
+      "bytes": 253077,
       "groups": {
         "handbooks": 2,
         "items": 91,
         "students": 1
       },
       "items": 94,
-      "sha256": "1a86dc724e0726e36042c97c90d852fce0508c662258ef196acb1d065862efec"
+      "sha256": "4e23484e987c70bba3e086c9ae66993b394f48d4a1bc72cd70bb86c29da7a0b2"
     },
     "mocks.json": {
-      "bytes": 23446,
+      "bytes": 22736,
       "groups": {},
       "items": 1,
-      "sha256": "c598958f47659cc63a2c22979ec66df27307911bbb5add6599627abb0e2aa124"
+      "sha256": "91d2496a3043c98e3d02247300886f9bdf76508d9653d49b016f862dd8812f70"
     },
     "papers.json": {
-      "bytes": 73863,
+      "bytes": 71022,
       "groups": {},
       "items": 42,
-      "sha256": "63cde0cc505402305e5dfc316200266beaccdf91846bc27497ba2ffda6d6a5c5"
+      "sha256": "193cd722f14f3bd9dc6e03a92822ec479dd38e480112561a262614801ea47ab3"
     },
     "predictions.json": {
-      "bytes": 302375,
+      "bytes": 301404,
       "groups": {},
       "items": 6,
-      "sha256": "e3791b98ef90368c81ba6edbb8533d2a3a61c9e3f0f80ca6b89a84bd9752d86c"
+      "sha256": "3b8ff2ae6776565666e8c69b7ea480fca33c9212c20c04e14ab563a88b21a111"
     },
     "questions.json": {
       "bytes": 2962359,
@@ -47,7 +54,7 @@
       "sha256": "d75a7cfff60cdf39a4b046e61c5ea782f76ec2550565b44d9d87320eafc30dfb"
     },
     "stats.json": {
-      "bytes": 30812,
+      "bytes": 29424,
       "groups": {
         "byModule": 7,
         "difficultyHard": 15,
@@ -62,18 +69,11 @@
         "yearCounts": 42
       },
       "items": 182,
-      "sha256": "c28396a35e2b6433e069fe68c118613b71eb7661b71d3748faef2eb0370d6ec3"
+      "sha256": "5ed1b814489f749b75bd7b23907d0987371755ba0d0d8f2e5e8cba9d395d6ab2"
     }
   },
-  "schema_version": 1,
-  "source_manifest": {
-    "asset_count": 548,
-    "logical_document_count": 418,
-    "path": "storage/import-manifest.json",
-    "sha256": "07414b2a5bc11efa3db844a63cc73f8df38ddc693eefa9aa89506a4b6a68c464"
-  },
   "totals": {
-    "bytes": 4227144,
+    "bytes": 4216018,
     "files": 8,
     "items": 1820
   }
