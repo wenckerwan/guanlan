@@ -1,5 +1,61 @@
 # 更新记录
 
+## 错题可见性、访客配额与登录态 SSR - 2026-09-27
+
+### 变更
+
+- **错题可见性收紧**：新增 `App\Support\MistakeAccess`，考生 A 为公开模板，
+  其余编号仅「绑定账号」与管理员可见。覆盖 `students` / `show` / `items` /
+  `handbooks` / `detail` / `handbooks/{id}` / `items/{id}/action` 七个入口，
+  其中 `handbooks/{id}` 反查手册归属，避免绕过 code 直取私有手册。
+- **全站搜索防泄露**：`/search` 的错题结果按可见编号白名单过滤。
+- **账号 ID**：`users` 新增 `mistake_code`（可空、唯一）。注册时取最小未占用的
+  纯数字编号（1、2、3…），一 ID 绑定一账号并对应同编号错题本；唯一索引兜底并发，
+  冲突最多重试 5 次。个人中心展示该 ID，后台用户列表可查看与改绑（撞号返回 422）。
+- **访客配额**：新增 `App\Support\GuestQuota`，真题分析 / 时政热点 / 时政预测
+  各自可免费阅读 3 篇。列表仍返回全部条目并带 `locked`，超额详情返回 403。
+  配额按「栏目整体顺序」计算，与列表筛选条件无关，保证列表与详情边界一致。
+- **登录引导**：新增 `LoginGateModal.vue`。锁定卡片点击即弹窗；详情被 403 拦下会
+  跳回对应列表并带 `?login=1` 自动弹窗，「去登录」携带 `redirect` 回跳原页。
+- **登录态迁移 Cookie**：token 从 localStorage 迁到 Cookie（30 天，`SameSite=Lax`，
+  HTTPS 加 `Secure`），SSR 首帧即可解析身份，消除已登录用户的游客态闪烁；
+  `useApiFetch` 透传 Authorization，缓存 key 含 URL 与 token。
+- **错题列表公告**：`/mistakes` 顶部提示错题分析服务消耗 token、暂不支持免费分析。
+- **移除考生 B**：`mistakes.json`、`dataset-manifest.json`、
+  `tools/ingest/build_mistakes.py` 三处同步移除，避免重新生成时回归。
+- **修复**：`/mistakes/{code}.vue` 的「看提分手册」链接指向不存在的
+  `/mistakes/{code}/handbook/{id}`，已改为实际路由 `/mistakes/{code}/{id}`。
+- **修复**：列表页原先在前端按优先级重排序，会让服务端算好的 `locked` 分界错位；
+  现改为顺序完全由服务端决定。
+
+### 验证
+
+本机（Windows，无 Docker；WSL 无 PHP）实际执行：
+
+- `php -l`（`src/config/migrations/seeders/tests/bin` 共 110 个文件）：0 失败。
+- `php tests/MistakeAccessTest.php`：`MistakeAccessTest: PASS`；
+  把 `GuestQuota::FREE_PER_SECTION` 改成 +10 后该测试 FAIL，确认能抓到配额破坏。
+- `php tests/AccountIdTest.php`：`AccountIdTest: PASS`；
+  把 `isDuplicateMistakeCode` 改名后该测试 FAIL，确认能抓到重试逻辑缺失。
+- `php bin/verify-dataset.php`：`Dataset integrity OK: 8 files`；
+  另用临时副本篡改 `mistakes.json.items` 后返回
+  `mistakes.json.items mismatch`，负向用例有效。
+- `python tools/phpcheck.py`：`checked=104 files, classes=70, tables=20`，`OK`。
+- `python -m unittest discover -s tools/ingest -p "test_*.py"`：20/20 通过。
+- `npm test --prefix apps/web`：38/38 通过（新增 `splitByLock` 两组用例）。
+- `npm run build --prefix apps/web`：Nuxt 生产构建成功，`Σ Total size: 5.19 MB (1.35 MB gzip)`。
+- SSR 冒烟：`node .output/server/index.mjs` 启动后
+  `/ /mistakes /analysis /hotspots /predictions /login` 全部 200，stderr 无报错。
+
+### 已知限制
+
+- 本机无 Docker、WSL 无 PHP，以下未执行也未声称通过：`docker compose up --build`、
+  `tools/lint.sh`（容器内 PHP lint + 三个测试）、`tools/smoke.sh` 权限与配额用例、
+  migration 与 Seeder 的真实数据库写入。相关条目保持「进行中」。
+- 数据库里已存在的考生 B 数据需重新执行 Seeder（容器重建流程已含 `db:seed --force`）才会清除。
+- `python tools/doclink.py` 报 `README.md: docs/api.md` 断链。该问题在本次改动前的
+  `HEAD` 上即存在（`docs/api.md` 从未入库），与本次改动无关，未修。
+
 ## V0.1-dev.5 - 2026-09-27
 
 ### 变更
