@@ -14,7 +14,7 @@ const mockLoggedIn = ref(isDev) // 开发环境模拟已登录
 const student = ref<MistakeStudent | null>(null)
 
 // 在客户端加载考生信息
-if (import.meta.client) {
+onMounted(async () => {
   if (isDev) {
     // 开发环境使用模拟数据
     student.value = {
@@ -28,7 +28,7 @@ if (import.meta.client) {
     const { data } = await useApiFetch<MistakeStudent>(`/mistakes/students/${code}`, null)
     student.value = data.value
   }
-}
+})
 
 // AI 配置
 const aiConfig = reactive({
