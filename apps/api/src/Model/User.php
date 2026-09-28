@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Model;
+namespace AppModel;
 
-use Hyperf\Database\Model\Model;
-use Hyperf\Database\Model\Relations\HasMany;
+use HyperfDatabaseModelModel;
+use HyperfDatabaseModelRelationsHasMany;
+use HyperfDatabaseModelRelationsHasOne;
 
 class User extends Model
 {
@@ -20,6 +21,16 @@ class User extends Model
         return $this->hasMany(UserToken::class, 'user_id');
     }
 
+    public function mistakeAccount(): HasOne
+    {
+        return $this->hasOne(MistakeAccount::class, 'user_id');
+    }
+
+    public function mistakeStudent(): HasOne
+    {
+        return $this->hasOne(MistakeStudent::class, 'owner_user_id');
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
@@ -30,9 +41,15 @@ class User extends Model
         return $this->status === 'active';
     }
 
-    /** 绑定的考生 / 错题编号，未绑定时为空字符串。 */
+    public function accountId(): string
+    {
+        $account = $this->mistakeAccount;
+        return $account instanceof MistakeAccount ? $account->displayId() : trim((string) ($this->mistake_code ?? ''));
+    }
+
+    /** 兼容旧调用；新代码应使用 accountId()。 */
     public function mistakeCode(): string
     {
-        return trim((string) ($this->mistake_code ?? ''));
+        return $this->accountId();
     }
 }

@@ -36,39 +36,68 @@ class MistakeSeeder extends Seeder
         $items = $payload['items'] ?? [];
         $handbooks = $payload['handbooks'] ?? [];
 
-        // 先删子表再删主表（外键 cascade）
-        \Hyperf\DbConnection\Db::table('mistake_handbooks')->delete();
-        \Hyperf\DbConnection\Db::table('mistake_items')->delete();
-        \Hyperf\DbConnection\Db::table('mistake_students')->delete();
-
         $now = DatasetReader::now();
         $idByCode = [];
 
+        // 幂等导入考生（仅导入 code 不为纯数字的模板考生，如「A」）
         foreach ($students as $order => $student) {
-            $record = MistakeStudent::create([
-                'code' => (string) $student['code'],
-                'name' => (string) $student['name'],
-                'relation' => (string) ($student['relation'] ?? ''),
-                'detail_html' => (string) ($student['detailHtml'] ?? ''),
-                'sort_order' => $order,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
-            $idByCode[(string) $student['code']] = (int) $record->id;
+            $code = (string) $student['code'];
+
+            // 跳过纯数字账号（这些是用户账号，不应被 Seeder 覆盖）
+            if (ctype_digit($code)) {
+                continue;
+            }
+
+            $existing = MistakeStudent::query()->where('code', $code)->where('owner_user_id', null)->first();
+
+            if ($existing) {
+                // 更新已有模板考生
+                $existing->name = (string) $student['name'];
+                $existing->relation = (string) ($student['relation'] ?? '');
+                $existing->detail_html = (string) ($student['detailHtml'] ?? '');
+                $existing->sort_order = $order;
+                $existing->updated_at = $now;
+                $existing->save();
+                $idByCode[$code] = (int) $existing->id;
+            } else {
+                // 创建新模板考生
+                $record = MistakeStudent::create([
+                    'code' => $code,
+                    'name' => (string) $student['name'],
+                    'relation' => (string) ($student['relation'] ?? ''),
+                    'detail_html' => (string) ($student['detailHtml'] ?? ''),
+                    'sort_order' => $order,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+                $idByCode[$code] = (int) $record->id;
+            }
         }
 
+        // 幂等导入错题（根据 item_key 判断更新还是新增）
         $sort = 0;
         foreach ($items as $item) {
-            $studentId = $idByCode[(string) ($item['studentCode'] ?? '')] ?? null;
+            $studentCode = (string) ($item['studentCode'] ?? '');
+            $studentId = $idByCode[$studentCode] ?? null;
+
             if (! $studentId) {
                 continue;
             }
-            MistakeItem::create([
+
+            $module = (string) ($item['module'] ?? '');
+            $chapter = (string) ($item['chapter'] ?? '');
+            $sourceNo = (string) ($item['sourceNo'] ?? '');
+            $itemKey = sprintf('%s|%s|%s|%s', $studentCode, $module, $chapter, $sourceNo);
+
+            $existing = MistakeItem::query()->where('item_key', $itemKey)->first();
+
+            $itemData = [
                 'student_id' => $studentId,
-                'module' => (string) ($item['module'] ?? ''),
-                'chapter' => (string) ($item['chapter'] ?? ''),
+                'item_key' => $itemKey,
+                'module' => $module,
+                'chapter' => $chapter,
                 'chapter_no' => (int) ($item['chapterNo'] ?? 0),
-                'source_no' => (string) ($item['sourceNo'] ?? ''),
+                'source_no' => $sourceNo,
                 'kaodian' => mb_substr((string) ($item['kaodian'] ?? ''), 0, 191),
                 'stem' => (string) ($item['stem'] ?? ''),
                 'options' => $item['options'] ?? [],
@@ -78,32 +107,70 @@ class MistakeSeeder extends Seeder
                 'error_type' => (string) ($item['errorType'] ?? ''),
                 'action' => (string) ($item['action'] ?? ''),
                 'sort_order' => $sort++,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
+                'origin' => 'dataset',
+            ];
+
+            if ($existing) {
+                // 更新已有错题
+                foreach ($itemData as $key => $value) {
+                    $existing->{$key} = $value;
+                }
+                $existing->updated_at = $now;
+                $existing->save();
+            } else {
+                // 创建新错题
+                $itemData['created_at'] = $now;
+                $itemData['updated_at'] = $now;
+                MistakeItem::create($itemData);
+            }
         }
 
+        // 幂等导入提分手册
         foreach ($handbooks as $order => $handbook) {
-            $studentId = $idByCode[(string) ($handbook['studentCode'] ?? '')] ?? null;
+            $studentCode = (string) ($handbook['studentCode'] ?? '');
+            $studentId = $idByCode[$studentCode] ?? null;
+
             if (! $studentId) {
                 continue;
             }
-            MistakeHandbook::create([
+
+            $module = (string) ($handbook['module'] ?? '');
+            $sourceFile = (string) ($handbook['sourceFile'] ?? '');
+
+            $existing = MistakeHandbook::query()
+                ->where('student_id', $studentId)
+                ->where('module', $module)
+                ->where('source_file', $sourceFile)
+                ->first();
+
+            $handbookData = [
                 'student_id' => $studentId,
-                'module' => (string) ($handbook['module'] ?? ''),
+                'module' => $module,
                 'title' => (string) ($handbook['title'] ?? ''),
                 'html' => (string) ($handbook['html'] ?? ''),
                 'sections' => $handbook['sections'] ?? [],
-                'source_file' => (string) ($handbook['sourceFile'] ?? ''),
+                'source_file' => $sourceFile,
                 'sort_order' => $order,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
+            ];
+
+            if ($existing) {
+                // 更新已有手册
+                foreach ($handbookData as $key => $value) {
+                    $existing->{$key} = $value;
+                }
+                $existing->updated_at = $now;
+                $existing->save();
+            } else {
+                // 创建新手册
+                $handbookData['created_at'] = $now;
+                $handbookData['updated_at'] = $now;
+                MistakeHandbook::create($handbookData);
+            }
         }
 
         echo sprintf(
-            '[MistakeSeeder] 考生 %d 名 / 错题 %d 道 / 提分手册 %d 份' . PHP_EOL,
-            MistakeStudent::query()->count(),
+            '[MistakeSeeder] 模板考生 %d 名 / 错题 %d 道 / 提分手册 %d 份' . PHP_EOL,
+            MistakeStudent::query()->whereNull('owner_user_id')->count(),
             MistakeItem::query()->count(),
             MistakeHandbook::query()->count()
         );

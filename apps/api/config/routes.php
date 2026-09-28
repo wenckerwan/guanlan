@@ -58,9 +58,14 @@ Router::addGroup('/api/v1/mistakes', function () {
     Router::get('/students/{code}/items', [MistakeController::class, 'items']);
     Router::get('/students/{code}/handbooks', [MistakeController::class, 'handbooks']);
     Router::get('/students/{code}/detail', [MistakeController::class, 'detail']);
+    Router::get('/students/{code}/review-summary', [MistakeController::class, 'reviewSummary']);
     Router::get('/students/{code}', [MistakeController::class, 'show']);
+    Router::post('/students/{code}/ai-analysis', [MistakeController::class, 'requestAIAnalysis']);
+    Router::get('/ai-config', [MistakeController::class, 'getAIConfig']);
 }, ['middleware' => [AuthMiddleware::class]]);
 Router::patch('/api/v1/mistakes/items/{id:\d+}/action', [MistakeController::class, 'updateAction'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
+Router::post('/api/v1/mistakes/items/{id:\d+}/review', [MistakeController::class, 'submitReview'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
+Router::patch('/api/v1/mistakes/items/{id:\d+}/review-status', [MistakeController::class, 'updateReviewStatus'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
 
 // 认证
 Router::post('/api/v1/auth/register', [AuthController::class, 'register']);

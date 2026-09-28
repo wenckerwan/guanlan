@@ -2,14 +2,10 @@
 
 declare(strict_types=1);
 
-/**
- * 账号 ID 生成规则：从 1 开始取最小未被占用的纯数字编号。
- *
- * 不依赖数据库：把 AuthService::nextAccountId 的纯算法抽出来单独验证，
- * 并断言它与源码中的实现保持同一规则（防止实现漂移）。
- */
-
 namespace {
+    require dirname(__DIR__) . '/src/Support/AccountId.php';
+
+    use AppSupportAccountId;
 
     $failures = [];
     $check = static function (string $label, mixed $actual, mixed $expected) use (&$failures): void {
@@ -18,41 +14,27 @@ namespace {
         }
     };
 
-    /** 与 AuthService::nextAccountId 同规则：最小未占用的正整数。 */
-    $nextId = static function (array $existing): string {
-        $taken = [];
-        foreach ($existing as $code) {
-            if (is_numeric($code)) {
-                $taken[(int) $code] = true;
-            }
-        }
-        $candidate = 1;
-        while (isset($taken[$candidate])) {
-            $candidate++;
-        }
-        return (string) $candidate;
-    };
+    $check('admin account is 000001', AccountId::format(1), '000001');
+    $check('first normal account follows admin', AccountId::format(2), '000002');
+    $check('millionth id is rejected', (static function (): bool {
+        try { AccountId::format(1000000); return false; } catch (InvalidArgumentException) { return true; }
+    })(), true);
 
-    $check('first account is 1', $nextId([]), '1');
-    $check('fills lowest gap', $nextId(['1', '3']), '2');
-    $check('sequential after contiguous', $nextId(['1', '2', '3']), '4');
-    $check('ignores non-numeric codes', $nextId(['A', 'B']), '1');
-    $check('ignores null and empty', $nextId([null, '', '2']), '1');
-    $check('never reuses a freed code', $nextId(['1', '2']), '3');
-    $check('account codes are distinct from A template', $nextId(['1']), '2');
-
-    // 源码必须仍然采用同一规则（最小未占用），而不是「max+1」之类会发生漂移的写法。
-    $source = (string) file_get_contents(dirname(__DIR__) . '/src/Service/AuthService.php');
-    $check('AuthService uses sequential fill', str_contains($source, 'while (isset($taken[$candidate]))'), true);
-    $check('AuthService starts from 1', str_contains($source, '$candidate = 1;'), true);
-    $check('AuthService assigns mistake_code on register', str_contains($source, "'mistake_code' => \$this->nextAccountId()"), true);
-    $check('AuthService retries on unique conflict', str_contains($source, 'isDuplicateMistakeCode'), true);
-    $check('AuthService seeds attributes once', str_contains($source, '$attributes + ['), true);
+    $auth = (string) file_get_contents(dirname(__DIR__) . '/src/Service/AuthService.php');
+    $accountService = (string) file_get_contents(dirname(__DIR__) . '/src/Service/MistakeAccountService.php');
+    $migration = (string) file_get_contents(dirname(__DIR__) . '/migrations/2026_09_28_000001_create_mistake_accounts_table.php');
+    $check('registration provisions account in transaction', str_contains($auth, 'Db::transaction') && str_contains($auth, 'mistakeAccounts->provision'), true);
+    $check('account service creates account', str_contains($accountService, 'MistakeAccount::create'), true);
+    $check('migration assigns admin first', str_contains($migration, "role = 'admin'") && str_contains($migration, '$number = 1'), true);
+    $check('account migration exists', str_contains($migration, 'mistake_accounts'), true);
 
     if ($failures !== []) {
-        fwrite(STDERR, "AccountIdTest: FAIL\n" . implode("\n", $failures) . "\n");
+        fwrite(STDERR, "AccountIdTest: FAIL
+" . implode("
+", $failures) . "
+");
         exit(1);
     }
-
-    echo "AccountIdTest: PASS\n";
+    echo "AccountIdTest: PASS
+";
 }
