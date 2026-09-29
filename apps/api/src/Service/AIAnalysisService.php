@@ -270,6 +270,20 @@ class AIAnalysisService
     }
 
     /**
+     * 分析/对话返回空内容：先识别推理型模型（思考占满输出额度），再走 HTML 误配提示
+     */
+    private function emptyContentError(string $raw): array
+    {
+        $body = json_decode($raw, true);
+        $reasoning = (string) ($body['choices'][0]['message']['reasoning_content'] ?? '');
+        if ($reasoning !== '') {
+            return ['error' => '该模型是推理型（先思考后回答），本次思考把输出额度占满了，正式回答为空。建议改用非推理模型（如 deepseek-chat）后重试。' . $this->htmlHint($raw)];
+        }
+
+        return ['error' => $this->emptyContentError($raw)];
+    }
+
+    /**
      * 常见配置错误：把网页地址当成 API 端点，返回的是 HTML 页面而非 JSON
      */
     private function htmlHint(string $raw): string
@@ -430,7 +444,7 @@ class AIAnalysisService
                     'Authorization' => "Bearer {$apiKey}",
                     'Content-Type' => 'application/json',
                 ],
-                'json' => [
+                'json' => array_filter([
                     'model' => $model,
                     'messages' => [
                         [
@@ -443,8 +457,9 @@ class AIAnalysisService
                         ],
                     ],
                     'temperature' => 0.7,
-                    'max_tokens' => (int) ($config['max_tokens'] ?? 4000),
-                ],
+                    // max_tokens 为 null 时不发送（DeepSeek 等推理模型用自身默认额度更合理）
+                    'max_tokens' => ! empty($config['max_tokens']) ? (int) $config['max_tokens'] : null,
+                ], static fn ($v) => $v !== null),
                 'timeout' => 60,
             ]);
 
@@ -453,7 +468,7 @@ class AIAnalysisService
             $content = $body['choices'][0]['message']['content'] ?? $body['choices'][0]['text'] ?? '';
 
             if (trim((string) $content) === '') {
-                return ['error' => 'AI 返回内容为空。' . $this->htmlHint($raw)];
+                return $this->emptyContentError($raw);
             }
 
             return [
@@ -513,7 +528,7 @@ class AIAnalysisService
             $content = $body['content'][0]['text'] ?? $body['content'][0]['content'] ?? '';
 
             if (trim((string) $content) === '') {
-                return ['error' => 'AI 返回内容为空。' . $this->htmlHint($raw)];
+                return ['error' => $this->emptyContentError($raw)];
             }
 
             return [
@@ -589,7 +604,7 @@ class AIAnalysisService
                 ?? '';
 
             if (trim((string) $content) === '') {
-                return ['error' => 'AI 返回内容为空。' . $this->htmlHint($raw)];
+                return ['error' => $this->emptyContentError($raw)];
             }
 
             return [
@@ -727,8 +742,9 @@ PROMPT;
             if (trim((string) ($config['model'] ?? '')) === '') {
                 $config['model'] = 'deepseek-chat';
             }
-            // 推理型模型的思考过程也消耗输出额度，分析长文需要更大空间
-            $config['max_tokens'] = 8000;
+            // 推理型模型的思考过程也消耗输出额度；不传 max_tokens，
+            // 让 API 使用模型自身默认额度（推理型默认远大于手动设的 8K）
+            $config['max_tokens'] = null;
         }
 
         return $config;
