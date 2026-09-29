@@ -61,7 +61,7 @@ class AdminController
     /** 后台只读：某卷题目（分页） */
     public function paperQuestions(string $pid): ResponseInterface
     {
-        $result = $this->service->paperQuestions($pid, $this->page(), $this->perPage());
+        $result = $this->service->paperQuestions(rawurldecode($pid), $this->page(), $this->perPage());
 
         return ApiResponse::data([
             'items' => QuestionResource::collection($result['items']),

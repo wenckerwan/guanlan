@@ -1,5 +1,23 @@
 # 更新记录
 
+## V0.1-dev.21 - 真题排版修复 + 错题自动归集 + 错题收藏/删除 - 2026-09-30
+
+### 变更
+
+- **真题排版修复**：
+  - 数据清洗（build_questions.py）：题干/选项中混入的【答案】X、【解析】尾巴剥离并入解析字段（286 处选项答案、221 处解析、5 处分析题参考答案块），
+    空缺答案字段从【答案】标记回填；questions.json 重新生成并重建 manifest（1479 题，0 残留）。
+  - 题干/选项/解析渲染启用 `white-space: pre-line`，OCR 换行与①②③④结构正常折行。
+  - 非中文/含中文 pid（如 1994·文科）路由 404 修复：Hyperf 路由参数不解码，PaperController::show 与后台 paperQuestions 手动 rawurldecode。
+- **真题错题自动归集**：
+  - 新接口 POST /api/v1/study/attempts/batch（需登录）：真题整卷交卷时服务端判分，逐题落 attempts，
+    错题（含未作答的客观题）自动 upsert 进本人错题本（mistake_items，origin='paper'，item_key='paper-q{题目id}' 去重，重复交卷只更新最新作答）。
+  - 错因口径与数据集导入一致（未记录/既漏又错/纯错选/纯漏选），options 带 chosen/missed/hit 标记，错题册直接渲染。
+  - 真题页交卷判分后自动上报（游客跳过），判分横幅提示「N 道错题已自动加入你的错题本」。
+- **错题收藏 / 删除**：
+  - 新接口 DELETE /api/v1/mistakes/items/{id}（本人或管理员）。
+  - 错题册页每题新增「收藏」（复用 /study/favorites，targetType=mistake_item，刷新后状态保持）与「删除」（确认后移除）按钮。
+
 ## V0.1-dev.20 - 用户组体系 + 学习时长排行 + 时政 AI 供应商 + 后台体验 - 2026-09-29
 
 ### 变更

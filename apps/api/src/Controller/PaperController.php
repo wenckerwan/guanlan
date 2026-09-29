@@ -32,6 +32,8 @@ class PaperController
 
     public function show(string $pid): ResponseInterface
     {
+        // 路由参数保留百分号编码（pid 含中文如 1994·文科），需手动解码
+        $pid = rawurldecode($pid);
         $paper = $this->service->paper($pid);
         if (! $paper) {
             return ApiResponse::message('试卷不存在', 404);

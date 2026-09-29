@@ -74,6 +74,7 @@ Router::addGroup('/api/v1/mistakes', function () {
     Router::get('/ai-config', [MistakeController::class, 'getAIConfig']);
 }, ['middleware' => [AuthMiddleware::class]]);
 Router::patch('/api/v1/mistakes/items/{id:\d+}/action', [MistakeController::class, 'updateAction'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
+Router::delete('/api/v1/mistakes/items/{id:\d+}', [MistakeController::class, 'deleteItem'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
 Router::post('/api/v1/mistakes/items/{id:\d+}/review', [MistakeController::class, 'submitReview'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
 Router::patch('/api/v1/mistakes/items/{id:\d+}/review-status', [MistakeController::class, 'updateReviewStatus'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
 
@@ -92,6 +93,7 @@ Router::addGroup('/api/v1/study', function () {
     Router::post('/notes', [StudyController::class, 'createNote']);
     Router::delete('/notes/{id:\d+}', [StudyController::class, 'removeNote']);
     Router::post('/attempts', [StudyController::class, 'createAttempt']);
+    Router::post('/attempts/batch', [StudyController::class, 'recordPaperSession']);
     Router::get('/stats', [StudyController::class, 'stats']);
     Router::get('/progress', [StudyController::class, 'progress']);
     Router::post('/progress', [StudyController::class, 'saveProgress']);

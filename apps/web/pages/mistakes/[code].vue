@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch, onMounted } from 'vue'
 import { marked } from 'marked'
-import { ArrowLeft, BookOpen, Check, FileText, RotateCcw, Send, Sparkles } from 'lucide-vue-next'
+import { ArrowLeft, BookOpen, Check, FileText, RotateCcw, Send, Sparkles, Star, Trash2 } from 'lucide-vue-next'
 import type { Handbook, MistakeItemsPayload, MistakeItem } from '~/types/api'
 import { displayAnswer, isCorrect } from '~/utils/quiz.mjs'
 import { normalizePage } from '~/utils/pagination.mjs'
@@ -107,6 +107,49 @@ const redoChoices = reactive<Record<number, string[]>>({})
 const redoResults = reactive<Record<number, boolean | null>>({})
 const redoActions = reactive<Record<number, string>>({})
 const redoNotices = reactive<Record<number, string>>({})
+
+// 错题收藏 / 删除（仅登录用户可用）
+const favMap = reactive<Record<number, boolean>>({})
+
+onMounted(async () => {
+  if (!isLoggedIn.value) return
+  try {
+    const favs = await request<Array<{ targetId: string }>>(withQuery('/study/favorites', { targetType: 'mistake_item' }))
+    for (const fav of favs) favMap[Number(fav.targetId)] = true
+  } catch {
+    /* 收藏状态获取失败不阻塞页面 */
+  }
+})
+
+async function toggleFav(item: MistakeItem) {
+  try {
+    const res = await request<{ favorited: boolean }>('/study/favorites', {
+      method: 'POST',
+      body: {
+        targetType: 'mistake_item',
+        targetId: String(item.id),
+        title: item.stem.slice(0, 80),
+        url: `/mistakes/${code}`,
+      },
+    })
+    favMap[item.id] = res.favorited
+  } catch {
+    /* 保持现状 */
+  }
+}
+
+async function removeItem(item: MistakeItem) {
+  if (!window.confirm('确定从错题本删除这道错题？删除后不可恢复。')) return
+  try {
+    await request(`/mistakes/items/${item.id}`, { method: 'DELETE' })
+    if (data.value) {
+      data.value.items = data.value.items.filter((row) => row.id !== item.id)
+      data.value.total = Math.max(0, (data.value.total ?? 1) - 1)
+    }
+  } catch {
+    /* 删除失败保持现状 */
+  }
+}
 
 const modules = computed(() => Object.keys(student.value?.moduleCounts ?? {}))
 const total = computed(() => data.value?.total ?? student.value?.itemCount ?? 0)
@@ -288,9 +331,17 @@ async function submitRedo(item: MistakeItem) {
             <p v-if="redoActions[item.id] || item.personalAction || item.action" class="mistake-action"><strong>下次怎么做：</strong>{{ redoActions[item.id] || item.personalAction || item.action }}</p>
           </div>
 
-          <button class="ghost-button small" type="button" @click="toggleRedo(item)">
-            <RotateCcw :size="13" />{{ redoOpen[item.id] ? '收起重练' : '开始重练' }}
-          </button>
+          <div class="mistake-item-actions">
+            <button class="ghost-button small" type="button" @click="toggleRedo(item)">
+              <RotateCcw :size="13" />{{ redoOpen[item.id] ? '收起重练' : '开始重练' }}
+            </button>
+            <button v-if="isLoggedIn" class="ghost-button small" type="button" :class="{ faved: favMap[item.id] }" @click="toggleFav(item)">
+              <Star :size="13" />{{ favMap[item.id] ? '已收藏' : '收藏' }}
+            </button>
+            <button v-if="isLoggedIn" class="ghost-button small danger" type="button" @click="removeItem(item)">
+              <Trash2 :size="13" />删除
+            </button>
+          </div>
           <div v-if="redoOpen[item.id]" class="redo-panel">
             <p class="redo-title">重新作答 · {{ isMulti(item) ? '多选题' : '单选题' }}</p>
             <ul class="option-list redo-options">
@@ -320,6 +371,22 @@ async function submitRedo(item: MistakeItem) {
 </template>
 
 <style scoped>
+.mistake-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.mistake-item-actions .faved {
+  color: var(--accent, #b45309);
+  border-color: var(--accent, #b45309);
+}
+
+.mistake-item-actions .danger {
+  color: var(--error, #dc2626);
+}
+
 .ai-reports {
   margin: 1.5rem 0;
   padding: 1rem 1.25rem;

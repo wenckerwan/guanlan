@@ -131,6 +131,28 @@ class StudyController
         ], 201);
     }
 
+    /**
+     * 真题整卷交卷：服务端判分并自动归集错题到本人错题本。
+     */
+    public function recordPaperSession(): ResponseInterface
+    {
+        $pid = trim((string) $this->request->input('pid', ''));
+        $answers = (array) $this->request->input('answers', []);
+        if ($pid === '') {
+            return ApiResponse::message('缺少试卷 pid', 422);
+        }
+        if (count($answers) > 200) {
+            return ApiResponse::message('作答数据超出上限', 422);
+        }
+
+        $result = $this->service->recordPaperSession(Auth::user(), $pid, $answers);
+        if (isset($result['error'])) {
+            return ApiResponse::message((string) $result['error'], 404);
+        }
+
+        return ApiResponse::data($result);
+    }
+
     public function stats(): ResponseInterface
     {
         return ApiResponse::data($this->service->stats(Auth::user()));

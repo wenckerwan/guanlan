@@ -172,6 +172,31 @@ class MistakeController
         );
     }
 
+    /**
+     * 删除本人错题本中的单条错题（本人或管理员）。
+     */
+    public function deleteItem(int $id): ResponseInterface
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return ApiResponse::message('未登录', 401);
+        }
+
+        $item = $this->service->item($id);
+        if (! $item) {
+            return ApiResponse::message('错题不存在', 404);
+        }
+
+        $isOwner = (int) ($item->student?->owner_user_id ?? 0) === (int) $user->id;
+        if (! $isOwner && ! MistakeAccess::isAdmin($user)) {
+            return ApiResponse::message('该错题本仅对应账号和管理员可见', 403);
+        }
+
+        $this->service->deleteItem($item);
+
+        return ApiResponse::message('已删除', 200);
+    }
+
     public function handbook(int $id): ResponseInterface
     {
         $handbook = $this->service->handbook($id);

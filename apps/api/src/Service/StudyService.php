@@ -6,7 +6,9 @@ namespace App\Service;
 
 use App\Model\Attempt;
 use App\Model\Favorite;
+use App\Model\MistakeStudent;
 use App\Model\Note;
+use App\Model\Question;
 use App\Model\StudyProgress;
 use App\Model\User;
 use Hyperf\Database\Model\Builder;
@@ -16,7 +18,13 @@ use Hyperf\Database\Model\Builder;
  */
 class StudyService
 {
-    public const TARGET_TYPES = ['question', 'paper', 'analysis', 'hotspot', 'prediction', 'mistake', 'handbook', 'mock'];
+    public const TARGET_TYPES = ['question', 'paper', 'analysis', 'hotspot', 'prediction', 'mistake', 'mistake_item', 'handbook', 'mock'];
+
+    public function __construct(
+        private MistakeAccountService $mistakeAccounts,
+        private MistakeService $mistakes
+    ) {
+    }
 
     /** @return array<int, Favorite> */
     public function favorites(User $user, string $targetType = ''): array
@@ -137,6 +145,87 @@ class StudyService
         $progress->save();
 
         return $attempt;
+    }
+
+    /**
+     * 真题整卷交卷：服务端判分、逐题落 attempts，错题（含未作答的客观题）
+     * 自动归集进本人错题本。
+     *
+     * @param array<int, string> $answers questionId => 所选字母
+     * @return array<string, mixed>
+     */
+    public function recordPaperSession(User $user, string $pid, array $answers): array
+    {
+        $questions = Question::query()->where('pid', $pid)->get();
+        if ($questions->isEmpty()) {
+            return ['error' => '试卷不存在'];
+        }
+
+        $student = MistakeStudent::query()->where('owner_user_id', (int) $user->id)->first();
+        if (! $student) {
+            $student = $this->mistakeAccounts->provision($user)['student'];
+        }
+
+        $right = 0;
+        $wrong = 0;
+        $blank = 0;
+        $score = 0;
+        $collected = 0;
+
+        foreach ($questions as $question) {
+            $questionId = (int) $question->id;
+            $chosen = self::normalizeLetters((string) ($answers[$questionId] ?? ''));
+            $correct = self::normalizeLetters((string) $question->answer);
+
+            if ($chosen !== '') {
+                $this->recordAttempt(
+                    $user,
+                    'paper',
+                    $pid,
+                    (string) $questionId,
+                    (string) $question->module_name,
+                    $chosen,
+                    $correct
+                );
+            }
+
+            if ($correct === '' || (array) $question->options === []) {
+                continue;
+            }
+
+            if ($chosen === '') {
+                $blank++;
+            } elseif ($chosen === $correct) {
+                $right++;
+                $score += (int) $question->score;
+            } else {
+                $wrong++;
+            }
+
+            if ($chosen === '' || $chosen !== $correct) {
+                if ($this->mistakes->collectWrongChoice($student, $question, $chosen)) {
+                    $collected++;
+                }
+            }
+        }
+
+        return [
+            'attempted' => count(array_filter($answers, fn ($v) => trim((string) $v) !== '')),
+            'right' => $right,
+            'wrong' => $wrong,
+            'blank' => $blank,
+            'score' => $score,
+            'totalScore' => (int) $questions->sum('score'),
+            'collected' => $collected,
+        ];
+    }
+
+    /** 字母答案归一化：去非字母、大写、去重排序，保证多选可比对。 */
+    public static function normalizeLetters(string $value): string
+    {
+        $letters = array_unique(str_split(strtoupper(preg_replace('/[^A-Da-d]/', '', $value) ?? '')));
+        sort($letters);
+        return implode('', $letters);
     }
 
     /** @return array<string, mixed> */

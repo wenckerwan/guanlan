@@ -6,6 +6,7 @@ import { displayAnswer, gradePaper, isCorrect, toLetters } from '~/utils/quiz.mj
 
 const route = useRoute()
 const pid = String(route.params.pid)
+const { isLoggedIn, request } = useAuth()
 
 useHead({ title: `${pid} 真题｜观澜考研政治知识库` })
 
@@ -14,6 +15,23 @@ const { data } = await useApiFetch<PaperDetail>(`/papers/${encodeURIComponent(pi
 const questions = computed<Question[]>(() => data.value?.questions ?? [])
 const answers = reactive<Record<number, string>>({})
 const submitted = ref(false)
+const collectNotice = ref('')
+
+async function submitPaper() {
+  submitted.value = true
+  if (!isLoggedIn.value) return
+  try {
+    const result = await request<{ collected: number }>('/study/attempts/batch', {
+      method: 'POST',
+      body: { pid, answers: { ...answers } },
+    })
+    collectNotice.value = result.collected > 0
+      ? `本次 ${result.collected} 道错题已自动加入你的错题本`
+      : ''
+  } catch {
+    collectNotice.value = ''
+  }
+}
 
 function toggle(question: Question, letter: string) {
   if (submitted.value) return
@@ -36,6 +54,7 @@ const result = computed(() => gradePaper(
 function reset() {
   for (const key of Object.keys(answers)) delete answers[Number(key)]
   submitted.value = false
+  collectNotice.value = ''
 }
 
 function stateOf(question: Question) {
@@ -60,7 +79,7 @@ function stateOf(question: Question) {
         </div>
         <div class="quiz-head-actions">
           <button class="ghost-button" type="button" @click="reset"><RotateCcw :size="15" />重做</button>
-          <button class="primary-button" type="button" :disabled="submitted" @click="submitted = true"><Check :size="15" />交卷判分</button>
+          <button class="primary-button" type="button" :disabled="submitted" @click="submitPaper"><Check :size="15" />交卷判分</button>
         </div>
       </section>
 
@@ -70,6 +89,7 @@ function stateOf(question: Question) {
         <div><strong>{{ result.wrong }}</strong><small>做错</small></div>
         <div><strong>{{ result.blank }}</strong><small>未答</small></div>
         <div><strong>{{ result.accuracy }}%</strong><small>正确率</small></div>
+        <span v-if="collectNotice" class="collect-notice">{{ collectNotice }}</span>
         <button class="ghost-button" type="button" @click="reset"><RotateCcw :size="14" />重新作答</button>
       </section>
 
@@ -117,3 +137,17 @@ function stateOf(question: Question) {
     </main>
   </div>
 </template>
+
+<style scoped>
+.question-material,
+.question-stem,
+.question-answer p {
+  white-space: pre-line;
+}
+
+.collect-notice {
+  color: var(--accent, #b45309);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+</style>
