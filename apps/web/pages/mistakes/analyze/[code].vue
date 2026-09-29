@@ -259,7 +259,7 @@ useHead(() => ({ title: `AI 错题分析 - ${student.value?.name || code} ｜观
             <template v-if="testResult.ok">
               ✅ 连接成功，耗时 {{ testResult.latencyMs }}ms
               <template v-if="testResult.models.length">，获取到 {{ testResult.models.length }} 个模型</template>
-              <template v-else-if="aiConfig.provider === 'custom'">（自定义 API 不支持自动获取模型，请手动填写）</template>
+              <template v-else>未能自动获取模型列表，请手动填写</template>
             </template>
             <template v-else>❌ {{ testResult.error || '连接失败' }}</template>
           </p>
@@ -297,11 +297,15 @@ useHead(() => ({ title: `AI 错题分析 - ${student.value?.name || code} ｜观
           <div v-else class="config-section">
             <div class="form-group">
               <label>API Endpoint *</label>
-              <input v-model="aiConfig.endpoint" type="text" class="form-input" placeholder="https://your-api.com/analyze" />
+              <input v-model="aiConfig.endpoint" type="text" class="form-input" placeholder="https://your-api.com/v1/chat/completions" />
             </div>
             <div class="form-group">
               <label>API Key（可选）</label>
               <input v-model="aiConfig.apiKey" type="password" class="form-input" placeholder="留空表示不需要认证" />
+            </div>
+            <div class="form-group">
+              <label>模型</label>
+              <input v-model="aiConfig.model" type="text" class="form-input" list="model-options" placeholder="端点以 /chat/completions 结尾时可自动获取" />
             </div>
           </div>
 

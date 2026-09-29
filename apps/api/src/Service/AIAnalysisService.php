@@ -77,6 +77,39 @@ class AIAnalysisService
                 if (! empty($config['apiKey'])) {
                     $headers['Authorization'] = "Bearer {$config['apiKey']}";
                 }
+
+                // 大多数「自定义 API」是 OpenAI 兼容中转站：优先尝试拉取 /models
+                $modelUrls = [];
+                if (preg_match('~/chat/completions/?$~i', $endpoint)) {
+                    $modelUrls[] = preg_replace('~/chat/completions/?$~i', '/models', $endpoint);
+                }
+                $modelUrls[] = rtrim($endpoint, '/') . '/models';
+                foreach ($modelUrls as $url) {
+                    if ($this->assertAllowedUrl($url) !== null) {
+                        continue;
+                    }
+                    try {
+                        $response = $this->httpClient->get($url, [
+                            'headers' => $headers,
+                            'http_errors' => false,
+                            'timeout' => 8,
+                        ]);
+                        if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 300) {
+                            $models = $this->extractModelIds($response->getBody()->getContents());
+                            if ($models !== []) {
+                                return [
+                                    'ok' => true,
+                                    'latencyMs' => (int) round((microtime(true) - $start) * 1000),
+                                    'models' => $models,
+                                ];
+                            }
+                        }
+                    } catch (GuzzleException) {
+                        continue;
+                    }
+                }
+
+                // 回退：仅探测端点本身可达性
                 $response = $this->httpClient->get($endpoint, [
                     'headers' => $headers,
                     'http_errors' => false,
@@ -130,6 +163,30 @@ class AIAnalysisService
 
             return ['ok' => false, 'latencyMs' => $latencyMs, 'models' => [], 'error' => '连接失败: ' . mb_substr($e->getMessage(), 0, 200)];
         }
+    }
+
+    /** 从 OpenAI 兼容的 /models 响应中提取模型 id 列表 */
+    private function extractModelIds(string $body): array
+    {
+        $decoded = json_decode($body, true);
+        $rows = [];
+        if (is_array($decoded) && array_is_list($decoded)) {
+            $rows = $decoded;
+        } elseif (is_array($decoded) && isset($decoded['data']) && is_array($decoded['data'])) {
+            $rows = $decoded['data'];
+        }
+
+        $models = [];
+        foreach ($rows as $row) {
+            if (is_array($row) && isset($row['id'])) {
+                $models[] = (string) $row['id'];
+            } elseif (is_string($row)) {
+                $models[] = $row;
+            }
+        }
+        sort($models);
+
+        return $models;
     }
 
     /** @return array{ok: bool, latencyMs: int, models: array<int, string>, error?: string} */
@@ -324,21 +381,43 @@ class AIAnalysisService
                 $headers['Authorization'] = "Bearer {$apiKey}";
             }
 
-            $response = $this->httpClient->post($endpoint, [
-                'headers' => $headers,
-                'json' => [
+            // OpenAI 兼容端点（/chat/completions 结尾）走标准 chat 格式，其余保持旧格式
+            $isChatCompletions = (bool) preg_match('~/chat/completions/?$~i', $endpoint);
+            if ($isChatCompletions) {
+                $payload = [
+                    'model' => (string) ($config['model'] ?? '') ?: 'gpt-4o-mini',
+                    'messages' => [
+                        ['role' => 'system', 'content' => $this->getSystemPrompt()],
+                        ['role' => 'user', 'content' => $prompt],
+                    ],
+                    'temperature' => 0.7,
+                    'max_tokens' => 4000,
+                ];
+            } else {
+                $payload = [
                     'system' => $this->getSystemPrompt(),
                     'prompt' => $prompt,
                     'student_code' => '',
-                ],
-                'timeout' => 60,
+                ];
+            }
+
+            $response = $this->httpClient->post($endpoint, [
+                'headers' => $headers,
+                'json' => $payload,
+                'timeout' => 120,
             ]);
 
             $body = json_decode($response->getBody()->getContents(), true);
 
+            if ($isChatCompletions) {
+                $content = $body['choices'][0]['message']['content'] ?? '';
+            } else {
+                $content = $body['content'] ?? $body['response'] ?? '';
+            }
+
             return [
                 'success' => true,
-                'content' => $body['content'] ?? $body['response'] ?? '',
+                'content' => $content,
                 'usage' => $body['usage'] ?? [],
             ];
         } catch (GuzzleException $e) {
