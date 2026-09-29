@@ -17,6 +17,7 @@ class ArticleResource
     public static function listItem(AnalysisArticle|Hotspot|Prediction $model): array
     {
         $base = [
+            'id' => (int) $model->id,
             'slug' => (string) $model->slug,
             'title' => (string) $model->title,
             'summary' => (string) $model->summary,
