@@ -61,6 +61,7 @@ Router::addGroup('/api/v1/mistakes', function () {
     Router::get('/students/{code}/review-summary', [MistakeController::class, 'reviewSummary']);
     Router::get('/students/{code}', [MistakeController::class, 'show']);
     Router::post('/students/{code}/ai-analysis', [MistakeController::class, 'requestAIAnalysis']);
+    Router::post('/ai/test', [MistakeController::class, 'testAIConnection'], ['middleware' => [RequireAuthMiddleware::class]]);
     Router::get('/ai-config', [MistakeController::class, 'getAIConfig']);
 }, ['middleware' => [AuthMiddleware::class]]);
 Router::patch('/api/v1/mistakes/items/{id:\d+}/action', [MistakeController::class, 'updateAction'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);

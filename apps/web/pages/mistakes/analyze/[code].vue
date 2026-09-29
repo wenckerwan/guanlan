@@ -5,6 +5,8 @@ import type { MistakeStudent } from '~/types/api'
 
 const route = useRoute()
 const code = String(route.params.code)
+const { request, isLoggedIn, restore } = useAuth()
+if (import.meta.client) restore()
 
 // 🔧 本地开发模式：绕过认证
 const isDev = process.env.NODE_ENV === 'development'
@@ -15,7 +17,7 @@ const student = ref<MistakeStudent | null>(null)
 
 // 在客户端加载考生信息
 onMounted(async () => {
-  if (isDev) {
+  if (isDev && !isLoggedIn.value) {
     // 开发环境使用模拟数据
     student.value = {
       code: code,
@@ -54,6 +56,12 @@ const analyzing = ref(false)
 const analysisResult = ref('')
 const analysisError = ref('')
 const showConfig = ref(false)
+
+// 连接测试与模型列表
+type TestResult = { ok: boolean; latencyMs: number; models: string[]; error?: string }
+const testing = ref(false)
+const testResult = ref<TestResult | null>(null)
+const modelOptions = ref<string[]>([])
 
 // 内嵌的错题分析 System Prompt
 const ANALYSIS_SKILL = `你是一个专业的考研政治错题分析专家。你的任务是：
@@ -102,14 +110,43 @@ function saveConfig() {
 }
 
 // 调用 AI 分析
+// 连接测试 + 模型列表获取（同一后端端点）
+async function testConnection() {
+  testing.value = true
+  testResult.value = null
+  analysisError.value = ''
+  try {
+    const data = await request<TestResult>('/mistakes/ai/test', { method: 'POST', body: { ...aiConfig } })
+    testResult.value = data
+    if (data.ok && data.models.length) {
+      modelOptions.value = data.models
+    }
+  } catch (err: any) {
+    testResult.value = { ok: false, latencyMs: 0, models: [], error: err?.data?.message || err?.message || '请求失败' }
+  } finally {
+    testing.value = false
+  }
+}
+
+// 开始分析：全部经由后端代理转发，浏览器不再直连 AI 提供商
 async function analyzeWithAI() {
   if (!markdown.value) {
     analysisError.value = '请先上传错题文件'
     return
   }
 
-  if (!aiConfig.apiKey && !aiConfig.endpoint) {
+  if (import.meta.client && !isLoggedIn.value && !isDev) {
+    analysisError.value = '请先登录后再使用 AI 分析（分析请求由服务器代理转发）'
+    return
+  }
+
+  if (!aiConfig.apiKey && aiConfig.provider !== 'custom') {
     analysisError.value = '请先配置 AI API'
+    showConfig.value = true
+    return
+  }
+  if (aiConfig.provider === 'custom' && !aiConfig.endpoint) {
+    analysisError.value = '请先填写自定义 API 端点'
     showConfig.value = true
     return
   }
@@ -119,128 +156,18 @@ async function analyzeWithAI() {
   analysisResult.value = ''
 
   try {
-    // 构建提示词
-    const prompt = `请使用考研政治错题分析 Skill。
-
-考生：${student.value?.code || code}
-考生名称：${student.value?.name || '未知'}
-
-# 错题清单（来自上传的 Markdown 文件）
-
-${markdown.value}
-
-请分析以上错题，给出：
-1. 主要的知识漏洞和错因归纳
-2. 相关考点的结论式总结
-3. 具体的复习建议和验收方式
-
-注意：
-- 这是 ${student.value?.name || '考生'} 的个人错题分析
-- 请按模块和章节组织内容
-- 给出的建议要具体可执行
-- 不要编造真题内容`
-
-    // 调用 AI API
-    let result
-    if (aiConfig.provider === 'openai') {
-      result = await callOpenAI(prompt)
-    } else if (aiConfig.provider === 'claude') {
-      result = await callClaude(prompt)
-    } else {
-      result = await callCustomAPI(prompt)
-    }
-
-    analysisResult.value = result
+    const data = await request<{ content: string; usage: Record<string, unknown> }>(
+      `/mistakes/students/${code}/ai-analysis`,
+      { method: 'POST', body: { ...aiConfig, markdown: markdown.value } },
+    )
+    analysisResult.value = data.content
   } catch (error: any) {
-    analysisError.value = error.message || 'AI 分析失败，请检查配置'
+    analysisError.value = error?.data?.message || error?.message || 'AI 分析失败，请检查配置或使用「测试连接」排查'
   } finally {
     analyzing.value = false
   }
 }
 
-// OpenAI API
-async function callOpenAI(prompt: string) {
-  const response = await fetch(`${aiConfig.baseUrl || 'https://api.openai.com/v1'}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${aiConfig.apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: aiConfig.model || 'gpt-4',
-      messages: [
-        { role: 'system', content: ANALYSIS_SKILL },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.7,
-      max_tokens: 4000,
-    }),
-  })
-
-  if (!response.ok) {
-    throw new Error(`OpenAI API 错误: ${response.statusText}`)
-  }
-
-  const data = await response.json()
-  return data.choices[0].message.content
-}
-
-// Claude API
-async function callClaude(prompt: string) {
-  const response = await fetch(`${aiConfig.baseUrl || 'https://api.anthropic.com/v1'}/messages`, {
-    method: 'POST',
-    headers: {
-      'x-api-key': aiConfig.apiKey,
-      'anthropic-version': '2023-06-01',
-      // 浏览器直连 Anthropic 必须带这个头，否则 CORS 预检被拒
-      'anthropic-dangerous-direct-browser-access': 'true',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: aiConfig.model || 'claude-opus-4-8',
-      max_tokens: 4000,
-      system: ANALYSIS_SKILL,
-      messages: [
-        { role: 'user', content: prompt },
-      ],
-    }),
-  })
-
-  if (!response.ok) {
-    throw new Error(`Claude API 错误: ${response.statusText}`)
-  }
-
-  const data = await response.json()
-  return data.content[0].text
-}
-
-// 自定义 API
-async function callCustomAPI(prompt: string) {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  }
-
-  if (aiConfig.apiKey) {
-    headers['Authorization'] = `Bearer ${aiConfig.apiKey}`
-  }
-
-  const response = await fetch(aiConfig.endpoint, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      system: ANALYSIS_SKILL,
-      prompt,
-      student_code: code,
-    }),
-  })
-
-  if (!response.ok) {
-    throw new Error(`自定义 API 错误: ${response.statusText}`)
-  }
-
-  const data = await response.json()
-  return data.content || data.response || data.result || JSON.stringify(data)
-}
 
 // 下载分析结果
 function downloadResult() {
@@ -319,6 +246,24 @@ useHead(() => ({ title: `AI 错题分析 - ${student.value?.name || code} ｜观
             </select>
           </div>
 
+          <div class="form-group connection-test-row">
+            <button type="button" class="ghost-button" :disabled="testing" @click="testConnection">
+              {{ testing ? '测试中…' : '测试连接 / 获取模型' }}
+            </button>
+          </div>
+          <datalist id="model-options">
+            <option v-for="model in modelOptions" :key="model" :value="model" />
+          </datalist>
+
+          <p v-if="testResult" class="test-result" :class="testResult.ok ? 'ok' : 'fail'">
+            <template v-if="testResult.ok">
+              ✅ 连接成功，耗时 {{ testResult.latencyMs }}ms
+              <template v-if="testResult.models.length">，获取到 {{ testResult.models.length }} 个模型</template>
+              <template v-else-if="aiConfig.provider === 'custom'">（自定义 API 不支持自动获取模型，请手动填写）</template>
+            </template>
+            <template v-else>❌ {{ testResult.error || '连接失败' }}</template>
+          </p>
+
           <div v-if="aiConfig.provider === 'openai'" class="config-section">
             <div class="form-group">
               <label>API Key *</label>
@@ -330,7 +275,7 @@ useHead(() => ({ title: `AI 错题分析 - ${student.value?.name || code} ｜观
             </div>
             <div class="form-group">
               <label>模型</label>
-              <input v-model="aiConfig.model" type="text" class="form-input" placeholder="gpt-4" />
+              <input v-model="aiConfig.model" type="text" class="form-input" list="model-options" placeholder="gpt-4，可点上方按钮获取列表" />
             </div>
           </div>
 
@@ -345,7 +290,7 @@ useHead(() => ({ title: `AI 错题分析 - ${student.value?.name || code} ｜观
             </div>
             <div class="form-group">
               <label>模型</label>
-              <input v-model="aiConfig.model" type="text" class="form-input" placeholder="claude-opus-4-8" />
+              <input v-model="aiConfig.model" type="text" class="form-input" list="model-options" placeholder="claude-opus-4-8，可点上方按钮获取列表" />
             </div>
           </div>
 
@@ -767,5 +712,26 @@ D. 实践是人类的存在方式
   margin-top: 2rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--border, #e5e7eb);
+}
+</style>
+
+<style scoped>
+.connection-test-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.test-result {
+  font-size: 0.8125rem;
+  margin: 0 0 0.75rem;
+}
+
+.test-result.ok {
+  color: var(--success, #16a34a);
+}
+
+.test-result.fail {
+  color: var(--error, #ef4444);
 }
 </style>

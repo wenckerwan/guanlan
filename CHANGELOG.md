@@ -1,5 +1,33 @@
 # 更新记录
 
+## V0.1-dev.10 - AI 分析走后端代理 + 连接测试/模型选择 - 2026-09-29
+
+修复浏览器直连 AI 提供商导致的 `Failed to fetch`（网络不可达 + CORS），并补齐连接测试与模型选择。
+
+### 变更
+
+- **AI 调用全部改为后端代理**：前端 `analyze/[code].vue` 删除浏览器直连
+  OpenAI/Claude/自定义 API 的三段 fetch 逻辑，统一走
+  `POST /mistakes/students/{code}/ai-analysis`；该接口新增可选 `markdown` 参数
+  （≤20 万字符），上传错题 Markdown 的场景由服务端 `analyzeMarkdown()` 包装提示词
+  后转发。服务器出网环境稳定，彻底规避浏览器侧网络与 CORS 问题。
+- **连接测试 + 模型获取**：新增 `POST /api/v1/mistakes/ai/test`（登录必需，
+  RequireAuthMiddleware）：
+  - openai / claude：GET 官方 `/models` 端点，返回 `ok`、`latencyMs`、排序后的
+    `models` 列表；401/403 给出「认证失败」明确提示；
+  - custom：仅探测端点可达性（2xx–4xx 视为可达，5xx 不可用），不支持自动获取模型；
+  - 全路径复用 `assertAllowedUrl` SSRF 拦截，内网/保留地址直接拒绝。
+- **前端配置面板**：新增「测试连接 / 获取模型」按钮与结果行（耗时、模型数、
+  失败原因）；模型输入框挂 `datalist`，测试成功后自动填充候选模型。
+- **登录要求**：分析页未登录时提示先登录（分析请求带鉴权由服务器转发）。
+
+### 验证
+
+- `python tools/phpcheck.py`：OK（124 files / 81 classes）。
+- `npm test --prefix apps/web`：43/43 通过。
+- 冒烟新增用例：`/mistakes/ai/test` 未登录 401；内网 baseUrl 返回 ok=false 且提示
+  内网拦截。生产容器实测见下节部署记录。
+
 ## V0.1-dev.9 生产部署与容器验证 - 2026-09-29
 
 服务器 root-189（/www/wwwroot/guanlan，宝塔 + Docker Compose）实际执行结果。

@@ -19,18 +19,143 @@ class AIAnalysisService
     }
 
     /**
-     * 调用 AI 分析接口
+     * 调用 AI 分析接口（提示词由考生错题数据构建）
      */
     public function analyze(MistakeStudent $student, array $config): array
+    {
+        $prompt = $this->buildPrompt($student);
+
+        return $this->dispatch($config, $prompt);
+    }
+
+    /**
+     * 调用 AI 分析接口（提示词来自用户上传的 Markdown，服务端代理转发）
+     */
+    public function analyzeMarkdown(MistakeStudent $student, string $markdown, array $config): array
+    {
+        $prompt = $this->buildMarkdownPrompt($student, $markdown);
+
+        return $this->dispatch($config, $prompt);
+    }
+
+    private function dispatch(array $config, string $prompt): array
     {
         $provider = $config['provider'] ?? 'openai';
 
         return match ($provider) {
-            'openai' => $this->analyzeWithOpenAI($student, $config),
-            'claude' => $this->analyzeWithClaude($student, $config),
-            'custom' => $this->analyzeWithCustom($student, $config),
+            'openai' => $this->analyzeWithOpenAI($prompt, $config),
+            'claude' => $this->analyzeWithClaude($prompt, $config),
+            'custom' => $this->analyzeWithCustom($prompt, $config),
             default => throw new \InvalidArgumentException("不支持的 AI 提供商: {$provider}"),
         };
+    }
+
+    /**
+     * 连接测试 + 模型列表获取：不触库，仅验证出网可达性与凭证有效性。
+     * openai/claude 走官方 /models 端点；custom 仅探测端点可达性。
+     *
+     * @return array{ok: bool, latencyMs: int, models: array<int, string>, error?: string}
+     */
+    public function testConnection(array $config): array
+    {
+        if (! $this->validateConfig($config)) {
+            return ['ok' => false, 'latencyMs' => 0, 'models' => [], 'error' => 'AI 配置无效'];
+        }
+
+        $provider = $config['provider'];
+        $start = microtime(true);
+
+        try {
+            if ($provider === 'custom') {
+                $endpoint = (string) $config['endpoint'];
+                $error = $this->assertAllowedUrl($endpoint);
+                if ($error !== null) {
+                    return ['ok' => false, 'latencyMs' => 0, 'models' => [], 'error' => "API 端点无效: {$error}"];
+                }
+
+                $headers = ['Content-Type' => 'application/json'];
+                if (! empty($config['apiKey'])) {
+                    $headers['Authorization'] = "Bearer {$config['apiKey']}";
+                }
+                $response = $this->httpClient->get($endpoint, [
+                    'headers' => $headers,
+                    'http_errors' => false,
+                    'timeout' => 12,
+                ]);
+                $latencyMs = (int) round((microtime(true) - $start) * 1000);
+                $status = $response->getStatusCode();
+                // 4xx 说明端点可达（协议/路径不符由调用方自行保证），5xx 视为不可用
+                if ($status < 500) {
+                    return ['ok' => true, 'latencyMs' => $latencyMs, 'models' => []];
+                }
+
+                return ['ok' => false, 'latencyMs' => $latencyMs, 'models' => [], 'error' => "端点不可用，HTTP {$status}"];
+            }
+
+            if ($provider === 'openai') {
+                $baseUrl = (string) ($config['baseUrl'] ?? 'https://api.openai.com/v1');
+                $error = $this->assertAllowedUrl($baseUrl);
+                if ($error !== null) {
+                    return ['ok' => false, 'latencyMs' => 0, 'models' => [], 'error' => "Base URL 无效: {$error}"];
+                }
+
+                $response = $this->httpClient->get("{$baseUrl}/models", [
+                    'headers' => ['Authorization' => 'Bearer ' . (string) ($config['apiKey'] ?? '')],
+                    'http_errors' => false,
+                    'timeout' => 12,
+                ]);
+
+                return $this->interpretModelList($response, $start);
+            }
+
+            // claude
+            $baseUrl = (string) ($config['baseUrl'] ?? 'https://api.anthropic.com/v1');
+            $error = $this->assertAllowedUrl($baseUrl);
+            if ($error !== null) {
+                return ['ok' => false, 'latencyMs' => 0, 'models' => [], 'error' => "Base URL 无效: {$error}"];
+            }
+
+            $response = $this->httpClient->get("{$baseUrl}/models", [
+                'headers' => [
+                    'x-api-key' => (string) ($config['apiKey'] ?? ''),
+                    'anthropic-version' => '2023-06-01',
+                ],
+                'http_errors' => false,
+                'timeout' => 12,
+            ]);
+
+            return $this->interpretModelList($response, $start);
+        } catch (GuzzleException $e) {
+            $latencyMs = (int) round((microtime(true) - $start) * 1000);
+
+            return ['ok' => false, 'latencyMs' => $latencyMs, 'models' => [], 'error' => '连接失败: ' . mb_substr($e->getMessage(), 0, 200)];
+        }
+    }
+
+    /** @return array{ok: bool, latencyMs: int, models: array<int, string>, error?: string} */
+    private function interpretModelList($response, float $start): array
+    {
+        $latencyMs = (int) round((microtime(true) - $start) * 1000);
+        $status = $response->getStatusCode();
+        $body = json_decode($response->getBody()->getContents(), true);
+
+        if ($status >= 200 && $status < 300) {
+            $models = [];
+            foreach ((array) ($body['data'] ?? []) as $model) {
+                if (isset($model['id'])) {
+                    $models[] = (string) $model['id'];
+                }
+            }
+            sort($models);
+
+            return ['ok' => true, 'latencyMs' => $latencyMs, 'models' => $models];
+        }
+
+        if (in_array($status, [401, 403], true)) {
+            return ['ok' => false, 'latencyMs' => $latencyMs, 'models' => [], 'error' => "认证失败（API Key 无效或无权限），HTTP {$status}"];
+        }
+
+        return ['ok' => false, 'latencyMs' => $latencyMs, 'models' => [], 'error' => "HTTP {$status}"];
     }
 
     /**
@@ -67,7 +192,7 @@ class AIAnalysisService
     /**
      * 使用 OpenAI API
      */
-    private function analyzeWithOpenAI(MistakeStudent $student, array $config): array
+    private function analyzeWithOpenAI(string $prompt, array $config): array
     {
         $apiKey = $config['apiKey'] ?? '';
         $baseUrl = $config['baseUrl'] ?? 'https://api.openai.com/v1';
@@ -81,8 +206,6 @@ class AIAnalysisService
         if ($baseUrlError !== null) {
             return ['error' => "Base URL 无效: {$baseUrlError}"];
         }
-
-        $prompt = $this->buildPrompt($student);
 
         try {
             $response = $this->httpClient->post("{$baseUrl}/chat/completions", [
@@ -126,7 +249,7 @@ class AIAnalysisService
     /**
      * 使用 Claude API (Anthropic)
      */
-    private function analyzeWithClaude(MistakeStudent $student, array $config): array
+    private function analyzeWithClaude(string $prompt, array $config): array
     {
         $apiKey = $config['apiKey'] ?? '';
         $baseUrl = $config['baseUrl'] ?? 'https://api.anthropic.com/v1';
@@ -140,8 +263,6 @@ class AIAnalysisService
         if ($baseUrlError !== null) {
             return ['error' => "Base URL 无效: {$baseUrlError}"];
         }
-
-        $prompt = $this->buildPrompt($student);
 
         try {
             $response = $this->httpClient->post("{$baseUrl}/messages", [
@@ -182,7 +303,7 @@ class AIAnalysisService
     /**
      * 使用自定义 API
      */
-    private function analyzeWithCustom(MistakeStudent $student, array $config): array
+    private function analyzeWithCustom(string $prompt, array $config): array
     {
         $endpoint = $config['endpoint'] ?? '';
         $apiKey = $config['apiKey'] ?? '';
@@ -196,8 +317,6 @@ class AIAnalysisService
             return ['error' => "API 端点无效: {$endpointError}"];
         }
 
-        $prompt = $this->buildPrompt($student);
-
         try {
             $headers = ['Content-Type' => 'application/json'];
 
@@ -210,7 +329,7 @@ class AIAnalysisService
                 'json' => [
                     'system' => $this->getSystemPrompt(),
                     'prompt' => $prompt,
-                    'student_code' => $student->code,
+                    'student_code' => '',
                 ],
                 'timeout' => 60,
             ]);
@@ -293,6 +412,33 @@ PROMPT;
 
 注意：
 - 这是 {$student->name} 的个人错题分析
+- 请按模块和章节组织内容
+- 给出的建议要具体可执行
+- 不要编造真题内容
+PROMPT;
+    }
+
+    /**
+     * 用户上传 Markdown 场景的提示词（内容由前端传入，服务端只做包装）
+     */
+    private function buildMarkdownPrompt(MistakeStudent $student, string $markdown): string
+    {
+        return <<<PROMPT
+请使用考研政治错题分析 Skill。
+
+考生：{$student->code}
+考生名称：{$student->name}
+
+# 错题清单（用户上传的 Markdown）
+
+{$markdown}
+
+请分析以上错题，给出：
+1. 主要的知识漏洞和错因归纳
+2. 相关考点的结论式总结
+3. 具体的复习建议和验收方式
+
+注意：
 - 请按模块和章节组织内容
 - 给出的建议要具体可执行
 - 不要编造真题内容

@@ -121,6 +121,10 @@ printf 'mist item empty    %s (expect 422)\n' "$(code "${AUTH[@]}" -X PATCH "$B/
 # B2 复习数据看板
 printf 'mist review-stats  %s\n' "$(code "${AUTH[@]}" "$B/admin/mistakes/review-stats")"
 
+# AI 连接测试：未登录 401；内网 baseUrl SSRF 拦截（ok=false 且提示内网）
+printf 'ai test (no token) %s (expect 401)\n' "$(code -X POST "$B/mistakes/ai/test" -H 'Content-Type: application/json' -d '{"provider":"openai","apiKey":"x"}')"
+printf 'ai test ssrf       %s (expect 1, ok=false 内网拦截)\n' "$(curl -s "${AUTH[@]}" -X POST "$B/mistakes/ai/test" -H 'Content-Type: application/json' -d '{"provider":"openai","apiKey":"x","baseUrl":"http://169.254.169.254"}' | grep -c '内网')"
+
 
 echo; echo "=== 11. 详情页 404 ==="
 printf 'analysis/404     %s\n' "$(code "$B/analysis/nope")"

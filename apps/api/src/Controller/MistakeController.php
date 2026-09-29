@@ -319,7 +319,8 @@ class MistakeController
     }
 
     /**
-     * 请求 AI 分析
+     * 请求 AI 分析：提示词来自用户上传的 Markdown（可选）或考生错题数据。
+     * 全部经由服务端代理转发，浏览器不再直连 AI 提供商。
      */
     public function requestAIAnalysis(string $code): ResponseInterface
     {
@@ -361,7 +362,14 @@ class MistakeController
             return ApiResponse::message('AI 配置无效', 422);
         }
 
-        $result = $aiService->analyze($student, $config);
+        $markdown = trim((string) $this->request->input('markdown', ''));
+        if (mb_strlen($markdown) > 200000) {
+            return ApiResponse::message('错题内容过长（上限 20 万字符）', 422);
+        }
+
+        $result = $markdown !== ''
+            ? $aiService->analyzeMarkdown($student, $markdown, $config)
+            : $aiService->analyze($student, $config);
 
         if (isset($result['error'])) {
             return ApiResponse::message($result['error'], 500);
@@ -371,6 +379,38 @@ class MistakeController
             'content' => $result['content'],
             'usage' => $result['usage'] ?? [],
         ]);
+    }
+
+    /**
+     * AI 连接测试 + 模型列表获取（凭证由请求方自带，服务端不存储）
+     */
+    public function testAIConnection(): ResponseInterface
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return ApiResponse::message('未登录', 401);
+        }
+
+        $aiService = $this->aiService();
+        if ($aiService === null) {
+            return ApiResponse::message('AI 分析组件未安装（服务器缺少 hyperf/guzzle），请联系管理员启用', 503);
+        }
+
+        $validator = new Validator($this->request->all());
+        $validator->required('provider', 'AI 提供商');
+        if ($validator->fails()) {
+            return ApiResponse::message('请求校验失败', 422, $validator->errors());
+        }
+
+        $config = [
+            'provider' => $validator->string('provider'),
+            'apiKey' => $validator->string('apiKey'),
+            'baseUrl' => $validator->string('baseUrl'),
+            'model' => $validator->string('model'),
+            'endpoint' => $validator->string('endpoint'),
+        ];
+
+        return ApiResponse::data($aiService->testConnection($config));
     }
 
     /**
