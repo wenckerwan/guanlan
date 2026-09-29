@@ -1,5 +1,37 @@
 # 更新记录
 
+## V0.1-dev.17 - 每日时政：爬虫接入 + 后台 AI 筛选发布 - 2026-09-29
+
+### 变更
+
+- **爬虫入库**：人民日报/人民网每日抓取项目落到 `services/shizheng-crawler/`
+  （自包含：抓取 `src/`、对接 `bridge/`、每日入口 `pipeline.py`、部署 `deploy/`）。
+  cron 03:30 抓取前一天版面 → 提炼考研政治考点 → 推送候选到网站 API → 服务端 AI 筛选 → 自动发布到 hotspots。
+  严格遵守 robots.txt `Crawl-delay: 120`，串行抓取。
+- **新增数据表**（迁移 `2026_09_30_000001/000002`）：
+  - `admin_settings`：后台键值配置存储（AI key 只存服务端）。
+  - `shizheng_candidates`：每日时政候选池，按 (publish_date, title) 唯一，status 流转 pending → selected → published。
+- **新增后台 API**（`/api/v1/admin/shizheng/*`，管理员权限）：
+  配置读写（GET/PUT config，apiKey 掩码回传、留空不覆盖）、连接测试（config/test）、
+  候选推送（POST candidates，幂等 upsert，单次 ≤200 条）、候选查询（GET candidates）、
+  AI 筛选（POST screen，支持 auto=true 筛完即发）、手动发布（POST publish）。
+- **新增后台页面** `/admin/shizheng`：AI 配置（provider/baseUrl/model/key）、测试连接、
+  按日期查看候选、AI 筛选 / 筛选并发布 / 发布选中项；后台导航加「每日时政」入口。
+- **筛选与发布逻辑**（`ShizhengScreeningService`）：
+  AI 不可用或调用失败自动降级为规则筛选（按爬虫原始优先级），链路不断；
+  发布写入 hotspots 时按标题去重，不覆盖后台人工编辑过的条目；
+  重复筛选先复位再标记，保证幂等；baseUrl 校验拒绝内网/保留地址（防 SSRF）。
+
+### 安全
+
+- AI apiKey 永不出服务端：列表/配置接口只回掩码（`xxxx****xxxx`），保存时传空或掩码视为不修改。
+- baseUrl 出网校验拒绝 localhost/.local/.internal 及私网、保留 IP 段。
+
+### 部署
+
+- `php bin/hyperf.php migrate` 创建两张新表。
+- 爬虫服务端部署见 `services/shizheng-crawler/README.md`（/opt/shizheng + crontab）。
+
 ## V0.1-dev.16 - AI 分析流式输出（SSE） - 2026-09-29
 
 ### 变更

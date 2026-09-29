@@ -1,0 +1,9 @@
+# 每日时政抓取 crontab 示例（观澜网站对接版）
+# 安装：crontab -e  然后粘贴（注意把路径改成实际部署目录）
+#
+# 每日 03:30 全流程：抓取 → 提炼 → 选 10 条 → 推送观澜网站
+# （限速 120 秒/篇，抓取约 80 分钟，05:00 前完成推送）
+30 3 * * *  cd /opt/shizheng && set -a && . ./.env && set +a && bash deploy/shizheng-daily.sh >> logs/cron.log 2>&1
+#
+# 每月1日 06:00 补抓近7天（防止漏抓；只补库，不重复推送——推送按标题幂等）
+0 6 1 * *   cd /opt/shizheng && ./venv/bin/python -m src.main --mode backfill --start $(date -d "7 days ago" +\%Y-\%m-\%d) >> logs/backfill.log 2>&1

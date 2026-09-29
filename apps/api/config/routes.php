@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Controller\AdminController;
+use App\Controller\AdminShizhengController;
 use App\Controller\ArticleController;
 use App\Controller\AuthController;
 use App\Controller\HealthController;
@@ -119,4 +120,13 @@ Router::addGroup('/api/v1/admin', function () {
     Router::post('/analysis', [AdminController::class, 'createAnalysis']);
     Router::patch('/analysis/{id:\d+}', [AdminController::class, 'updateAnalysis']);
     Router::delete('/analysis/{id:\d+}', [AdminController::class, 'deleteAnalysis']);
+
+    // 每日时政：AI 配置 / 候选池 / 筛选 / 发布
+    Router::get('/shizheng/config', [AdminShizhengController::class, 'getConfig']);
+    Router::put('/shizheng/config', [AdminShizhengController::class, 'saveConfig']);
+    Router::post('/shizheng/config/test', [AdminShizhengController::class, 'testConfig']);
+    Router::post('/shizheng/candidates', [AdminShizhengController::class, 'pushCandidates']);
+    Router::get('/shizheng/candidates', [AdminShizhengController::class, 'candidates']);
+    Router::post('/shizheng/screen', [AdminShizhengController::class, 'screen']);
+    Router::post('/shizheng/publish', [AdminShizhengController::class, 'publish']);
 }, ['middleware' => [AuthMiddleware::class, RequireAdminMiddleware::class]]);
