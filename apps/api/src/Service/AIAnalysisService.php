@@ -310,7 +310,7 @@ class AIAnalysisService
             return ['ok' => false, 'latencyMs' => $latencyMs, 'reply' => '', 'error' => "请求被拒绝，HTTP {$status}: " . mb_substr($raw, 0, 200)];
         }
         if ($reply === '') {
-            return ['ok' => false, 'latencyMs' => $latencyMs, 'reply' => '', 'error' => '模型没有返回内容。' . \$this->htmlHint(\$raw)];
+            return ['ok' => false, 'latencyMs' => $latencyMs, 'reply' => '', 'error' => '模型没有返回内容。' . $this->htmlHint($raw)];
         }
 
         $usedModel = (bool) preg_match('/A\s*B\s*C/i', $reply);
@@ -447,7 +447,7 @@ class AIAnalysisService
             $content = $body['choices'][0]['message']['content'] ?? $body['choices'][0]['text'] ?? '';
 
             if (trim((string) $content) === '') {
-                return ['error' => 'AI 返回内容为空。' . \$this->htmlHint(\$raw)];
+                return ['error' => 'AI 返回内容为空。' . $this->htmlHint($raw)];
             }
 
             return [
@@ -507,7 +507,7 @@ class AIAnalysisService
             $content = $body['content'][0]['text'] ?? $body['content'][0]['content'] ?? '';
 
             if (trim((string) $content) === '') {
-                return ['error' => 'AI 返回内容为空。' . \$this->htmlHint(\$raw)];
+                return ['error' => 'AI 返回内容为空。' . $this->htmlHint($raw)];
             }
 
             return [
@@ -583,7 +583,7 @@ class AIAnalysisService
                 ?? '';
 
             if (trim((string) $content) === '') {
-                return ['error' => 'AI 返回内容为空。' . \$this->htmlHint(\$raw)];
+                return ['error' => 'AI 返回内容为空。' . $this->htmlHint($raw)];
             }
 
             return [
