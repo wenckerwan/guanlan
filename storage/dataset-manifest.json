@@ -1,26 +1,26 @@
 {
   "datasets": {
     "analysis_articles.json": {
-      "bytes": 404771,
+      "bytes": 413236,
       "groups": {},
       "items": 13,
-      "sha256": "66fe110660f5fda24eeebb0798dd0a5397721480e421bf5d5a2532aa68f0e4cf"
+      "sha256": "47e9536c206beb61089000de3b6d109835c5f0c4640170bc2aa639f6294cbc93"
     },
     "hotspots.json": {
-      "bytes": 171225,
+      "bytes": 195577,
       "groups": {},
-      "items": 3,
-      "sha256": "7e2b249e8c343dd8413e7ff13d3f93d70cd37b037e0915b65b7f37451405990c"
+      "items": 4,
+      "sha256": "9e51d21478dfaeab3b75b421ab6257567376a73abe551a5c7d6c4cbc9dc395ec"
     },
     "mistakes.json": {
-      "bytes": 253087,
+      "bytes": 253077,
       "groups": {
         "handbooks": 2,
         "items": 91,
         "students": 1
       },
       "items": 94,
-      "sha256": "4bdc005a8bd6b46b9eaef8f46755626d6300c2ece641e9155061bd649c3166c0"
+      "sha256": "4e23484e987c70bba3e086c9ae66993b394f48d4a1bc72cd70bb86c29da7a0b2"
     },
     "mocks.json": {
       "bytes": 22736,
@@ -35,10 +35,10 @@
       "sha256": "193cd722f14f3bd9dc6e03a92822ec479dd38e480112561a262614801ea47ab3"
     },
     "predictions.json": {
-      "bytes": 301404,
+      "bytes": 585841,
       "groups": {},
-      "items": 6,
-      "sha256": "3b8ff2ae6776565666e8c69b7ea480fca33c9212c20c04e14ab563a88b21a111"
+      "items": 10,
+      "sha256": "664787cf67f9925f6c8a90c136b6b375d72b28c27d0818044034ac8753212a08"
     },
     "questions.json": {
       "bytes": 2962359,
@@ -67,14 +67,14 @@
   },
   "schema_version": 1,
   "source_manifest": {
-    "asset_count": 548,
-    "logical_document_count": 418,
+    "asset_count": 553,
+    "logical_document_count": 423,
     "path": "storage/import-manifest.json",
-    "sha256": "1fc5a0b20db722345d2849b83a0496ea42d041f5fbdf076871b3a3a7240f0ed9"
+    "sha256": "0a790455b203627c61eb7ac89d49fb66eb11d02f31c06596cc998cde3c964e3c"
   },
   "totals": {
-    "bytes": 4216028,
+    "bytes": 4533272,
     "files": 8,
-    "items": 1820
+    "items": 1825
   }
 }

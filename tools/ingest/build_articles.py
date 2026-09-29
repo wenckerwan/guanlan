@@ -37,13 +37,14 @@ ANALYSIS_CATEGORY = {
 
 # 时政类文件：归入 hotspots / predictions
 HOTSPOT_FILES = sorted(HOTSPOT_DIR.glob("时政考点_*.md"))
+SUPPLEMENT_FILES = sorted(ANALYSIS_DIR.glob("时政增补_*.md"))
 PREDICTION_FILES = [
     HOTSPOT_DIR / "时政考点预测_真题反推" / "2027时政考点预测_纯真题反推.md",
     ANALYSIS_DIR / "2027考研政治时政热点预测.md",
     ANALYSIS_DIR / "人民网2026考研政治时政精选.md",
     ANALYSIS_DIR / "人民网462314建党105周年专题考研政治精选.md",
     ANALYSIS_DIR / "上合组织专题_2026.md",
-    ANALYSIS_DIR / "时政增补_20260922.md",
+    *SUPPLEMENT_FILES,
 ]
 
 PREDICTION_LAYER = {
@@ -52,7 +53,6 @@ PREDICTION_LAYER = {
     "人民网2026考研政治时政精选.md": "原文精选",
     "人民网462314建党105周年专题考研政治精选.md": "专题精选",
     "上合组织专题_2026.md": "专题精选",
-    "时政增补_20260922.md": "每日增补",
 }
 
 
@@ -138,7 +138,7 @@ def build_predictions() -> list[dict]:
         items.append({
             "slug": slugify(title, "prediction"),
             "title": title,
-            "layer": PREDICTION_LAYER.get(path.name, "其他"),
+            "layer": "每日增补" if path.name.startswith("时政增补_") else PREDICTION_LAYER.get(path.name, "其他"),
             "priority": star_priority(text, "A"),
             "summary": summary_of(text),
             "html": md_to_html(body_without_h1(text)),

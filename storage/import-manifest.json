@@ -1,7 +1,7 @@
 {
   "generated_at": "2026-09-07",
-  "asset_count": 548,
-  "logical_document_count": 418,
+  "asset_count": 553,
+  "logical_document_count": 423,
   "duplicate_groups": 88,
   "assets": [
     {
@@ -226,6 +226,13 @@
       "bytes": 38252,
       "paths": [
         "时政热点\\时政考点_2026年9月.md"
+      ]
+    },
+    {
+      "sha256": "fc0d882e454b787cf93144bcb243872b9840c58d70389cd4ba6469e9e56d340f",
+      "bytes": 16022,
+      "paths": [
+        "时政热点\\时政考点_2026年9月下_0927更新.md"
       ]
     },
     {
@@ -747,8 +754,8 @@
       ]
     },
     {
-      "sha256": "376ef017d307706c771a6fde18fa24ee03e5449617230bcf9cde6650e6f99b65",
-      "bytes": 9341,
+      "sha256": "edabe563e5be09e692b5a73f48f3d423bba3812d43ef85bd2ce2791ea63d0f58",
+      "bytes": 10247,
       "paths": [
         "真题分析_2012-2026\\分析题分析.md"
       ]
@@ -803,6 +810,34 @@
       ]
     },
     {
+      "sha256": "3e7ac7df5f0fc50844d6bd00f3f71db804eb0c0148a1c2220f54c75ab90174e7",
+      "bytes": 207987,
+      "paths": [
+        "真题分析_2012-2026\\时政增补_20260928-29.md"
+      ]
+    },
+    {
+      "sha256": "9b54c02ef7c3b864dd4945bc9a5c6ec43d23e43b530464d99871a9f15cf7ed6a",
+      "bytes": 16497,
+      "paths": [
+        "真题分析_2012-2026\\时政增补_世界人工智能大会讲话_马原大题_20260929.md"
+      ]
+    },
+    {
+      "sha256": "44f2508127e6743bb1c158905676b3f8e608f3e1aa6712da77eaa139a28a2ded",
+      "bytes": 4086,
+      "paths": [
+        "真题分析_2012-2026\\时政增补_中美八点成果共识_20260927.md"
+      ]
+    },
+    {
+      "sha256": "24a9fb14ada9ed1918cc90ea5bbb7f706c3df901e16cbe7f7fd83b9e33a53bb1",
+      "bytes": 19544,
+      "paths": [
+        "真题分析_2012-2026\\时政增补_生态环境法典_20260928.md"
+      ]
+    },
+    {
       "sha256": "fa1ca60ddafb1deebff5e7ed2bed0180df710a8e783369946a644d23ff080178",
       "bytes": 10891,
       "paths": [
@@ -810,15 +845,15 @@
       ]
     },
     {
-      "sha256": "046e7180f2e3d0dc3b1204b1e104c7ebbde8eb3bc7c0863664f11e0d9a9fde9d",
-      "bytes": 2999,
+      "sha256": "87b16a90c56f28f713ea4aff2a2598aecb03de5165d3ac2af64338ac252094d8",
+      "bytes": 3847,
       "paths": [
         "真题分析_2012-2026\\综合结论.md"
       ]
     },
     {
-      "sha256": "4d9211c105ccdfd5482385fbee3f9aa1fa78d6647cc90807b95524c91e63f486",
-      "bytes": 9840,
+      "sha256": "4b5f98d48a8cbafb9cb1ca926cd9384d3b1a6ebe33c7e882fb28b18b6716a54f",
+      "bytes": 14604,
       "paths": [
         "真题分析_2012-2026\\选择题分析.md"
       ]
