@@ -44,6 +44,19 @@ async function toggleStatus(item: AdminPrediction) {
     message.value = (exception as { data?: { message?: string } })?.data?.message || '操作失败'
   }
 }
+
+async function setCommentMode(item: AdminPrediction, event: Event) {
+  const mode = (event.target as HTMLSelectElement).value
+  message.value = ''
+  try {
+    await request('/admin/comments/mode', { method: 'PUT', body: { articleType: 'prediction', slug: item.slug, mode } })
+    item.commentMode = mode
+    message.value = '评论设置已更新'
+  } catch (exception) {
+    message.value = (exception as { data?: { message?: string } })?.data?.message || '评论设置失败'
+    await load()
+  }
+}
 </script>
 
 <template>
@@ -52,7 +65,7 @@ async function toggleStatus(item: AdminPrediction) {
     <p class="admin-meta">预测文章由离线数据集导入；支持发布 / 隐藏上下线管理。</p>
 
     <table class="admin-table">
-      <thead><tr><th>标题</th><th>层级</th><th>字数</th><th>来源文件</th><th>状态</th></tr></thead>
+      <thead><tr><th>标题</th><th>层级</th><th>字数</th><th>来源文件</th><th>状态</th><th>评论</th></tr></thead>
       <tbody>
         <tr v-for="item in predictions" :key="item.slug">
           <td>{{ item.title }}</td>
@@ -63,6 +76,13 @@ async function toggleStatus(item: AdminPrediction) {
             <button type="button" class="ghost-button small" :class="{ hidden: item.status === 'hidden' }" @click="toggleStatus(item)">
               {{ item.status === 'hidden' ? '已隐藏' : '已发布' }}
             </button>
+          </td>
+          <td>
+            <select class="comment-mode-select" :value="item.commentMode ?? 'open'" @change="setCommentMode(item, $event)">
+              <option value="open">自动发布</option>
+              <option value="review">审核后发布</option>
+              <option value="closed">禁止评论</option>
+            </select>
           </td>
         </tr>
       </tbody>
@@ -87,4 +107,12 @@ async function toggleStatus(item: AdminPrediction) {
 }
 
 .hidden { opacity: 0.5; }
+.comment-mode-select {
+  padding: 4px 8px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 6px;
+  background: var(--card-bg, #fff);
+  color: var(--text-primary, #111827);
+  font-size: 0.8125rem;
+}
 </style>

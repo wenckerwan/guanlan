@@ -23,6 +23,7 @@ class ArticleResource
             'summary' => (string) $model->summary,
             'priority' => (string) ($model->priority ?? 'A'),
             'status' => ContentStatus::normalize(isset($model->status) ? (string) $model->status : null),
+            'commentMode' => (string) ($model->comment_mode ?? 'open'),
             'outline' => array_values((array) ($model->outline ?? [])),
         ];
 

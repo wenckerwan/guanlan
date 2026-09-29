@@ -6,6 +6,7 @@ use App\Controller\AdminController;
 use App\Controller\AdminShizhengController;
 use App\Controller\ArticleController;
 use App\Controller\AuthController;
+use App\Controller\CommentController;
 use App\Controller\HealthController;
 use App\Controller\HomeController;
 use App\Controller\MistakeController;
@@ -78,6 +79,11 @@ Router::delete('/api/v1/mistakes/items/{id:\d+}', [MistakeController::class, 'de
 Router::post('/api/v1/mistakes/items/{id:\d+}/review', [MistakeController::class, 'submitReview'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
 Router::patch('/api/v1/mistakes/items/{id:\d+}/review-status', [MistakeController::class, 'updateReviewStatus'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
 
+// 文章评论区（仅登录用户；游客不可见不可评）
+Router::get('/api/v1/comments', [CommentController::class, 'index'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
+Router::post('/api/v1/comments', [CommentController::class, 'store'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
+Router::delete('/api/v1/comments/{id:\d+}', [CommentController::class, 'destroy'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
+
 // 认证
 Router::post('/api/v1/auth/register', [AuthController::class, 'register']);
 Router::post('/api/v1/auth/login', [AuthController::class, 'login']);
@@ -132,6 +138,12 @@ Router::addGroup('/api/v1/admin', function () {
     Router::post('/analysis', [AdminController::class, 'createAnalysis']);
     Router::patch('/analysis/{id:\d+}', [AdminController::class, 'updateAnalysis']);
     Router::delete('/analysis/{id:\d+}', [AdminController::class, 'deleteAnalysis']);
+
+    // 文章评论区管理：列表 / 置顶 / 审核 / 删除 / 评论模式
+    Router::get('/comments', [CommentController::class, 'adminIndex']);
+    Router::put('/comments/mode', [CommentController::class, 'setMode']);
+    Router::patch('/comments/{id:\d+}', [CommentController::class, 'adminUpdate']);
+    Router::delete('/comments/{id:\d+}', [CommentController::class, 'adminDestroy']);
 
     // 每日时政：AI 配置 / 候选池 / 筛选 / 发布
     Router::get('/shizheng/config', [AdminShizhengController::class, 'getConfig']);

@@ -22,6 +22,7 @@ if ((error.value as { statusCode?: number } | null)?.statusCode === 403) {
     <main class="page-wrap inner-page">
       <Breadcrumbs />
       <ArticleReader v-if="article" :article="article" back-to="/analysis" back-label="返回分析列表" />
+      <CommentSection v-if="article" article-type="analysis" :slug="slug" />
       <section v-else class="not-found-card">
         <h1>没有找到这篇内容</h1>
         <p>可能链接已失效，或该篇需要登录后查看。</p>

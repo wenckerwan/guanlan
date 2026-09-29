@@ -145,6 +145,7 @@ export type OutlineItem = {
 
 export type ArticleSummary = {
   status?: 'published' | 'hidden'
+  commentMode?: 'open' | 'review' | 'closed'
   slug: string
   title: string
   summary: string

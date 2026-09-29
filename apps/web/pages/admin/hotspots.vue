@@ -48,6 +48,19 @@ async function toggleStatus(item: AdminArticle) {
     message.value = (exception as { data?: { message?: string } })?.data?.message || '操作失败'
   }
 }
+
+async function setCommentMode(item: AdminArticle, event: Event) {
+  const mode = (event.target as HTMLSelectElement).value
+  message.value = ''
+  try {
+    await request('/admin/comments/mode', { method: 'PUT', body: { articleType: 'hotspot', slug: item.slug, mode } })
+    item.commentMode = mode
+    message.value = '评论设置已更新'
+  } catch (exception) {
+    message.value = (exception as { data?: { message?: string } })?.data?.message || '评论设置失败'
+    await load()
+  }
+}
 </script>
 
 <template>
@@ -73,8 +86,23 @@ async function toggleStatus(item: AdminArticle) {
         <span class="record-title">{{ item.title }}</span>
         <time>{{ item.period }}</time>
         <button type="button" class="ghost-button small" :class="{ hidden: item.status === 'hidden' }" @click="toggleStatus(item)">{{ item.status === 'hidden' ? '已隐藏' : '已发布' }}</button>
+        <select class="comment-mode-select" :value="item.commentMode ?? 'open'" @change="setCommentMode(item, $event)">
+          <option value="open">评论·自动发布</option>
+          <option value="review">评论·审核后发布</option>
+          <option value="closed">禁止评论</option>
+        </select>
         <button type="button" class="icon-button" aria-label="删除" @click="remove(item.id)"><Trash2 :size="14" /></button>
       </li>
     </ul>
   </section>
 </template>
+<style scoped>
+.comment-mode-select {
+  padding: 4px 8px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 6px;
+  background: var(--card-bg, #fff);
+  color: var(--text-primary, #111827);
+  font-size: 0.8125rem;
+}
+</style>
