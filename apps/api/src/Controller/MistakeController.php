@@ -414,6 +414,38 @@ class MistakeController
     }
 
     /**
+     * AI 真实对话测试：发送固定短消息，验证模型实际可用
+     */
+    public function chatTestAIConnection(): ResponseInterface
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return ApiResponse::message('未登录', 401);
+        }
+
+        $aiService = $this->aiService();
+        if ($aiService === null) {
+            return ApiResponse::message('AI 分析组件未安装（服务器缺少 hyperf/guzzle），请联系管理员启用', 503);
+        }
+
+        $validator = new Validator($this->request->all());
+        $validator->required('provider', 'AI 提供商');
+        if ($validator->fails()) {
+            return ApiResponse::message('请求校验失败', 422, $validator->errors());
+        }
+
+        $config = [
+            'provider' => $validator->string('provider'),
+            'apiKey' => $validator->string('apiKey'),
+            'baseUrl' => $validator->string('baseUrl'),
+            'model' => $validator->string('model'),
+            'endpoint' => $validator->string('endpoint'),
+        ];
+
+        return ApiResponse::data($aiService->chatTest($config));
+    }
+
+    /**
      * 获取 AI 配置模板
      */
     public function getAIConfig(): ResponseInterface

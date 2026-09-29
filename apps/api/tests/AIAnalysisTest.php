@@ -96,6 +96,16 @@ namespace {
     ]);
     $check('ssrf blocked custom endpoint', str_contains((string) ($result['error'] ?? ''), '无效'), true);
     // 公网地址通过 URL 校验（直接反射测 assertAllowedUrl，不触网）
+    // chatTest：内网端点在触网前被拒
+    $result = $service->chatTest([
+        'provider' => 'custom', 'endpoint' => 'http://127.0.0.1:8000/api',
+    ]);
+    $check('chat test ssrf blocked', str_contains((string) ($result['error'] ?? ''), '无效'), true);
+    $result = $service->chatTest([
+        'provider' => 'openai', 'apiKey' => 'x', 'baseUrl' => 'http://192.168.1.1/v1',
+    ]);
+    $check('chat test ssrf blocked openai', str_contains((string) ($result['error'] ?? ''), '无效'), true);
+
     $urlGate = $reflection->getMethod('assertAllowedUrl');
     $check('public url allowed', $urlGate->invoke($service, 'https://api.openai.com/v1'), null);
     $check('internal url message', str_contains((string) $urlGate->invoke($service, 'http://10.0.0.5/api'), '不允许'), true);

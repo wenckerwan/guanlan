@@ -165,6 +165,142 @@ class AIAnalysisService
         }
     }
 
+    /**
+     * 真实对话测试：发送「请只回复：ABC」并校验 AI 实际回复，验证模型真的可用。
+     *
+     * @return array{ok: bool, latencyMs: int, reply: string, error?: string}
+     */
+    public function chatTest(array $config): array
+    {
+        if (! $this->validateConfig($config)) {
+            return ['ok' => false, 'latencyMs' => 0, 'reply' => '', 'error' => 'AI 配置无效'];
+        }
+
+        $provider = $config['provider'];
+        $start = microtime(true);
+        $message = '这是一条连通性测试。请只回复三个字母：ABC';
+
+        try {
+            if ($provider === 'custom') {
+                $endpoint = (string) $config['endpoint'];
+                $error = $this->assertAllowedUrl($endpoint);
+                if ($error !== null) {
+                    return ['ok' => false, 'latencyMs' => 0, 'reply' => '', 'error' => "API 端点无效: {$error}"];
+                }
+
+                $headers = ['Content-Type' => 'application/json'];
+                if (! empty($config['apiKey'])) {
+                    $headers['Authorization'] = "Bearer {$config['apiKey']}";
+                }
+
+                $isChatCompletions = (bool) preg_match('~/chat/completions/?$~i', $endpoint);
+                if ($isChatCompletions) {
+                    $payload = [
+                        'model' => (string) ($config['model'] ?? '') ?: 'gpt-4o-mini',
+                        'messages' => [['role' => 'user', 'content' => $message]],
+                        'max_tokens' => 20,
+                    ];
+                } else {
+                    $payload = ['prompt' => $message];
+                }
+
+                $response = $this->httpClient->post($endpoint, [
+                    'headers' => $headers,
+                    'json' => $payload,
+                    'http_errors' => false,
+                    'timeout' => 30,
+                ]);
+                $raw = $response->getBody()->getContents();
+                $reply = $this->extractReply($raw);
+                return $this->interpretChatReply($reply, $raw, $response->getStatusCode(), $start);
+            }
+
+            if ($provider === 'openai') {
+                $baseUrl = (string) ($config['baseUrl'] ?? 'https://api.openai.com/v1');
+                $error = $this->assertAllowedUrl($baseUrl);
+                if ($error !== null) {
+                    return ['ok' => false, 'latencyMs' => 0, 'reply' => '', 'error' => "Base URL 无效: {$error}"];
+                }
+
+                $response = $this->httpClient->post("{$baseUrl}/chat/completions", [
+                    'headers' => ['Authorization' => 'Bearer ' . (string) ($config['apiKey'] ?? '')],
+                    'json' => [
+                        'model' => (string) ($config['model'] ?? '') ?: 'gpt-4o-mini',
+                        'messages' => [['role' => 'user', 'content' => $message]],
+                        'max_tokens' => 20,
+                    ],
+                    'http_errors' => false,
+                    'timeout' => 30,
+                ]);
+                $raw = $response->getBody()->getContents();
+                return $this->interpretChatReply($this->extractReply($raw), $raw, $response->getStatusCode(), $start);
+            }
+
+            // claude
+            $baseUrl = (string) ($config['baseUrl'] ?? 'https://api.anthropic.com/v1');
+            $error = $this->assertAllowedUrl($baseUrl);
+            if ($error !== null) {
+                return ['ok' => false, 'latencyMs' => 0, 'reply' => '', 'error' => "Base URL 无效: {$error}"];
+            }
+
+            $response = $this->httpClient->post("{$baseUrl}/messages", [
+                'headers' => [
+                    'x-api-key' => (string) ($config['apiKey'] ?? ''),
+                    'anthropic-version' => '2023-06-01',
+                ],
+                'json' => [
+                    'model' => (string) ($config['model'] ?? '') ?: 'claude-3-5-haiku-latest',
+                    'max_tokens' => 32,
+                    'messages' => [['role' => 'user', 'content' => $message]],
+                ],
+                'http_errors' => false,
+                'timeout' => 30,
+            ]);
+            $raw = $response->getBody()->getContents();
+            return $this->interpretChatReply($this->extractReply($raw), $raw, $response->getStatusCode(), $start);
+        } catch (GuzzleException $e) {
+            $latencyMs = (int) round((microtime(true) - $start) * 1000);
+
+            return ['ok' => false, 'latencyMs' => $latencyMs, 'reply' => '', 'error' => '连接失败: ' . mb_substr($e->getMessage(), 0, 200)];
+        }
+    }
+
+    private function extractReply(string $raw): string
+    {
+        $body = json_decode($raw, true);
+        if (! is_array($body)) {
+            return '';
+        }
+
+        return (string) ($body['choices'][0]['message']['content']
+            ?? $body['choices'][0]['text']
+            ?? $body['content'][0]['text']
+            ?? $body['content']
+            ?? $body['response']
+            ?? $body['output_text']
+            ?? '');
+    }
+
+    private function interpretChatReply(string $reply, string $raw, int $status, float $start): array
+    {
+        $latencyMs = (int) round((microtime(true) - $start) * 1000);
+        $reply = trim($reply);
+
+        if ($status === 401 || $status === 403) {
+            return ['ok' => false, 'latencyMs' => $latencyMs, 'reply' => '', 'error' => "认证失败（API Key 无效或无权限），HTTP {$status}"];
+        }
+        if ($status >= 400) {
+            return ['ok' => false, 'latencyMs' => $latencyMs, 'reply' => '', 'error' => "请求被拒绝，HTTP {$status}: " . mb_substr($raw, 0, 200)];
+        }
+        if ($reply === '') {
+            return ['ok' => false, 'latencyMs' => $latencyMs, 'reply' => '', 'error' => '模型没有返回内容，原始响应: ' . mb_substr($raw, 0, 300)];
+        }
+
+        $usedModel = (bool) preg_match('/A\s*B\s*C/i', $reply);
+
+        return ['ok' => true, 'latencyMs' => $latencyMs, 'reply' => mb_substr($reply, 0, 200), 'followedInstruction' => $usedModel];
+    }
+
     /** 从 OpenAI 兼容的 /models 响应中提取模型 id 列表 */
     private function extractModelIds(string $body): array
     {
@@ -288,8 +424,13 @@ class AIAnalysisService
                 'timeout' => 60,
             ]);
 
-            $body = json_decode($response->getBody()->getContents(), true);
-            $content = $body['choices'][0]['message']['content'] ?? '';
+            $raw = $response->getBody()->getContents();
+            $body = json_decode($raw, true);
+            $content = $body['choices'][0]['message']['content'] ?? $body['choices'][0]['text'] ?? '';
+
+            if (trim((string) $content) === '') {
+                return ['error' => 'AI 返回内容为空，原始响应: ' . mb_substr($raw, 0, 300)];
+            }
 
             return [
                 'success' => true,
@@ -342,8 +483,13 @@ class AIAnalysisService
                 'timeout' => 60,
             ]);
 
-            $body = json_decode($response->getBody()->getContents(), true);
-            $content = $body['content'][0]['text'] ?? '';
+            $raw = $response->getBody()->getContents();
+            $body = json_decode($raw, true);
+            $content = $body['content'][0]['text'] ?? $body['content'][0]['content'] ?? '';
+
+            if (trim((string) $content) === '') {
+                return ['error' => 'AI 返回内容为空，原始响应: ' . mb_substr($raw, 0, 300)];
+            }
 
             return [
                 'success' => true,
@@ -407,12 +553,17 @@ class AIAnalysisService
                 'timeout' => 120,
             ]);
 
-            $body = json_decode($response->getBody()->getContents(), true);
+            $raw = $response->getBody()->getContents();
+            $body = json_decode($raw, true);
+            $content = $body['choices'][0]['message']['content']
+                ?? $body['choices'][0]['text']
+                ?? $body['content']
+                ?? $body['response']
+                ?? $body['output_text']
+                ?? '';
 
-            if ($isChatCompletions) {
-                $content = $body['choices'][0]['message']['content'] ?? '';
-            } else {
-                $content = $body['content'] ?? $body['response'] ?? '';
+            if (trim((string) $content) === '') {
+                return ['error' => 'AI 返回内容为空，原始响应: ' . mb_substr($raw, 0, 300)];
             }
 
             return [

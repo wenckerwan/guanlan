@@ -128,6 +128,35 @@ async function testConnection() {
   }
 }
 
+// 真实对话测试：给 AI 发固定短消息，验证模型实际可用，成功失败都弹提示
+type ChatTestResult = { ok: boolean; latencyMs: number; reply: string; error?: string; followedInstruction?: boolean }
+const chatTesting = ref(false)
+
+async function chatTest() {
+  chatTesting.value = true
+  analysisError.value = ''
+  let result: ChatTestResult
+  try {
+    result = await request<ChatTestResult>('/mistakes/ai/chat-test', { method: 'POST', body: { ...aiConfig } })
+  } catch (err: any) {
+    result = { ok: false, latencyMs: 0, reply: '', error: err?.data?.message || err?.message || '请求失败' }
+  } finally {
+    chatTesting.value = false
+  }
+
+  if (result.ok) {
+    const follow = result.followedInstruction ? '' : '（未按指令回复，但模型有响应）'
+    window.alert(`✅ AI 可用！
+模型回复：${result.reply || '（空）'}
+耗时 ${result.latencyMs}ms${follow}`)
+    testResult.value = { ok: true, latencyMs: result.latencyMs, models: [], error: undefined }
+  } else {
+    window.alert(`❌ AI 不可用
+${result.error || '未知错误'}
+耗时 ${result.latencyMs}ms`)
+  }
+}
+
 // 开始分析：全部经由后端代理转发，浏览器不再直连 AI 提供商
 async function analyzeWithAI() {
   if (!markdown.value) {
@@ -249,6 +278,9 @@ useHead(() => ({ title: `AI 错题分析 - ${student.value?.name || code} ｜观
           <div class="form-group connection-test-row">
             <button type="button" class="ghost-button" :disabled="testing" @click="testConnection">
               {{ testing ? '测试中…' : '测试连接 / 获取模型' }}
+            </button>
+            <button type="button" class="ghost-button" :disabled="chatTesting" @click="chatTest">
+              {{ chatTesting ? '对话测试中…' : '发送测试消息' }}
             </button>
           </div>
           <datalist id="model-options">
