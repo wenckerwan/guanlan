@@ -10,6 +10,8 @@ use App\Model\Favorite;
 use App\Model\Hotspot;
 use App\Model\Mock;
 use App\Model\MistakeItem;
+use App\Model\MistakeProfile;
+use App\Model\MistakeStudent;
 use App\Model\Note;
 use App\Model\Paper;
 use App\Model\Prediction;
@@ -23,6 +25,12 @@ use Hyperf\DbConnection\Db;
  */
 class AdminService
 {
+    public function __construct(
+        private MistakeService $mistakeService,
+        private MistakeProfileService $mistakeProfiles
+    ) {
+    }
+
     /** @return array<string, mixed> */
     public function overview(): array
     {
@@ -252,5 +260,108 @@ class AdminService
         $items = $query->forPage(max(1, $page), max(1, min(100, $perPage)))->get()->all();
 
         return ['items' => $items, 'total' => $total, 'page' => max(1, $page), 'perPage' => max(1, min(100, $perPage))];
+    }
+
+    /* ---------- 错题后台（阶段 B1） ---------- */
+
+    /** 全部考生（含未绑定账号的数据集考生），带计数与绑定账号信息 */
+    public function mistakeStudents(): array
+    {
+        $students = $this->mistakeService->studentsWithin(null);
+        if ($students === []) {
+            return [];
+        }
+
+        $ownerIds = array_values(array_filter($students, fn ($s) => $s->owner_user_id) ?: []);
+        $owners = [];
+        if ($ownerIds !== []) {
+            $owners = User::query()
+                ->whereIn('id', array_map(static fn ($s) => (int) $s->owner_user_id, $ownerIds))
+                ->get()
+                ->keyBy('id');
+        }
+
+        $out = [];
+        foreach ($students as $student) {
+            /** @var User|null $owner */
+            $owner = $student->owner_user_id ? ($owners[(int) $student->owner_user_id] ?? null) : null;
+            $out[] = [
+                'code' => (string) $student->code,
+                'name' => (string) $student->name,
+                'relation' => (string) $student->relation,
+                'itemCount' => (int) $student->items()->count(),
+                'moduleCounts' => $this->mistakeService->moduleCounts((int) $student->id),
+                'errorTypes' => $this->mistakeService->errorTypeCounts((int) $student->id),
+                'ownerEmail' => $owner?->email ?? '',
+                'ownerId' => $student->owner_user_id ? (int) $student->owner_user_id : null,
+                'isDataset' => ! (bool) $student->owner_user_id,
+            ];
+        }
+
+        return $out;
+    }
+
+    public function mistakeStudent(string $code): ?MistakeStudent
+    {
+        return $this->mistakeService->student($code);
+    }
+
+    /** @return array{items: array, total: int, page: int, perPage: int} */
+    public function mistakeItems(string $code, int $page = 1, int $perPage = 20): array
+    {
+        $student = $this->mistakeService->student($code);
+        if (! $student) {
+            return ['items' => [], 'total' => 0, 'page' => max(1, $page), 'perPage' => max(1, min(100, $perPage))];
+        }
+
+        $result = $this->mistakeService->items((int) $student->id, '', '', $page, $perPage);
+
+        return [
+            'items' => $result['items'],
+            'total' => $result['total'],
+            'page' => max(1, $page),
+            'perPage' => max(1, min(100, $perPage)),
+        ];
+    }
+
+    /** @return array<string, mixed>|null */
+    public function mistakeProfile(string $code): ?array
+    {
+        $student = $this->mistakeService->student($code);
+        if (! $student) {
+            return null;
+        }
+
+        $profile = MistakeProfile::query()->where('student_id', (int) $student->id)->first();
+
+        return [
+            'code' => (string) $student->code,
+            'name' => (string) $student->name,
+            'markdown' => (string) ($profile->markdown ?? ''),
+            'html' => (string) ($profile->html ?? ''),
+            'isDefault' => (bool) ($profile->is_default ?? true),
+            'sourceFile' => (string) ($profile->source_file ?? ''),
+            'updatedAt' => $profile?->updated_at ? (string) $profile->updated_at : '',
+        ];
+    }
+
+    /** @return array<string, mixed>|null */
+    public function saveMistakeProfile(User $admin, string $code, string $markdown, string $sourceFile): ?array
+    {
+        $student = $this->mistakeService->student($code);
+        if (! $student) {
+            return null;
+        }
+
+        $profile = $this->mistakeProfiles->replace($student, $markdown, $sourceFile, $admin);
+
+        return [
+            'code' => (string) $student->code,
+            'markdown' => (string) $profile->markdown,
+            'html' => (string) $profile->html,
+            'isDefault' => false,
+            'sourceFile' => (string) $profile->source_file,
+            'updatedAt' => (string) $profile->updated_at,
+        ];
     }
 }

@@ -6,11 +6,15 @@ namespace App\Controller;
 
 use App\Resource\ArticleResource;
 use App\Resource\MockResource;
+use App\Resource\MistakeResource;
 use App\Resource\PaperResource;
 use App\Resource\QuestionResource;
 use App\Resource\UserResource;
+use App\Service\AdminAuditService;
 use App\Service\AdminService;
 use App\Support\ApiResponse;
+use App\Support\Auth;
+use App\Support\Validator;
 use Hyperf\HttpServer\Contract\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -18,6 +22,7 @@ class AdminController
 {
     public function __construct(
         private AdminService $service,
+        private AdminAuditService $audit,
         private RequestInterface $request
     ) {
     }
@@ -143,6 +148,76 @@ class AdminController
     public function mistakes(): ResponseInterface
     {
         return ApiResponse::data($this->service->mistakeOverview());
+    }
+
+    /* ---------- 错题后台（阶段 B1） ---------- */
+
+    /** 全部考生（含数据集考生），带计数与绑定账号 */
+    public function mistakeStudents(): ResponseInterface
+    {
+        return ApiResponse::data($this->service->mistakeStudents());
+    }
+
+    /** 某考生错题条目（分页，只读浏览） */
+    public function mistakeItems(string $code): ResponseInterface
+    {
+        $student = $this->service->mistakeStudent($code);
+        if (! $student) {
+            return ApiResponse::message('考生不存在', 404);
+        }
+
+        $result = $this->service->mistakeItems($code, $this->page(), $this->perPage());
+
+        return ApiResponse::data([
+            'code' => (string) $student->code,
+            'name' => (string) $student->name,
+            'items' => MistakeResource::items($result['items']),
+            'total' => $result['total'],
+            'page' => $result['page'],
+            'perPage' => $result['perPage'],
+        ]);
+    }
+
+    /** 当前错题分析 Markdown */
+    public function mistakeProfile(string $code): ResponseInterface
+    {
+        $profile = $this->service->mistakeProfile($code);
+
+        return $profile
+            ? ApiResponse::data($profile)
+            : ApiResponse::message('考生不存在', 404);
+    }
+
+    /** 上传/替换错题分析 Markdown（落库 + 审计） */
+    public function saveMistakeProfile(string $code): ResponseInterface
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return ApiResponse::message('未登录', 401);
+        }
+
+        $validator = new Validator($this->request->all());
+        $validator->required('markdown', '错题分析内容')
+            ->max('markdown', 200000, '错题分析内容');
+
+        if ($validator->fails()) {
+            return ApiResponse::message('请求校验失败', 422, $validator->errors());
+        }
+
+        $markdown = $validator->string('markdown');
+        $sourceFile = trim((string) $this->request->input('sourceFile', '')) ?: 'admin-console.md';
+
+        $profile = $this->service->saveMistakeProfile($user, $code, $markdown, $sourceFile);
+        if (! $profile) {
+            return ApiResponse::message('考生不存在', 404);
+        }
+
+        $this->audit->log($user, 'mistake.profile.replace', 'mistake_student', $code, [
+            'sourceFile' => $sourceFile,
+            'markdownLength' => mb_strlen($markdown),
+        ]);
+
+        return ApiResponse::data($profile);
     }
 
     public function hotspots(): ResponseInterface

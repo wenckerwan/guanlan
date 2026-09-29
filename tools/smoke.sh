@@ -96,6 +96,20 @@ printf 'hidden detail 404 %s (expect 404)\n' "$(code "$B/hotspots/$HS_SLUG")"
 printf 'hotspot publish  %s\n' "$(code "${AUTH[@]}" -X PATCH "$B/admin/hotspots/$HS_ID" -H 'Content-Type: application/json' -d '{"status":"published"}')"
 printf 'republish detail %s (expect 200)\n' "$(code "$B/hotspots/$HS_SLUG")"
 printf 'bad status fallback %s (published 回退，仍 200)\n' "$(code "${AUTH[@]}" -X PATCH "$B/admin/hotspots/$HS_ID" -H 'Content-Type: application/json' -d '{"status":"draft"}')"
+# B1 错题后台：考生列表、条目分页、profile 上传回读
+printf 'mist students (admin) %s\n' "$(code "${AUTH[@]}" "$B/admin/mistakes/students")"
+printf 'mist items (admin)   %s\n' "$(code "${AUTH[@]}" "$B/admin/mistakes/students/A/items?perPage=5")"
+printf 'mist profile GET     %s\n' "$(code "${AUTH[@]}" "$B/admin/mistakes/students/A/profile")"
+PROF_MD="B1 smoke: 考点结论测试行"
+printf 'mist profile PUT     %s\n' "$(code "${AUTH[@]}" -X PUT "$B/admin/mistakes/students/A/profile" -H 'Content-Type: application/json' -d "{\"markdown\":\"$PROF_MD\",\"sourceFile\":\"b1-smoke.md\"}")"
+printf 'mist profile reread  %s (expect 1)\n' "$(curl -s "${AUTH[@]}" "$B/admin/mistakes/students/A/profile" | grep -c 'b1-smoke.md')"
+# 非管理员 403：注册临时用户后访问后台错题接口
+U_TOKEN=$(curl -s -X POST "$B/auth/register" -H 'Content-Type: application/json' -d "{\"email\":\"b1-smoke-$(date +%s)@guanlan.local\",\"password\":\"guanlan2027\",\"displayName\":\"b1smoke\"}" | sed -n 's/.*"token":"\([^"]*\)\".*/\1/p')
+printf 'mist students (user) %s (expect 403)\n' "$(code -H "Authorization: Bearer $U_TOKEN" "$B/admin/mistakes/students")"
+printf 'mist profile PUT (user) %s (expect 403)\n' "$(code -H "Authorization: Bearer $U_TOKEN" -X PUT "$B/admin/mistakes/students/A/profile" -H 'Content-Type: application/json' -d '{"markdown":"x"}')"
+# 考生端 detail 接口回读上传内容（公开考生 A）
+printf 'student detail (user) %s (expect 200)\n' "$(code -H "Authorization: Bearer $U_TOKEN" "$B/mistakes/students/A/detail")"
+printf 'detail carries html  %s (expect 1)\n' "$(curl -s -H "Authorization: Bearer $U_TOKEN" "$B/mistakes/students/A/detail" | grep -c 'markdown-body\|B1 smoke')"
 
 
 echo; echo "=== 11. 详情页 404 ==="

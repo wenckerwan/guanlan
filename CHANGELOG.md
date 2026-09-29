@@ -1,5 +1,43 @@
 # 更新记录
 
+## V0.1-dev.9 - 错题后台闭环 B1 - 2026-09-29
+
+对应 [admin-update-plan](docs/superpowers/plans/2026-09-29-admin-update-plan.md) 阶段 B1 + 审计表前置。
+分支 `feature/admin-mistake-console`（叠于 dev.8 之上）。
+
+### 变更
+
+- **审计表前置**：迁移 `2026_09_29_000003` 建 `admin_audit_logs`
+  （admin_id / action / target_type / target_id / detail / created_at，双索引），
+  新增 `AdminAuditService::log()`。阶段 B/C 的后台写操作统一走它，本期接入 profile 上传。
+- **接通错题分析断头链路**：`MistakeController::detail` 原先读
+  `students.detail_html`（注册生成的考生恒为空串），`mistake_profiles` 只写不读。
+  现改为优先返回 profile 内容（`isDefault=false` 时），回退 `detail_html`；
+  响应新增 `isDefault` / `updatedAt`。考生端错题本页新增「错题分析」折叠卡片，
+  默认占位内容不渲染——管理员上传后考生端立即可见（验收标准①）。
+- **后台错题接口**（全部在 `RequireAdminMiddleware` 组内，非管理员 403 = 验收标准②）：
+  - `GET /admin/mistakes/students`：全量考生（含数据集考生 A），带错题数、模块/错因分布、
+    绑定账号邮箱、来源标记；
+  - `GET /admin/mistakes/students/{code}/items`：条目分页浏览（perPage ≤ 100）；
+  - `GET /admin/mistakes/students/{code}/profile`：当前 Markdown 与来源信息；
+  - `PUT /admin/mistakes/students/{code}/profile`：落 `MistakeProfileService::replace()`，
+    记录 `source_file` 与 `updated_by`（验收标准③），并写审计日志
+    `mistake.profile.replace`。
+- **前端**：新增 `admin/mistakes.vue`（考生列表 → 条目分页浏览 → Markdown 编辑器：
+  .md 文件上传或直接粘贴、来源文件名、保存发布），后台导航加「错题」入口。
+
+### 验证
+
+本机（Windows，无 PHP/Docker）实际执行：
+
+- `python tools/phpcheck.py`：checked=122 files, classes=80, tables=25，OK。
+- `npm test --prefix apps/web`：43/43 通过。
+- `python tools/doclink.py`：断链仍为改动前已存在的 README→docs/api.md，无新增。
+- `bash -n tools/smoke.sh`：语法通过；新增 B1 用例（后台考生列表/条目/profile GET、
+  PUT 上传后回读 sourceFile 一致、非管理员 403 × 2、考生端 detail 200 且带内容），
+  待容器内执行。
+- 审计落库断言依赖真实数据库，待容器冒烟覆盖。
+
 ## V0.1-dev.8 - 后台内容管理补齐 - 2026-09-29
 
 对应 development-plan 1.6，规划见 [superpowers/plans/2026-09-29-admin-update-plan.md](docs/superpowers/plans/2026-09-29-admin-update-plan.md) 阶段 A。

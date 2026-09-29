@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch, onMounted } from 'vue'
 import { ArrowLeft, BookOpen, Check, RotateCcw, Send, Sparkles } from 'lucide-vue-next'
 import type { Handbook, MistakeItemsPayload, MistakeItem } from '~/types/api'
 import { displayAnswer, isCorrect } from '~/utils/quiz.mjs'
@@ -35,6 +35,19 @@ if ((error.value as { statusCode?: number } | null)?.statusCode === 403) {
 
 const student = computed(() => data.value?.student ?? null)
 const items = computed(() => data.value?.items ?? [])
+
+// 错题分析正文：管理员在后台上传后，这里立即可见（默认占位内容不渲染）
+const analysis = ref<{ html: string; isDefault: boolean; updatedAt: string } | null>(null)
+onMounted(async () => {
+  try {
+    analysis.value = await request<{ html: string; isDefault: boolean; updatedAt: string }>(
+      `/mistakes/students/${code}/detail`
+    )
+  } catch {
+    analysis.value = null
+  }
+})
+const showAnalysis = computed(() => !!analysis.value && !analysis.value.isDefault && !!analysis.value.html)
 
 const redoOpen = reactive<Record<number, boolean>>({})
 const redoChoices = reactive<Record<number, string[]>>({})
@@ -157,6 +170,13 @@ async function submitRedo(item: MistakeItem) {
         </div>
       </section>
 
+      <section v-if="showAnalysis" class="mistake-analysis">
+        <details open>
+          <summary><Sparkles :size="14" />错题分析<time v-if="analysis?.updatedAt">（更新于 {{ analysis.updatedAt.slice(0, 10) }}）</time></summary>
+          <div class="markdown-body" v-html="analysis?.html" />
+        </details>
+      </section>
+
       <section v-if="student" class="stat-row">
         <div v-for="[name, count] in Object.entries(student.errorTypes)" :key="name" class="stat-cell">
           <strong>{{ count }}</strong><small>{{ name }}</small>
@@ -227,3 +247,32 @@ async function submitRedo(item: MistakeItem) {
     </main>
   </div>
 </template>
+
+<style scoped>
+.mistake-analysis {
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.mistake-analysis summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.mistake-analysis summary time {
+  font-weight: 400;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.mistake-analysis .markdown-body {
+  margin-top: 0.75rem;
+}
+</style>

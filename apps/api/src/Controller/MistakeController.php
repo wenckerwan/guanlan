@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Model\MistakeProfile;
 use App\Model\MistakeReview;
 use App\Resource\MistakeResource;
 use App\Service\AIAnalysisService;
@@ -191,11 +192,19 @@ class MistakeController
             return ApiResponse::message('该错题本仅对应账号和管理员可见', 403);
         }
 
+        // 内容来源：mistake_profiles（后台上传）优先，回退 students.detail_html（数据集内联）
+        $profile = MistakeProfile::query()->where('student_id', (int) $student->id)->first();
+        $isDefault = (bool) ($profile->is_default ?? true);
+
         return ApiResponse::data([
             'code' => (string) $student->code,
             'name' => (string) $student->name,
             'relation' => (string) $student->relation,
-            'html' => (string) $student->detail_html,
+            'html' => $profile && ! $isDefault
+                ? (string) $profile->html
+                : (string) $student->detail_html,
+            'isDefault' => $isDefault,
+            'updatedAt' => $profile?->updated_at ? (string) $profile->updated_at : '',
         ]);
     }
 
