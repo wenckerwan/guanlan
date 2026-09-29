@@ -1,5 +1,50 @@
 # 更新记录
 
+## V0.1-dev.9 生产部署与容器验证 - 2026-09-29
+
+服务器 root-189（/www/wwwroot/guanlan，宝塔 + Docker Compose）实际执行结果。
+
+### 部署内容
+
+- `git reset --hard` 对齐重写后的 `origin/v0.1-dev.7`（历史清理 + dev.8/9 全量内容）。
+- **`composer require hyperf/guzzle`**（composer:2 容器内执行）：安装 hyperf/guzzle
+  v3.1.66 + guzzlehttp/guzzle 7.15.5，AI 分析后端启用。提交 10c3752。
+- 重建 api/web 镜像并重启；api 启动链自动跑 `verify-dataset → migrate --force →
+  db:seed --force`。三个新迁移落库确认：`admin_audit_logs` 表、
+  `mistake_reviews.consecutive_correct` 列、`hotspots/analysis_articles.status` 列。
+- `/api/v1/health` 返回 `{"status":"ok","db":"ok","version":"V0.1-dev.9"}`。
+
+### 部署过程中发现并修复的问题
+
+1. **数据集 manifest 漂移（05a29e1）**：dev.6/7 提交 038ae9a 更新了 `mistakes.json`
+   但未重生成 manifest（253087 字节实际 vs 253077 声明），容器 `verify-dataset`
+   启动失败、api 崩溃循环。用 `tools/ingest/dataset_manifest.py` 的 build_manifest
+   正式重生成，8 个数据集 + totals 全部对账一致。此前生产是靠服务器上未提交的手工
+   manifest 修改在撑——重置工作区后暴露。
+2. **管理员账号失效**：`admin@guanlan.local` 在 9/28 被普通注册抢占，MistakeSeeder
+   的 seedAdmin 见邮箱已存在即跳过，导致系统无管理员、全部后台接口 403。已修数据
+   （升级 role=admin）并修 seeder：邮箱被占时升级为管理员而非跳过。
+3. **后台热点/分析编辑失效（遗留 bug）**：`ArticleResource::listItem` 从不输出
+   `id`，而后台页的改状态/删除按钮依赖 `item.id`——该功能自上线起即不可用。资源
+   已补 `id` 字段。
+4. **/health 版本号硬编码**：改为读仓库根 VERSION 文件（镜像同步 COPY）。
+5. **测试可运行性**：`AIAnalysisTest` 原 PHPUnit 风格但项目从未引入 phpunit，从来
+   跑不起来——重写为项目统一的纯脚本风格（桩件、无外部依赖），并补 8 组 SSRF 拦截
+   用例；`DatasetManifestVerifierTest` 原 shell 出调 python3 构建 fixture，api 容器
+   无 python——改为纯 PHP 复刻 builder 算法。
+
+### 容器验证记录（实际输出）
+
+- `php -l` 全量：**lint checked=122 failed=0**（api 容器内执行）。
+- PHP 测试 6/6：AIAnalysisTest / AccountIdTest / AdminCredentialsTest /
+  ContentStatusTest / DatasetManifestVerifierTest / MistakeAccessTest 全部 PASS。
+- `bash tools/smoke.sh`（生产网关 127.0.0.1:8080）：49 个用例 200/201；所有 4xx 均为
+  预期（不存在资源 404、未登录 401、校验 422、重复注册 409）。第 10 节后台全矩阵
+  通过：admin 全接口 200 / 无 token 401 / 非管理员 403；隐藏热点详情 404 → 恢复发布
+  200；非法 status 回退 published；B1 profile 上传回读一致；B3 PATCH 200/403/404/422；
+  B2 review-stats 200。
+- 前端 43/43 node 测试通过（本机）。
+
 ## V0.1-dev.9 - 错题后台闭环 B1 - 2026-09-29
 
 对应 [admin-update-plan](docs/superpowers/plans/2026-09-29-admin-update-plan.md) 阶段 B1 + 审计表前置。
