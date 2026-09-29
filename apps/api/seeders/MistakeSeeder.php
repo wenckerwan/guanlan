@@ -241,8 +241,18 @@ class MistakeSeeder extends Seeder
     {
         $credentials = AdminCredentials::fromEnvironment($_ENV + $_SERVER);
         $email = $credentials['email'];
-        if (User::query()->where('email', $email)->exists()) {
-            echo '[MistakeSeeder] 管理员已存在，跳过' . PHP_EOL;
+        $existing = User::query()->where('email', $email)->first();
+        if ($existing) {
+            if ($existing->role === 'admin') {
+                echo '[MistakeSeeder] 管理员已存在，跳过' . PHP_EOL;
+                return;
+            }
+
+            // 邮箱被普通注册抢占：升级为管理员，保证每次 seeding 后都存在可用管理员
+            $existing->role = 'admin';
+            $existing->status = 'active';
+            $existing->save();
+            echo '[MistakeSeeder] 邮箱 ' . $email . ' 已被普通账号占用，已升级为管理员' . PHP_EOL;
             return;
         }
 
