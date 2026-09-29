@@ -34,7 +34,7 @@ onMounted(async () => {
 
 // AI 配置
 const aiConfig = reactive({
-  provider: 'custom',
+  provider: 'deepseek',
   apiKey: '',
   baseUrl: '',
   model: '',
@@ -269,6 +269,7 @@ useHead(() => ({ title: `AI 错题分析 - ${student.value?.name || code} ｜观
           <div class="form-group">
             <label>AI 提供商</label>
             <select v-model="aiConfig.provider" class="form-select">
+              <option value="deepseek">DeepSeek (官方)</option>
               <option value="openai">OpenAI (GPT-4)</option>
               <option value="claude">Claude (Anthropic)</option>
               <option value="custom">自定义 API</option>
@@ -296,18 +297,29 @@ useHead(() => ({ title: `AI 错题分析 - ${student.value?.name || code} ｜观
             <template v-else>❌ {{ testResult.error || '连接失败' }}</template>
           </p>
 
-          <div v-if="aiConfig.provider === 'openai'" class="config-section">
+          <div v-if="aiConfig.provider === 'openai' || aiConfig.provider === 'deepseek'" class="config-section">
             <div class="form-group">
               <label>API Key *</label>
               <input v-model="aiConfig.apiKey" type="password" class="form-input" placeholder="sk-..." />
             </div>
             <div class="form-group">
               <label>Base URL（可选）</label>
-              <input v-model="aiConfig.baseUrl" type="text" class="form-input" placeholder="https://api.openai.com/v1" />
+              <input
+                v-model="aiConfig.baseUrl"
+                type="text"
+                class="form-input"
+                :placeholder="aiConfig.provider === 'deepseek' ? 'https://api.deepseek.com（默认，无需修改）' : 'https://api.openai.com/v1'"
+              />
             </div>
             <div class="form-group">
               <label>模型</label>
-              <input v-model="aiConfig.model" type="text" class="form-input" list="model-options" placeholder="gpt-4，可点上方按钮获取列表" />
+              <input
+                v-model="aiConfig.model"
+                type="text"
+                class="form-input"
+                list="model-options"
+                :placeholder="aiConfig.provider === 'deepseek' ? 'deepseek-chat（可点上方按钮获取列表）' : 'gpt-4，可点上方按钮获取列表'"
+              />
             </div>
           </div>
 

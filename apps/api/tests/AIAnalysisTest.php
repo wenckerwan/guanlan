@@ -56,6 +56,9 @@ namespace {
     $check('valid openai', $service->validateConfig([
         'provider' => 'openai', 'apiKey' => 'sk-test', 'baseUrl' => 'https://api.openai.com/v1', 'model' => 'gpt-4',
     ]), true);
+    $check('valid deepseek (defaults)', $service->validateConfig([
+        'provider' => 'deepseek', 'apiKey' => 'sk-ds-test',
+    ]), true);
     $check('valid claude', $service->validateConfig([
         'provider' => 'claude', 'apiKey' => 'sk-ant-test', 'baseUrl' => 'https://api.anthropic.com/v1', 'model' => 'claude-opus-4-8',
     ]), true);

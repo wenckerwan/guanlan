@@ -41,6 +41,7 @@ class AIAnalysisService
 
     private function dispatch(array $config, \Closure $promptFactory): array
     {
+        $config = $this->normalizeProviderConfig($config);
         $provider = $config['provider'] ?? 'openai';
 
         return match ($provider) {
@@ -63,6 +64,7 @@ class AIAnalysisService
             return ['ok' => false, 'latencyMs' => 0, 'models' => [], 'error' => 'AI 配置无效'];
         }
 
+        $config = $this->normalizeProviderConfig($config);
         $provider = $config['provider'];
         $start = microtime(true);
 
@@ -177,6 +179,7 @@ class AIAnalysisService
             return ['ok' => false, 'latencyMs' => 0, 'reply' => '', 'error' => 'AI 配置无效'];
         }
 
+        $config = $this->normalizeProviderConfig($config);
         $provider = $config['provider'];
         $start = microtime(true);
         $message = '这是一条连通性测试。请只回复三个字母：ABC';
@@ -266,6 +269,19 @@ class AIAnalysisService
         }
     }
 
+    /**
+     * 常见配置错误：把网页地址当成 API 端点，返回的是 HTML 页面而非 JSON
+     */
+    private function htmlHint(string $raw): string
+    {
+        $trimmed = ltrim($raw);
+        if (stripos($trimmed, '<!doctype') === 0 || stripos($trimmed, '<html') === 0) {
+            return '端点返回的是网页而非 API 响应——请检查地址是否为完整 API 端点（例如 https://api.deepseek.com/chat/completions），而不是网站首页';
+        }
+
+        return '原始响应: ' . mb_substr($raw, 0, 300);
+    }
+
     private function extractReply(string $raw): string
     {
         $body = json_decode($raw, true);
@@ -294,7 +310,7 @@ class AIAnalysisService
             return ['ok' => false, 'latencyMs' => $latencyMs, 'reply' => '', 'error' => "请求被拒绝，HTTP {$status}: " . mb_substr($raw, 0, 200)];
         }
         if ($reply === '') {
-            return ['ok' => false, 'latencyMs' => $latencyMs, 'reply' => '', 'error' => '模型没有返回内容，原始响应: ' . mb_substr($raw, 0, 300)];
+            return ['ok' => false, 'latencyMs' => $latencyMs, 'reply' => '', 'error' => '模型没有返回内容。' . \$this->htmlHint(\$raw)];
         }
 
         $usedModel = (bool) preg_match('/A\s*B\s*C/i', $reply);
@@ -431,7 +447,7 @@ class AIAnalysisService
             $content = $body['choices'][0]['message']['content'] ?? $body['choices'][0]['text'] ?? '';
 
             if (trim((string) $content) === '') {
-                return ['error' => 'AI 返回内容为空，原始响应: ' . mb_substr($raw, 0, 300)];
+                return ['error' => 'AI 返回内容为空。' . \$this->htmlHint(\$raw)];
             }
 
             return [
@@ -491,7 +507,7 @@ class AIAnalysisService
             $content = $body['content'][0]['text'] ?? $body['content'][0]['content'] ?? '';
 
             if (trim((string) $content) === '') {
-                return ['error' => 'AI 返回内容为空，原始响应: ' . mb_substr($raw, 0, 300)];
+                return ['error' => 'AI 返回内容为空。' . \$this->htmlHint(\$raw)];
             }
 
             return [
@@ -567,7 +583,7 @@ class AIAnalysisService
                 ?? '';
 
             if (trim((string) $content) === '') {
-                return ['error' => 'AI 返回内容为空，原始响应: ' . mb_substr($raw, 0, 300)];
+                return ['error' => 'AI 返回内容为空。' . \$this->htmlHint(\$raw)];
             }
 
             return [
@@ -693,13 +709,31 @@ PROMPT;
     }
 
     /**
+     * DeepSeek 官方 API 与 OpenAI 完全兼容：归一化后复用 openai 通道
+     */
+    private function normalizeProviderConfig(array $config): array
+    {
+        if (($config['provider'] ?? '') === 'deepseek') {
+            $config['provider'] = 'openai';
+            if (trim((string) ($config['baseUrl'] ?? '')) === '') {
+                $config['baseUrl'] = 'https://api.deepseek.com';
+            }
+            if (trim((string) ($config['model'] ?? '')) === '') {
+                $config['model'] = 'deepseek-chat';
+            }
+        }
+
+        return $config;
+    }
+
+    /**
      * 验证配置
      */
     public function validateConfig(array $config): bool
     {
         $provider = $config['provider'] ?? '';
 
-        if (! in_array($provider, ['openai', 'claude', 'custom'])) {
+        if (! in_array($provider, ['openai', 'deepseek', 'claude', 'custom'])) {
             return false;
         }
 

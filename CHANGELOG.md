@@ -1,5 +1,27 @@
 # 更新记录
 
+## V0.1-dev.11 - DeepSeek 官方 API 支持 + 网页地址误配识别 - 2026-09-29
+
+### 变更
+
+- **DeepSeek 官方 API 一等支持**：新增 `deepseek` 提供商（DeepSeek API 与 OpenAI
+  完全兼容，归一化后复用 openai 通道），默认 `https://api.deepseek.com` +
+  `deepseek-chat`，Base URL / 模型留空即用默认值；连接测试、模型获取、真实对话
+  测试、分析全链路可用；前端提供商下拉新增 DeepSeek 并设为默认项，
+  `getAIConfig` 同步补充。
+- **网页地址误配识别**：用户把网站首页当 API 端点填写时（响应为 HTML），错误提示
+  从「原始响应: <!doctype html>…」升级为明确指引：「端点返回的是网页而非 API
+  响应——请检查地址是否为完整 API 端点（例如
+  https://api.deepseek.com/chat/completions）」。覆盖分析空内容守卫（3 处）与
+  真实对话测试的失败路径。
+- 分析请求超时 60s → 120s（长文分析在中转站上更稳）。
+
+### 验证
+
+- `python tools/phpcheck.py`：OK；`npm test --prefix apps/web`：43/43。
+- AIAnalysisTest 新增 deepseek 校验用例；生产部署后 6/6 全 PASS（见 V0.1-dev.9
+  部署记录的验证通道）。
+
 ## V0.1-dev.10 - AI 分析走后端代理 + 连接测试/模型选择 - 2026-09-29
 
 修复浏览器直连 AI 提供商导致的 `Failed to fetch`（网络不可达 + CORS），并补齐连接测试与模型选择。

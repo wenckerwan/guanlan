@@ -458,6 +458,15 @@ class MistakeController
         return ApiResponse::data([
             'providers' => [
                 [
+                    'id' => 'deepseek',
+                    'name' => 'DeepSeek (官方)',
+                    'fields' => [
+                        ['key' => 'apiKey', 'label' => 'API Key', 'required' => true],
+                        ['key' => 'baseUrl', 'label' => 'Base URL', 'required' => false, 'default' => 'https://api.deepseek.com'],
+                        ['key' => 'model', 'label' => 'Model', 'required' => false, 'default' => 'deepseek-chat'],
+                    ],
+                ],
+                [
                     'id' => 'openai',
                     'name' => 'OpenAI',
                     'fields' => [
