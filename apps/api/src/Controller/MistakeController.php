@@ -17,6 +17,7 @@ use App\Support\MistakeAccess;
 use App\Support\Validator;
 use Hyperf\Context\ApplicationContext;
 use Hyperf\HttpServer\Contract\RequestInterface;
+use Hyperf\HttpServer\Contract\ResponseInterface as HyperfResponseInterface;
 use Psr\Http\Message\ResponseInterface;
 
 class MistakeController
@@ -24,7 +25,8 @@ class MistakeController
     public function __construct(
         private MistakeService $service,
         private MistakeReviewService $reviewService,
-        private RequestInterface $request
+        private RequestInterface $request,
+        private HyperfResponseInterface $response
     ) {
     }
 
@@ -380,6 +382,94 @@ class MistakeController
             'content' => $result['content'],
             'usage' => $result['usage'] ?? [],
         ]);
+    }
+
+    /**
+     * 请求 AI 分析（SSE 流式）：校验逻辑与 requestAIAnalysis 相同，
+     * 校验通过后以 text/event-stream 逐段推送增量文本，
+     * 事件格式：data: {"delta":"..."} / data: {"error":"..."} / data: {"done":true,...}
+     */
+    public function requestAIAnalysisStream(string $code): ResponseInterface
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return ApiResponse::message('未登录', 401);
+        }
+
+        $student = $this->service->student($code);
+        if (! $student) {
+            return ApiResponse::message('考生不存在', 404);
+        }
+        if (! MistakeAccess::canViewStudent($student)) {
+            return ApiResponse::message('该错题本仅对应账号和管理员可见', 403);
+        }
+
+        $validator = new Validator($this->request->all());
+        $validator->required('provider', 'AI 提供商')
+            ->required('apiKey', 'API Key');
+
+        if ($validator->fails()) {
+            return ApiResponse::message('请求校验失败', 422, $validator->errors());
+        }
+
+        $aiService = $this->aiService();
+        if ($aiService === null) {
+            return ApiResponse::message('AI 分析组件未安装（服务器缺少 hyperf/guzzle），请联系管理员启用', 503);
+        }
+
+        $config = [
+            'provider' => $validator->string('provider'),
+            'apiKey' => $validator->string('apiKey'),
+            'baseUrl' => $validator->string('baseUrl'),
+            'model' => $validator->string('model'),
+            'endpoint' => $validator->string('endpoint'),
+        ];
+
+        if (! $aiService->validateConfig($config)) {
+            return ApiResponse::message('AI 配置无效', 422);
+        }
+
+        $markdown = trim((string) $this->request->input('markdown', ''));
+        if (mb_strlen($markdown) > 200000) {
+            return ApiResponse::message('错题内容过长（上限 20 万字符）', 422);
+        }
+
+        $sse = $this->response
+            ->withHeader('Content-Type', 'text/event-stream; charset=utf-8')
+            ->withHeader('Cache-Control', 'no-cache')
+            ->withHeader('X-Accel-Buffering', 'no');
+
+        $send = function (array $payload) use ($sse): void {
+            $sse->write('data: ' . json_encode($payload, JSON_UNESCAPED_UNICODE) . "\n\n");
+        };
+
+        $onDelta = function (string $delta) use ($send): void {
+            $send(['delta' => $delta]);
+        };
+
+        try {
+            $result = $markdown !== ''
+                ? $aiService->analyzeMarkdownStream($student, $markdown, $config, $onDelta)
+                : $aiService->analyzeStream($student, $config, $onDelta);
+        } catch (\Throwable $e) {
+            $send(['error' => 'AI 分析流式响应中断: ' . mb_substr($e->getMessage(), 0, 200)]);
+
+            return $sse;
+        }
+
+        if (isset($result['error'])) {
+            $send(['error' => $result['error']]);
+
+            return $sse;
+        }
+
+        $send([
+            'done' => true,
+            'content' => $result['content'],
+            'usage' => $result['usage'] ?? [],
+        ]);
+
+        return $sse;
     }
 
     /**

@@ -6,7 +6,7 @@ import type { MistakeStudent } from '~/types/api'
 
 const route = useRoute()
 const code = String(route.params.code)
-const { request, isLoggedIn, restore } = useAuth()
+const { request, token, isLoggedIn, restore } = useAuth()
 if (import.meta.client) restore()
 
 // 🔧 本地开发模式：绕过认证
@@ -225,7 +225,62 @@ onMounted(() => {
   loadReports()
 })
 
-// 开始分析：全部经由后端代理转发，浏览器不再直连 AI 提供商
+// SSE 流式分析：增量文本实时追加到 analysisResult，服务端 done 事件以全量内容兜底
+async function streamAnalysis(): Promise<void> {
+  const apiBase = useRuntimeConfig().public.apiBase as string
+  const response = await fetch(`${apiBase}/mistakes/students/${code}/ai-analysis-stream`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token.value ? { Authorization: `Bearer ${token.value}` } : {}),
+    },
+    body: JSON.stringify({ ...aiConfig, markdown: markdown.value }),
+  })
+
+  const contentType = response.headers.get('content-type') || ''
+  if (!response.ok || !contentType.includes('text/event-stream')) {
+    let message = `HTTP ${response.status}`
+    try {
+      const body = await response.json()
+      if (body?.message) message = body.message
+    } catch {
+      // 错误体不是 JSON，保留 HTTP 状态码提示
+    }
+    throw new Error(message)
+  }
+
+  const reader = response.body?.getReader()
+  if (!reader) throw new Error('当前浏览器不支持流式读取')
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let finished = false
+
+  while (!finished) {
+    const { value, done } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    let sep: number
+    while ((sep = buffer.indexOf('\n\n')) >= 0) {
+      const event = buffer.slice(0, sep)
+      buffer = buffer.slice(sep + 2)
+      const dataLine = event.split('\n').find((line) => line.startsWith('data: '))
+      if (!dataLine) continue
+      const payload = JSON.parse(dataLine.slice(6))
+      if (payload.delta) analysisResult.value += payload.delta
+      if (payload.error) throw new Error(payload.error)
+      if (payload.done) {
+        finished = true
+        if (payload.content) analysisResult.value = payload.content
+      }
+    }
+  }
+
+  if (!finished && !analysisResult.value) {
+    throw new Error('连接中断，未收到分析内容')
+  }
+}
+
+// 开始分析：优先走 SSE 流式（边生成边渲染），流式不可用时回退非流式接口
 async function analyzeWithAI() {
   if (!markdown.value) {
     analysisError.value = '请先上传错题文件'
@@ -253,17 +308,25 @@ async function analyzeWithAI() {
   analysisResult.value = ''
 
   try {
-    const data = await request<{ content: string; usage: Record<string, unknown> }>(
-      `/mistakes/students/${code}/ai-analysis`,
-      { method: 'POST', body: { ...aiConfig, markdown: markdown.value } },
-    )
-    analysisResult.value = data.content
-    if (isLoggedIn.value) {
+    await streamAnalysis()
+  } catch (error: any) {
+    if (!analysisResult.value) {
+      try {
+        const data = await request<{ content: string; usage: Record<string, unknown> }>(
+          `/mistakes/students/${code}/ai-analysis`,
+          { method: 'POST', body: { ...aiConfig, markdown: markdown.value } },
+        )
+        analysisResult.value = data.content
+      } catch (fallbackError: any) {
+        analysisError.value = fallbackError?.data?.message || fallbackError?.message || 'AI 分析失败，请检查配置或使用「测试连接」排查'
+      }
+    } else {
+      analysisError.value = `分析中断（已保留已生成部分）：${error?.message || '未知错误'}`
+    }
+  } finally {
+    if (analysisResult.value && isLoggedIn.value) {
       await saveReport()
     }
-  } catch (error: any) {
-    analysisError.value = error?.data?.message || error?.message || 'AI 分析失败，请检查配置或使用「测试连接」排查'
-  } finally {
     analyzing.value = false
   }
 }

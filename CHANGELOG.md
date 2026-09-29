@@ -1,5 +1,30 @@
 # 更新记录
 
+## V0.1-dev.16 - AI 分析流式输出（SSE） - 2026-09-29
+
+### 变更
+
+- **后端流式端点** `POST /api/v1/mistakes/students/{code}/ai-analysis-stream`：
+  校验逻辑与非流式端点一致，通过后以 `text/event-stream` 逐段推送增量文本。
+  服务端以 Guzzle `stream` 透传上游 SSE（openai/deepseek、claude 走标准流式协议；
+  custom 端点若为 /chat/completions 兼容则同样流式，否则降级为一次性生成后整段推送），
+  响应带 `X-Accel-Buffering: no` 防 nginx 缓冲。事件格式：
+  `data: {"delta":"..."}` / `data: {"error":"..."}` / `data: {"done":true,"content":...,"usage":...}`。
+  流中途异常但已有部分内容时，把已生成部分作为 `partial` 结果返回，不全量丢弃。
+- **前端渐进渲染**：分析页改用 fetch + ReadableStream 消费 SSE，
+  每收到 delta 实时追加并即时渲染 Markdown；`done` 事件以服务端全量内容兜底校准。
+  流式失败（网关/浏览器不支持等）且尚未收到任何内容时，自动回退原非流式接口；
+  已收到部分内容时保留内容并提示「分析中断」。
+- 原 `ai-analysis` 非流式接口保持不变，作为回退通道。
+
+### 体验
+
+- 30s-1min 的干等（「分析中...」原地转圈）变为边生成边显示，首字可见时间 ≈ 模型首 token 时间。
+
+### 验证
+
+- `npm run build` 通过；部署后走真实分析验证流式渲染与自动保存链路。
+
 ## V0.1-dev.15 - 报告删除 + 错题册报告折叠 + 补更新记录 - 2026-09-29
 
 ### 变更

@@ -7,6 +7,7 @@ namespace App\Service;
 use App\Model\MistakeStudent;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Psr7\Utils;
 use Hyperf\Guzzle\ClientFactory;
 
 class AIAnalysisService
@@ -50,6 +51,288 @@ class AIAnalysisService
             'custom' => $this->analyzeWithCustom($promptFactory, $config),
             default => throw new \InvalidArgumentException("不支持的 AI 提供商: {$provider}"),
         };
+    }
+
+    /**
+     * 流式分析（提示词由考生错题数据构建）：每收到一段增量文本调用一次 $onDelta
+     */
+    public function analyzeStream(MistakeStudent $student, array $config, \Closure $onDelta): array
+    {
+        return $this->dispatchStream($config, function () use ($student) {
+            return $this->buildPrompt($student);
+        }, $onDelta);
+    }
+
+    /**
+     * 流式分析（提示词来自用户上传的 Markdown）
+     */
+    public function analyzeMarkdownStream(MistakeStudent $student, string $markdown, array $config, \Closure $onDelta): array
+    {
+        return $this->dispatchStream($config, function () use ($student, $markdown) {
+            return $this->buildMarkdownPrompt($student, $markdown);
+        }, $onDelta);
+    }
+
+    private function dispatchStream(array $config, \Closure $promptFactory, \Closure $onDelta): array
+    {
+        $config = $this->normalizeProviderConfig($config);
+        $provider = $config['provider'] ?? 'openai';
+
+        return match ($provider) {
+            'openai' => $this->streamOpenAICompatible($promptFactory, $config, $onDelta),
+            'claude' => $this->streamClaude($promptFactory, $config, $onDelta),
+            'custom' => $this->streamCustom($promptFactory, $config, $onDelta),
+            default => throw new \InvalidArgumentException("不支持的 AI 提供商: {$provider}"),
+        };
+    }
+
+    /**
+     * OpenAI 兼容端点的 SSE 流式分析
+     */
+    private function streamOpenAICompatible(\Closure $promptFactory, array $config, \Closure $onDelta): array
+    {
+        $apiKey = $config['apiKey'] ?? '';
+        $baseUrl = rtrim((string) ($config['baseUrl'] ?? 'https://api.openai.com/v1'), '/');
+        $model = $config['model'] ?? 'gpt-4';
+
+        if (empty($apiKey)) {
+            return ['error' => 'OpenAI API Key 未配置'];
+        }
+
+        $baseUrlError = $this->assertAllowedUrl($baseUrl);
+        if ($baseUrlError !== null) {
+            return ['error' => "Base URL 无效: {$baseUrlError}"];
+        }
+
+        $prompt = $promptFactory();
+        try {
+            $response = $this->httpClient->post("{$baseUrl}/chat/completions", [
+                'headers' => [
+                    'Authorization' => "Bearer {$apiKey}",
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'text/event-stream',
+                ],
+                'json' => array_filter([
+                    'model' => $model,
+                    'messages' => [
+                        ['role' => 'system', 'content' => $this->getSystemPrompt()],
+                        ['role' => 'user', 'content' => $prompt],
+                    ],
+                    'temperature' => 0.7,
+                    'max_tokens' => ! empty($config['max_tokens']) ? (int) $config['max_tokens'] : null,
+                    'stream' => true,
+                    'stream_options' => empty($config['max_tokens']) ? ['include_usage' => true] : null,
+                ], static fn ($v) => $v !== null),
+                'stream' => true,
+                'connect_timeout' => 15,
+                'timeout' => 300,
+                'read_timeout' => 60,
+                'http_errors' => false,
+            ]);
+
+            $status = $response->getStatusCode();
+            if ($status >= 400) {
+                $raw = $response->getBody()->getContents();
+                if ($status === 401 || $status === 403) {
+                    return ['error' => "认证失败（API Key 无效或无权限），HTTP {$status}"];
+                }
+
+                return ['error' => "AI 分析请求被拒绝，HTTP {$status}: " . mb_substr($raw, 0, 200)];
+            }
+
+            return $this->consumeOpenAIStream($response->getBody(), $onDelta);
+        } catch (GuzzleException $e) {
+            return ['error' => 'AI 分析请求失败: ' . $e->getMessage()];
+        }
+    }
+
+    private function consumeOpenAIStream($stream, \Closure $onDelta): array
+    {
+        $content = '';
+        $usage = [];
+        $streamError = '';
+
+        try {
+            while (! $stream->eof()) {
+                $line = trim(Utils::readLine($stream));
+                if ($line === '' || ! str_starts_with($line, 'data:')) {
+                    continue;
+                }
+                $payload = trim(substr($line, 5));
+                if ($payload === '[DONE]') {
+                    break;
+                }
+                $body = json_decode($payload, true);
+                if (! is_array($body)) {
+                    continue;
+                }
+                if (isset($body['usage']) && is_array($body['usage'])) {
+                    $usage = $body['usage'];
+                }
+                if (isset($body['error'])) {
+                    $streamError = (string) ($body['error']['message'] ?? json_encode($body['error'], JSON_UNESCAPED_UNICODE));
+                    break;
+                }
+                $delta = (string) ($body['choices'][0]['delta']['content'] ?? $body['choices'][0]['text'] ?? '');
+                if ($delta !== '') {
+                    $content .= $delta;
+                    $onDelta($delta);
+                }
+            }
+        } catch (\Throwable $e) {
+            if (trim($content) === '') {
+                return ['error' => 'AI 分析流式读取失败: ' . mb_substr($e->getMessage(), 0, 200)];
+            }
+            // 已有部分内容：把已生成的部分作为结果返回，避免全部丢弃
+            return ['success' => true, 'content' => $content, 'usage' => $usage, 'partial' => true];
+        }
+
+        if ($streamError !== '') {
+            return ['error' => 'AI 分析流式响应出错: ' . mb_substr($streamError, 0, 200)];
+        }
+        if (trim($content) === '') {
+            return ['error' => '模型没有返回内容（流式）。请重试，或换用非推理模型（如 deepseek-chat）'];
+        }
+
+        return ['success' => true, 'content' => $content, 'usage' => $usage];
+    }
+
+    /**
+     * Claude (Anthropic) SSE 流式分析
+     */
+    private function streamClaude(\Closure $promptFactory, array $config, \Closure $onDelta): array
+    {
+        $apiKey = $config['apiKey'] ?? '';
+        $baseUrl = rtrim((string) ($config['baseUrl'] ?? 'https://api.anthropic.com/v1'), '/');
+        $model = $config['model'] ?? 'claude-opus-4-8';
+
+        if (empty($apiKey)) {
+            return ['error' => 'Claude API Key 未配置'];
+        }
+
+        $baseUrlError = $this->assertAllowedUrl($baseUrl);
+        if ($baseUrlError !== null) {
+            return ['error' => "Base URL 无效: {$baseUrlError}"];
+        }
+
+        $prompt = $promptFactory();
+        try {
+            $response = $this->httpClient->post("{$baseUrl}/messages", [
+                'headers' => [
+                    'x-api-key' => $apiKey,
+                    'anthropic-version' => '2023-06-01',
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'text/event-stream',
+                ],
+                'json' => [
+                    'model' => $model,
+                    'max_tokens' => 4000,
+                    'system' => $this->getSystemPrompt(),
+                    'messages' => [['role' => 'user', 'content' => $prompt]],
+                    'stream' => true,
+                ],
+                'stream' => true,
+                'connect_timeout' => 15,
+                'timeout' => 300,
+                'read_timeout' => 60,
+                'http_errors' => false,
+            ]);
+
+            $status = $response->getStatusCode();
+            if ($status >= 400) {
+                $raw = $response->getBody()->getContents();
+                if ($status === 401 || $status === 403) {
+                    return ['error' => "认证失败（API Key 无效或无权限），HTTP {$status}"];
+                }
+
+                return ['error' => "AI 分析请求被拒绝，HTTP {$status}: " . mb_substr($raw, 0, 200)];
+            }
+
+            return $this->consumeClaudeStream($response->getBody(), $onDelta);
+        } catch (GuzzleException $e) {
+            return ['error' => 'AI 分析请求失败: ' . $e->getMessage()];
+        }
+    }
+
+    private function consumeClaudeStream($stream, \Closure $onDelta): array
+    {
+        $content = '';
+        $usage = [];
+
+        try {
+            while (! $stream->eof()) {
+                $line = trim(Utils::readLine($stream));
+                if ($line === '' || ! str_starts_with($line, 'data:')) {
+                    continue;
+                }
+                $body = json_decode(trim(substr($line, 5)), true);
+                if (! is_array($body)) {
+                    continue;
+                }
+                $type = (string) ($body['type'] ?? '');
+                if ($type === 'content_block_delta') {
+                    $delta = (string) ($body['delta']['text'] ?? '');
+                    if ($delta !== '') {
+                        $content .= $delta;
+                        $onDelta($delta);
+                    }
+                } elseif ($type === 'message_start' && isset($body['message']['usage'])) {
+                    $usage = array_merge($usage, $body['message']['usage']);
+                } elseif ($type === 'message_delta' && isset($body['usage'])) {
+                    $usage = array_merge($usage, $body['usage']);
+                } elseif ($type === 'error') {
+                    return ['error' => 'AI 分析流式响应出错: ' . mb_substr(json_encode($body['error'], JSON_UNESCAPED_UNICODE), 0, 200)];
+                }
+            }
+        } catch (\Throwable $e) {
+            if (trim($content) === '') {
+                return ['error' => 'AI 分析流式读取失败: ' . mb_substr($e->getMessage(), 0, 200)];
+            }
+
+            return ['success' => true, 'content' => $content, 'usage' => $usage, 'partial' => true];
+        }
+
+        if (trim($content) === '') {
+            return ['error' => '模型没有返回内容（流式）。请重试。'];
+        }
+
+        return ['success' => true, 'content' => $content, 'usage' => $usage];
+    }
+
+    /**
+     * 自定义端点：OpenAI 兼容（/chat/completions 结尾）走标准流式，
+     * 其余端点无通用流式协议，降级为一次性生成后整段推送。
+     */
+    private function streamCustom(\Closure $promptFactory, array $config, \Closure $onDelta): array
+    {
+        $endpoint = $config['endpoint'] ?? '';
+
+        if (empty($endpoint)) {
+            return ['error' => '自定义 API 端点未配置'];
+        }
+
+        $endpointError = $this->assertAllowedUrl($endpoint);
+        if ($endpointError !== null) {
+            return ['error' => "API 端点无效: {$endpointError}"];
+        }
+
+        if (preg_match('~/chat/completions/?$~i', $endpoint)) {
+            $base = preg_replace('~/chat/completions/?$~i', '', $endpoint);
+
+            return $this->streamOpenAICompatible($promptFactory, [
+                'apiKey' => $config['apiKey'] ?? '',
+                'baseUrl' => $base,
+                'model' => (string) ($config['model'] ?? '') ?: 'gpt-4o-mini',
+                'max_tokens' => 8000,
+            ], $onDelta);
+        }
+
+        $result = $this->analyzeWithCustom($promptFactory, $config);
+        if (isset($result['content'])) {
+            $onDelta($result['content']);
+        }
+
+        return $result;
     }
 
     /**
