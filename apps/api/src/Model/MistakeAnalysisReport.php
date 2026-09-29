@@ -12,5 +12,5 @@ class MistakeAnalysisReport extends Model
 
     protected array $guarded = [];
 
-    public $timestamps = false;
+    public bool $timestamps = false;
 }
