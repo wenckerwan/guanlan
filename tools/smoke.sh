@@ -81,7 +81,22 @@ head -c 400 /tmp/out; echo
 printf 'users (admin)    %s\n' "$(code "${AUTH[@]}" "$B/admin/users")"
 printf 'hotspots (admin) %s\n' "$(code "${AUTH[@]}" "$B/admin/hotspots")"
 printf 'analysis (admin) %s\n' "$(code "${AUTH[@]}" "$B/admin/analysis")"
+printf 'papers (admin)   %s\n' "$(code "${AUTH[@]}" "$B/admin/papers?page=1&perPage=5")"
+printf 'papers qs (admin) %s\n' "$(code "${AUTH[@]}" "$B/admin/papers/2026/questions?page=1&perPage=5")"
+printf 'mocks (admin)    %s\n' "$(code "${AUTH[@]}" "$B/admin/mocks")"
+printf 'predictions (admin) %s\n' "$(code "${AUTH[@]}" "$B/admin/predictions")"
 printf 'admin (no token) %s\n' "$(code "$B/admin/overview")"
+printf 'papers (no token) %s\n' "$(code "$B/admin/papers")"
+
+# 内容状态：隐藏一条热点后，详情 404、恢复发布后可访问
+HS_ID=$(curl -s "${AUTH[@]}" "$B/admin/hotspots" | sed -n 's/.*"items":\[{"id":\([0-9]*\).*/\1/p')
+HS_SLUG=$(curl -s "${AUTH[@]}" "$B/admin/hotspots" | sed -n 's/.*"items":\[{"id":[0-9]*,"slug":"\([^"]*\)".*/\1/p')
+printf 'hotspot hide     %s\n' "$(code "${AUTH[@]}" -X PATCH "$B/admin/hotspots/$HS_ID" -H 'Content-Type: application/json' -d '{"status":"hidden"}')"
+printf 'hidden detail 404 %s (expect 404)\n' "$(code "$B/hotspots/$HS_SLUG")"
+printf 'hotspot publish  %s\n' "$(code "${AUTH[@]}" -X PATCH "$B/admin/hotspots/$HS_ID" -H 'Content-Type: application/json' -d '{"status":"published"}')"
+printf 'republish detail %s (expect 200)\n' "$(code "$B/hotspots/$HS_SLUG")"
+printf 'bad status fallback %s (published 回退，仍 200)\n' "$(code "${AUTH[@]}" -X PATCH "$B/admin/hotspots/$HS_ID" -H 'Content-Type: application/json' -d '{"status":"draft"}')"
+
 
 echo; echo "=== 11. 详情页 404 ==="
 printf 'analysis/404     %s\n' "$(code "$B/analysis/nope")"

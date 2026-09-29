@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import type { AdminOverview } from '~/types/api'
+import { fillTrend, lastNDays, trendTotal } from '~/utils/trend.mjs'
 
 definePageMeta({ name: 'admin-overview' })
 
@@ -24,10 +25,15 @@ const labels: Record<string, string> = {
   hotspots: '时政热点',
   predictions: '时政预测',
   mistake_items: '错题',
+  mistake_reviews: '复习记录',
   attempts: '作答记录',
   favorites: '收藏',
   notes: '笔记',
 }
+
+const trendSeries = computed(() => fillTrend(data.value?.registrationTrend ?? {}, lastNDays(new Date(), 14)))
+const trendMax = computed(() => Math.max(1, ...trendSeries.value.map((item) => item.count)))
+const trendSum = computed(() => trendTotal(trendSeries.value))
 </script>
 
 <template>
@@ -40,6 +46,14 @@ const labels: Record<string, string> = {
     </div>
     <p v-if="data" class="admin-meta">今日新增用户：{{ data.todayUsers }}</p>
 
+    <div class="section-heading compact"><div><span class="section-kicker">近 14 天</span><h2>注册趋势（共 {{ trendSum }} 人）</h2></div></div>
+    <div class="trend-chart" role="img" aria-label="近 14 天注册趋势柱状图">
+      <div v-for="item in trendSeries" :key="item.day" class="trend-col">
+        <div class="trend-bar" :style="{ height: `${Math.round((item.count / trendMax) * 100)}%` }" :title="`${item.day}：${item.count}`" />
+        <small>{{ item.day.slice(5) }}</small>
+      </div>
+    </div>
+
     <div class="section-heading compact"><div><span class="section-kicker">最近注册</span><h2>新用户</h2></div></div>
     <ul class="record-list">
       <li v-for="item in data?.recentUsers ?? []" :key="item.id">
@@ -50,3 +64,37 @@ const labels: Record<string, string> = {
     </ul>
   </section>
 </template>
+
+<style scoped>
+.trend-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  height: 8rem;
+  margin: 1rem 0;
+}
+
+.trend-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 0.25rem;
+}
+
+.trend-bar {
+  width: 100%;
+  min-height: 2px;
+  background: var(--primary, #3b82f6);
+  border-radius: 3px 3px 0 0;
+  opacity: 0.85;
+}
+
+.trend-col small {
+  font-size: 0.625rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+</style>

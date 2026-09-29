@@ -6,7 +6,7 @@
     "dev": "nuxt dev",
     "build": "nuxt build",
     "preview": "nuxt preview",
-    "test": "node --test tests/home.test.mjs tests/subjects.test.mjs tests/api.test.mjs tests/quiz.test.mjs tests/articles.test.mjs tests/search.test.mjs tests/pagination.test.mjs"
+    "test": "node --test tests/home.test.mjs tests/subjects.test.mjs tests/api.test.mjs tests/quiz.test.mjs tests/articles.test.mjs tests/search.test.mjs tests/pagination.test.mjs tests/trend.test.mjs"
   },
   "dependencies": {
     "lucide-vue-next": "0.468.0",

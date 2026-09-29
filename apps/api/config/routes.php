@@ -90,6 +90,10 @@ Router::addGroup('/api/v1/study', function () {
 // 后台
 Router::addGroup('/api/v1/admin', function () {
     Router::get('/overview', [AdminController::class, 'overview']);
+    Router::get('/papers', [AdminController::class, 'papers']);
+    Router::get('/papers/{pid}/questions', [AdminController::class, 'paperQuestions']);
+    Router::get('/mocks', [AdminController::class, 'mocks']);
+    Router::get('/predictions', [AdminController::class, 'predictions']);
     Router::get('/users', [AdminController::class, 'users']);
     Router::patch('/users/{id:\d+}', [AdminController::class, 'updateUser']);
     Router::get('/attempts', [AdminController::class, 'attempts']);

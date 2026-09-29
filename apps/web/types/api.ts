@@ -143,6 +143,7 @@ export type OutlineItem = {
 }
 
 export type ArticleSummary = {
+  status?: 'published' | 'hidden'
   slug: string
   title: string
   summary: string
@@ -312,6 +313,14 @@ export type AdminOverview = {
   counts: Record<string, number>
   recentUsers: { id: number; email: string; displayName: string; role: string; createdAt: string }[]
   todayUsers: number
+  registrationTrend?: Record<string, number>
+}
+
+export type AdminListPayload<T> = {
+  items: T[]
+  total: number
+  page: number
+  perPage: number
 }
 
 export type AdminAttempt = {

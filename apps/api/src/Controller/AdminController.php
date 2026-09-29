@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Resource\ArticleResource;
+use App\Resource\MockResource;
+use App\Resource\PaperResource;
+use App\Resource\QuestionResource;
 use App\Resource\UserResource;
 use App\Service\AdminService;
 use App\Support\ApiResponse;
@@ -17,6 +20,68 @@ class AdminController
         private AdminService $service,
         private RequestInterface $request
     ) {
+    }
+
+    private function page(): int
+    {
+        return max(1, (int) $this->request->input('page', 1));
+    }
+
+    private function perPage(): int
+    {
+        return min(100, max(1, (int) $this->request->input('perPage', 20)));
+    }
+
+    /** 后台只读：试卷列表（分页） */
+    public function papers(): ResponseInterface
+    {
+        $result = $this->service->papers($this->page(), $this->perPage());
+
+        return ApiResponse::data([
+            'items' => PaperResource::collection($result['items']),
+            'total' => $result['total'],
+            'page' => $result['page'],
+            'perPage' => $result['perPage'],
+        ]);
+    }
+
+    /** 后台只读：某卷题目（分页） */
+    public function paperQuestions(string $pid): ResponseInterface
+    {
+        $result = $this->service->paperQuestions($pid, $this->page(), $this->perPage());
+
+        return ApiResponse::data([
+            'items' => QuestionResource::collection($result['items']),
+            'total' => $result['total'],
+            'page' => $result['page'],
+            'perPage' => $result['perPage'],
+        ]);
+    }
+
+    /** 后台只读：模拟押题（分页） */
+    public function mocks(): ResponseInterface
+    {
+        $result = $this->service->mocks($this->page(), $this->perPage());
+
+        return ApiResponse::data([
+            'items' => MockResource::collection($result['items']),
+            'total' => $result['total'],
+            'page' => $result['page'],
+            'perPage' => $result['perPage'],
+        ]);
+    }
+
+    /** 后台只读：时政预测（分页） */
+    public function predictions(): ResponseInterface
+    {
+        $result = $this->service->predictions($this->page(), $this->perPage());
+
+        return ApiResponse::data([
+            'items' => ArticleResource::collection($result['items']),
+            'total' => $result['total'],
+            'page' => $result['page'],
+            'perPage' => $result['perPage'],
+        ]);
     }
 
     public function overview(): ResponseInterface

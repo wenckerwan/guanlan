@@ -1,5 +1,42 @@
 # 更新记录
 
+## V0.1-dev.8 - 后台内容管理补齐 - 2026-09-29
+
+对应 development-plan 1.6，规划见 [superpowers/plans/2026-09-29-admin-update-plan.md](docs/superpowers/plans/2026-09-29-admin-update-plan.md) 阶段 A。
+
+### 变更
+
+- **内容状态字段**：迁移 `2026_09_29_000002` 给 `hotspots` / `analysis_articles` 加
+  `status`（`published`/`hidden`，默认 published 并回填存量行）。新增
+  `App\Support\ContentStatus` 统一口径：后台写入非法值回退 published，前台仅
+  `hidden` 不可见。
+- **前台出口全量过滤**：热点与分析的列表、详情（404）、首页热点卡片、全站搜索
+  （`SearchService::articles`）对 hidden 内容统一隐藏；后台列表仍可见可改。
+  注意：部署时必须先跑迁移再启动 API，否则旧行 NULL 会被 `<> hidden` 条件排除。
+- **后台 CRUD 接入状态**：`saveHotspot` / `saveAnalysis` 接受并归一化 `status`；
+  `ArticleResource` 输出 `status` 字段；热点/分析后台页新增「已发布/已隐藏」切换按钮。
+- **后台只读查看**：新增 `GET /admin/papers`（分页）、`GET /admin/papers/{pid}/questions`
+  （分页）、`GET /admin/mocks`、`GET /admin/predictions`，全部在 `RequireAdminMiddleware`
+  组内，复用现有 Resource；前端新增 `admin/papers.vue`（含题目展开）、`admin/mocks.vue`、
+  `admin/predictions.vue`，导航增加真题/押题/预测三项。数据集内容明确只读。
+- **总览增强**：`overview` 增加 `registrationTrend`（近 14 天按天注册数）与
+  `mistake_reviews` 计数；前端总览页渲染趋势柱状图；新增 `utils/trend.mjs`
+  （`lastNDays` / `fillTrend` / `trendTotal` 纯函数）。
+- **冒烟补例**：`tools/smoke.sh` 第 10 节增加 4 个后台只读接口、无 token 401、
+  隐藏热点详情 404 → 恢复发布 200、非法 status 回退 published 的用例。
+
+### 验证
+
+本机（Windows，无 PHP/Docker）实际执行：
+
+- `python tools/phpcheck.py`：checked=120 files, classes=79, tables=23，OK。
+- `npm test --prefix apps/web`：43/43 通过（新增 trend 纯函数 5 组用例）。
+- `python tools/doclink.py`：断链 7 处，均为改动前已存在（HEAD 上输出一致），无新增。
+- `bash -n tools/smoke.sh`：语法通过。
+- 新增 `apps/api/tests/ContentStatusTest.php`（normalize/isVisible 共 12 组断言），
+  已接入项目测试目录；因本机无 PHP 未实际执行，待容器 `tools/lint.sh` 验证。
+- `bash tools/smoke.sh` 与迁移 `2026_09_29_000002` 待容器内执行。
+
 ## 错题板块修复 - 2026-09-29
 
 ### 变更

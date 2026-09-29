@@ -8,12 +8,14 @@ use App\Model\AnalysisArticle;
 use App\Model\Attempt;
 use App\Model\Favorite;
 use App\Model\Hotspot;
+use App\Model\Mock;
 use App\Model\MistakeItem;
 use App\Model\Note;
 use App\Model\Paper;
 use App\Model\Prediction;
 use App\Model\Question;
 use App\Model\User;
+use App\Support\ContentStatus;
 use Hyperf\DbConnection\Db;
 
 /**
@@ -33,11 +35,24 @@ class AdminService
             'hotspots' => Hotspot::class,
             'predictions' => Prediction::class,
             'mistake_items' => MistakeItem::class,
+            'mistake_reviews' => \App\Model\MistakeReview::class,
             'attempts' => Attempt::class,
             'favorites' => Favorite::class,
             'notes' => Note::class,
         ] as $key => $model) {
             $counts[$key] = (int) $model::query()->count();
+        }
+
+        // 近 14 天注册趋势：按天 group by，前端用 trend 纯函数补齐空档日
+        $since = date('Y-m-d 00:00:00', strtotime('-13 days'));
+        $trendRows = User::query()
+            ->selectRaw("DATE(created_at) as day, count(*) as total")
+            ->where('created_at', '>=', $since)
+            ->groupBy(Db::raw('DATE(created_at)'))
+            ->get();
+        $perDay = [];
+        foreach ($trendRows as $row) {
+            $perDay[(string) $row->day] = (int) $row->total;
         }
 
         return [
@@ -53,6 +68,7 @@ class AdminService
                 ])
                 ->all(),
             'todayUsers' => User::query()->where('created_at', '>=', date('Y-m-d') . ' 00:00:00')->count(),
+            'registrationTrend' => $perDay,
         ];
     }
 
@@ -146,6 +162,7 @@ class AdminService
             'period' => (string) ($data['period'] ?? $hotspot->period ?? ''),
             'html' => (string) ($data['html'] ?? $hotspot->html ?? ''),
             'subject_id' => (int) ($data['subjectId'] ?? $hotspot->subject_id ?? 1),
+            'status' => ContentStatus::normalize(isset($data['status']) ? (string) $data['status'] : null),
         ]);
 
         if (! $hotspot->slug) {
@@ -180,6 +197,7 @@ class AdminService
             'category' => (string) ($data['category'] ?? $article->category ?? ''),
             'summary' => (string) ($data['summary'] ?? $article->summary ?? ''),
             'html' => (string) ($data['html'] ?? $article->html ?? ''),
+            'status' => ContentStatus::normalize(isset($data['status']) ? (string) $data['status'] : null),
         ]);
 
         if (! $article->slug) {
@@ -194,5 +212,45 @@ class AdminService
     public function deleteAnalysis(int $id): bool
     {
         return (bool) AnalysisArticle::query()->where('id', $id)->delete();
+    }
+
+    /** 后台只读：试卷分页 */
+    public function papers(int $page = 1, int $perPage = 20): array
+    {
+        $query = Paper::query()->orderBy('sort_order')->orderBy('id');
+        $total = (int) (clone $query)->count();
+        $items = $query->forPage(max(1, $page), max(1, min(100, $perPage)))->get()->all();
+
+        return ['items' => $items, 'total' => $total, 'page' => max(1, $page), 'perPage' => max(1, min(100, $perPage))];
+    }
+
+    /** 后台只读：某卷题目分页 */
+    public function paperQuestions(string $pid, int $page = 1, int $perPage = 20): array
+    {
+        $query = Question::query()->where('pid', $pid)->orderBy('no');
+        $total = (int) (clone $query)->count();
+        $items = $query->forPage(max(1, $page), max(1, min(100, $perPage)))->get()->all();
+
+        return ['items' => $items, 'total' => $total, 'page' => max(1, $page), 'perPage' => max(1, min(100, $perPage))];
+    }
+
+    /** 后台只读：模拟押题分页 */
+    public function mocks(int $page = 1, int $perPage = 20): array
+    {
+        $query = Mock::query()->orderBy('id');
+        $total = (int) (clone $query)->count();
+        $items = $query->forPage(max(1, $page), max(1, min(100, $perPage)))->get()->all();
+
+        return ['items' => $items, 'total' => $total, 'page' => max(1, $page), 'perPage' => max(1, min(100, $perPage))];
+    }
+
+    /** 后台只读：时政预测分页 */
+    public function predictions(int $page = 1, int $perPage = 20): array
+    {
+        $query = Prediction::query()->orderBy('sort_order')->orderBy('id');
+        $total = (int) (clone $query)->count();
+        $items = $query->forPage(max(1, $page), max(1, min(100, $perPage)))->get()->all();
+
+        return ['items' => $items, 'total' => $total, 'page' => max(1, $page), 'perPage' => max(1, min(100, $perPage))];
     }
 }

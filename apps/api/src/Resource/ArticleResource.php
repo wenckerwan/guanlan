@@ -7,6 +7,7 @@ namespace App\Resource;
 use App\Model\AnalysisArticle;
 use App\Model\Hotspot;
 use App\Model\Prediction;
+use App\Support\ContentStatus;
 
 /**
  * 文章类 DTO：列表不带 html（省流量），详情才带。
@@ -20,6 +21,7 @@ class ArticleResource
             'title' => (string) $model->title,
             'summary' => (string) $model->summary,
             'priority' => (string) ($model->priority ?? 'A'),
+            'status' => ContentStatus::normalize(isset($model->status) ? (string) $model->status : null),
             'outline' => array_values((array) ($model->outline ?? [])),
         ];
 

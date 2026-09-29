@@ -7,6 +7,7 @@ namespace App\Service;
 use App\Model\AnalysisArticle;
 use App\Model\Hotspot;
 use App\Model\Prediction;
+use App\Support\ContentStatus;
 use Hyperf\Database\Model\Builder;
 
 /**
@@ -18,6 +19,7 @@ class ArticleService
     public function analysis(string $category = ''): array
     {
         return AnalysisArticle::query()
+            ->where('status', '<>', ContentStatus::HIDDEN)
             ->when($category !== '', fn (Builder $q) => $q->where('category', $category))
             // 发布稿排在同类工作稿之前，再按原文件顺序
             ->orderByDesc('release')
@@ -28,13 +30,17 @@ class ArticleService
 
     public function analysisBySlug(string $slug): ?AnalysisArticle
     {
-        return AnalysisArticle::query()->where('slug', $slug)->first();
+        return AnalysisArticle::query()
+            ->where('slug', $slug)
+            ->where('status', '<>', ContentStatus::HIDDEN)
+            ->first();
     }
 
     /** @return array<int, Hotspot> */
     public function hotspots(string $period = '', string $priority = ''): array
     {
         return Hotspot::query()
+            ->where('status', '<>', ContentStatus::HIDDEN)
             ->when($period !== '', fn (Builder $q) => $q->where('period', $period))
             ->when($priority !== '', fn (Builder $q) => $q->where('priority', $priority))
             ->orderByRaw("FIELD(priority, 'S', 'A', 'B', 'C')")
@@ -49,6 +55,7 @@ class ArticleService
     public function hotspotCards(int $limit = 6): array
     {
         return Hotspot::query()
+            ->where('status', '<>', ContentStatus::HIDDEN)
             ->whereNotNull('slug')
             ->orderByRaw("FIELD(priority, 'S', 'A', 'B', 'C')")
             ->orderByDesc('published_at')
@@ -59,7 +66,10 @@ class ArticleService
 
     public function hotspotBySlug(string $slug): ?Hotspot
     {
-        return Hotspot::query()->where('slug', $slug)->first();
+        return Hotspot::query()
+            ->where('slug', $slug)
+            ->where('status', '<>', ContentStatus::HIDDEN)
+            ->first();
     }
 
     /** @return array<int, Prediction> */

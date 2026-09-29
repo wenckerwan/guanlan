@@ -11,6 +11,7 @@ use App\Model\Mock;
 use App\Model\Paper;
 use App\Model\Prediction;
 use App\Model\Question;
+use App\Support\ContentStatus;
 use App\Support\MistakeAccess;
 
 /**
@@ -121,6 +122,11 @@ class SearchService
      */
     private function articles($query, string $type, string $like): array
     {
+        // 热点与分析有发布状态：hidden 的内容不进搜索（预测是数据集只读内容，无状态列）
+        if (in_array($type, ['analysis', 'hotspot'], true)) {
+            $query->where('status', '<>', ContentStatus::HIDDEN);
+        }
+
         $rows = $query
             ->where(function ($q) use ($like) {
                 $q->where('title', 'like', $like)

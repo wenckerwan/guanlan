@@ -37,6 +37,17 @@ async function remove(id: number) {
   await request(`/admin/hotspots/${id}`, { method: 'DELETE' })
   await load()
 }
+
+async function toggleStatus(item: AdminArticle) {
+  const status = item.status === 'hidden' ? 'published' : 'hidden'
+  try {
+    await request(`/admin/hotspots/${item.id}`, { method: 'PATCH', body: { status } })
+    await load()
+    message.value = status === 'hidden' ? '已隐藏' : '已发布'
+  } catch (exception) {
+    message.value = (exception as { data?: { message?: string } })?.data?.message || '操作失败'
+  }
+}
 </script>
 
 <template>
@@ -61,6 +72,7 @@ async function remove(id: number) {
         <span class="record-type">{{ item.priority || 'A' }}</span>
         <span class="record-title">{{ item.title }}</span>
         <time>{{ item.period }}</time>
+        <button type="button" class="ghost-button small" :class="{ hidden: item.status === 'hidden' }" @click="toggleStatus(item)">{{ item.status === 'hidden' ? '已隐藏' : '已发布' }}</button>
         <button type="button" class="icon-button" aria-label="删除" @click="remove(item.id)"><Trash2 :size="14" /></button>
       </li>
     </ul>
