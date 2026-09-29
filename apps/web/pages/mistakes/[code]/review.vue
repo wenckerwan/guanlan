@@ -86,7 +86,7 @@ useHead(() => ({ title: `复习概览 - 考生 ${code}｜观澜` }))
           <div class="stat-content">
             <strong>{{ summary.mastered }}</strong>
             <small>已掌握</small>
-            <p class="stat-note">占比 {{ Math.round((summary.mastered / summary.total) * 100) }}%</p>
+            <p class="stat-note">占比 {{ summary.total ? Math.round((summary.mastered / summary.total) * 100) : 0 }}%</p>
           </div>
         </div>
 

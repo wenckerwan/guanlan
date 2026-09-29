@@ -54,7 +54,8 @@ class MistakeReview extends Model
             return false;
         }
 
-        return $this->next_review_at->lte(now()->endOfDay());
+        // 仅统计「今天之内」到期；更早的归入 overdue，避免两项相加双重计数
+        return $this->next_review_at->between(now()->startOfDay(), now()->endOfDay());
     }
 
     public function isOverdue(): bool

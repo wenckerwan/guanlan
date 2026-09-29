@@ -1,5 +1,40 @@
 # 更新记录
 
+## 错题板块修复 - 2026-09-29
+
+### 变更
+
+- **AI 服务懒加载（P0）**：`MistakeController` 不再在构造函数注入 `AIAnalysisService`
+  （其依赖 `Hyperf\Guzzle\ClientFactory`，而 `hyperf/guzzle` 未入库，曾导致错题模块
+  全量 500）。改为请求时经容器懒加载，包缺失时返回 503 提示，错题核心功能不受影响。
+  启用 AI 分析需在生产执行 `composer require hyperf/guzzle`。
+- **行动建议写权限拆分**：全局 `action` 仅管理员可改；普通用户的行动建议写入
+  `mistake_reviews.personal_action`（列此前已存在但未使用）。错题列表接口按登录态
+  合并返回 `personalAction`，前端展示优先级：本次会话 > 个人建议 > 全局建议。
+- **复习统计去重**：`MistakeReview::isDueToday()` 改为仅统计「今天之内」到期，
+  逾期的归入 `overdue`，修复前端 `dueToday + overdue` 双重计数。
+- **真实连胜算法**：`mistake_reviews` 新增 `consecutive_correct` 列（迁移
+  `2026_09_29_000001`），答错清零、答对 +1，达到 3 判定已掌握。替换原先用累计
+  `correct_count` 近似的错误逻辑（该逻辑下「对对错对」会直接跳到已掌握）。
+- **`updateReviewStatus` 容错**：无复习记录时自动创建（原先 `firstOrFail` 抛 500）；
+  `nextReviewAt` 先经 `strtotime` 校验，非法格式返回 422。
+- **AI 出网校验（SSRF）**：`AIAnalysisService` 对用户输入的 `baseUrl` / `endpoint`
+  校验协议与主机，拒绝内网、保留 IP 与 `.local` / `.internal` 域名。
+- **旧账号编号兼容**：`MistakeAccess::normalizeCode()` 对纯数字编号去前导零再比较，
+  旧格式 `mistake_code`（如 `2`）可命中新格式错题本编号（`000002`）；带空白的编号
+  仍拒绝。`allowedCodes` 同时返回两种形式。
+- **并发首访**：`ensureReviews` 改用 `insertOrIgnore`，依赖唯一索引幂等。
+- **前端**：复习概览 `mastered/total` 在 total 为 0 时不再显示 NaN%；AI 分析页
+  Claude 直连补 `anthropic-dangerous-direct-browser-access` 头修复 CORS。
+
+### 验证
+
+- `python tools/phpcheck.py`：checked=118 files, classes=78, tables=23，OK。
+- `npm test --prefix apps/web`：38/38 通过。
+- `MistakeAccessTest` 补充 5 个编号归一化用例（旧新格式互通、空白拒绝、前导零不串号）。
+- 本机无 PHP/Docker：`php -l`、PHP 测试与 migration 实际执行待部署环境跑
+  `tools/lint.sh` 与 `db:migrate`。
+
 ## 错题可见性、访客配额与登录态 SSR - 2026-09-27
 
 ### 变更

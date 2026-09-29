@@ -194,7 +194,7 @@ async function submitRedo(item: MistakeItem) {
 
           <div class="mistake-answer">
             <p><strong>上次：</strong>我选 <b>{{ displayAnswer(item.myAnswer) || '未记录' }}</b> ｜ 正确 <b>{{ displayAnswer(item.correctAnswer) }}</b></p>
-            <p v-if="redoActions[item.id] || item.action" class="mistake-action"><strong>下次怎么做：</strong>{{ redoActions[item.id] || item.action }}</p>
+            <p v-if="redoActions[item.id] || item.personalAction || item.action" class="mistake-action"><strong>下次怎么做：</strong>{{ redoActions[item.id] || item.personalAction || item.action }}</p>
           </div>
 
           <button class="ghost-button small" type="button" @click="toggleRedo(item)">

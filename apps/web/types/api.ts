@@ -185,6 +185,7 @@ export type MistakeItem = {
   qType: string
   errorType: string
   action: string
+  personalAction?: string
 }
 
 export type MistakeStudent = {

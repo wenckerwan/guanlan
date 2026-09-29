@@ -22,7 +22,7 @@ class MistakeResource
         ];
     }
 
-    public static function item(MistakeItem $item): array
+    public static function item(MistakeItem $item, ?string $personalAction = null): array
     {
         return [
             'id' => (int) $item->id,
@@ -37,15 +37,16 @@ class MistakeResource
             'qType' => (string) $item->q_type,
             'errorType' => (string) $item->error_type,
             'action' => (string) $item->action,
+            'personalAction' => (string) ($personalAction ?? ''),
         ];
     }
 
-    /** @param iterable<MistakeItem> $items */
-    public static function items(iterable $items): array
+    /** @param iterable<MistakeItem> $items @param array<int, string> $personalActions 以 mistake_item_id 为键 */
+    public static function items(iterable $items, array $personalActions = []): array
     {
         $out = [];
         foreach ($items as $item) {
-            $out[] = self::item($item);
+            $out[] = self::item($item, $personalActions[(int) $item->id] ?? null);
         }
         return $out;
     }

@@ -192,6 +192,8 @@ async function callClaude(prompt: string) {
     headers: {
       'x-api-key': aiConfig.apiKey,
       'anthropic-version': '2023-06-01',
+      // 浏览器直连 Anthropic 必须带这个头，否则 CORS 预检被拒
+      'anthropic-dangerous-direct-browser-access': 'true',
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({

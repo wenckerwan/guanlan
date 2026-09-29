@@ -111,12 +111,14 @@ class MistakeReviewService
                 'review_count' => 0,
                 'correct_count' => 0,
                 'wrong_count' => 0,
+                'consecutive_correct' => 0,
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
         }
 
-        Db::table('mistake_reviews')->insert($rows);
+        // 唯一索引 (user_id, mistake_item_id) 兜底并发首访，冲突行直接跳过
+        Db::table('mistake_reviews')->insertOrIgnore($rows);
     }
 
     /**
@@ -179,20 +181,22 @@ class MistakeReviewService
     private function updateNextReview(MistakeReview $review, bool $isCorrect): void
     {
         if (! $isCorrect) {
-            // 答错：回到复习中，1 天后复习
+            // 答错：连胜清零，回到复习中，1 天后复习
+            $review->consecutive_correct = 0;
             $review->status = 'reviewing';
             $review->next_review_at = now()->addDays(self::INTERVALS['wrong']);
             return;
         }
 
-        // 答对：根据连续答对次数决定间隔
-        $consecutiveCorrect = $this->getConsecutiveCorrect($review);
+        // 答对：连胜 +1，按连胜次数决定间隔
+        $streak = (int) $review->consecutive_correct + 1;
+        $review->consecutive_correct = $streak;
 
-        if ($consecutiveCorrect === 0) {
+        if ($streak === 1) {
             // 第一次答对
             $review->status = 'reviewing';
             $review->next_review_at = now()->addDays(self::INTERVALS['first_correct']);
-        } elseif ($consecutiveCorrect === 1) {
+        } elseif ($streak === 2) {
             // 连续第二次答对
             $review->status = 'reviewing';
             $review->next_review_at = now()->addDays(self::INTERVALS['second_correct']);
@@ -201,28 +205,6 @@ class MistakeReviewService
             $review->status = 'mastered';
             $review->next_review_at = now()->addDays(self::INTERVALS['third_correct']);
         }
-    }
-
-    /**
-     * 获取连续答对次数
-     */
-    private function getConsecutiveCorrect(MistakeReview $review): int
-    {
-        // 简化版本：通过正确率和最近结果判断
-        // 完整版本需要记录详细的答题历史
-        if ($review->correct_count === 1) {
-            return 0;
-        }
-
-        if ($review->correct_count === 2 && $review->last_result === 'correct') {
-            return 1;
-        }
-
-        if ($review->correct_count >= 3 && $review->last_result === 'correct') {
-            return 2;
-        }
-
-        return 0;
     }
 
     /**
@@ -237,23 +219,61 @@ class MistakeReviewService
     }
 
     /**
-     * 修改复习状态
+     * 修改复习状态（无复习记录时自动创建，而不是 500）
      */
     public function updateStatus(User $user, int $itemId, string $status, ?string $nextReviewAt = null): MistakeReview
     {
         $review = MistakeReview::query()
             ->where('user_id', $user->id)
             ->where('mistake_item_id', $itemId)
-            ->firstOrFail();
+            ->first();
+
+        if (! $review) {
+            $item = MistakeItem::query()->findOrFail($itemId);
+            $review = MistakeReview::create([
+                'user_id' => $user->id,
+                'mistake_item_id' => $itemId,
+                'item_key' => $item->item_key,
+                'status' => $status,
+            ]);
+        }
 
         $review->status = $status;
 
-        if ($nextReviewAt) {
-            $review->next_review_at = $nextReviewAt;
+        if ($nextReviewAt !== null && trim($nextReviewAt) !== '') {
+            $timestamp = strtotime($nextReviewAt);
+            if ($timestamp !== false) {
+                $review->next_review_at = date('Y-m-d H:i:s', $timestamp);
+            }
         }
 
         $review->save();
 
         return $review;
+    }
+
+    /**
+     * 保存个人行动建议（写入用户自己的复习记录，不污染全局错题数据）
+     */
+    public function savePersonalAction(User $user, MistakeItem $item, string $action): string
+    {
+        $review = MistakeReview::query()
+            ->where('user_id', $user->id)
+            ->where('mistake_item_id', $item->id)
+            ->first();
+
+        if (! $review) {
+            $review = MistakeReview::create([
+                'user_id' => $user->id,
+                'mistake_item_id' => (int) $item->id,
+                'item_key' => $item->item_key,
+                'status' => 'new',
+            ]);
+        }
+
+        $review->personal_action = $action;
+        $review->save();
+
+        return $action;
     }
 }

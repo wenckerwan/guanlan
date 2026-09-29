@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Model\MistakeReview;
 use App\Resource\MistakeResource;
 use App\Service\AIAnalysisService;
 use App\Service\MistakeReviewService;
@@ -12,6 +13,7 @@ use App\Support\ApiResponse;
 use App\Support\Auth;
 use App\Support\MistakeAccess;
 use App\Support\Validator;
+use Hyperf\Context\ApplicationContext;
 use Hyperf\HttpServer\Contract\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -20,9 +22,21 @@ class MistakeController
     public function __construct(
         private MistakeService $service,
         private MistakeReviewService $reviewService,
-        private AIAnalysisService $aiService,
         private RequestInterface $request
     ) {
+    }
+
+    /**
+     * 懒加载 AI 分析服务：AIAnalysisService 依赖 hyperf/guzzle，
+     * 包未安装时不能在控制器构造阶段注入，否则整个错题板块一起 500。
+     */
+    private function aiService(): ?AIAnalysisService
+    {
+        try {
+            return ApplicationContext::getContainer()->get(AIAnalysisService::class);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     public function students(): ResponseInterface
@@ -76,13 +90,24 @@ class MistakeController
             $perPage
         );
 
+        $personalActions = [];
+        $user = Auth::user();
+        if ($user !== null && $result['items'] !== []) {
+            $itemIds = array_map(static fn ($item) => (int) $item->id, $result['items']);
+            $personalActions = MistakeReview::query()
+                ->where('user_id', (int) $user->id)
+                ->whereIn('mistake_item_id', $itemIds)
+                ->pluck('personal_action', 'mistake_item_id')
+                ->all();
+        }
+
         return ApiResponse::data([
             'student' => MistakeResource::student(
                 $student,
                 $this->service->moduleCounts((int) $student->id),
                 $this->service->errorTypeCounts((int) $student->id)
             ),
-            'items' => MistakeResource::items($result['items']),
+            'items' => MistakeResource::items($result['items'], $personalActions),
             'total' => $result['total'],
             'page' => $page,
             'perPage' => $perPage,
@@ -104,6 +129,11 @@ class MistakeController
 
     public function updateAction(int $id): ResponseInterface
     {
+        $user = Auth::user();
+        if (! $user) {
+            return ApiResponse::message('未登录', 401);
+        }
+
         $item = $this->service->item($id);
         if (! $item) {
             return ApiResponse::message('错题不存在', 404);
@@ -122,8 +152,18 @@ class MistakeController
             return ApiResponse::message('请求校验失败', 422, $validator->errors());
         }
 
+        $action = $validator->string('action');
+
+        // 全局 action 是所有访客共享的内容，只有管理员能改；
+        // 普通用户的行动建议写入个人复习记录的 personal_action。
+        if (MistakeAccess::isAdmin($user)) {
+            return ApiResponse::data(
+                MistakeResource::item($this->service->updateAction($item, $action))
+            );
+        }
+
         return ApiResponse::data(
-            MistakeResource::item($this->service->updateAction($item, $validator->string('action')))
+            MistakeResource::item($item, $this->reviewService->savePersonalAction($user, $item, $action))
         );
     }
 
@@ -251,11 +291,16 @@ class MistakeController
             return ApiResponse::message('该错题本仅对应账号和管理员可见', 403);
         }
 
+        $nextReviewAt = trim((string) $this->request->input('nextReviewAt', ''));
+        if ($nextReviewAt !== '' && strtotime($nextReviewAt) === false) {
+            return ApiResponse::message('nextReviewAt 时间格式无效', 422);
+        }
+
         $review = $this->reviewService->updateStatus(
             $user,
             $id,
             $validator->string('status'),
-            $validator->string('nextReviewAt')
+            $nextReviewAt !== '' ? $nextReviewAt : null
         );
 
         return ApiResponse::data([
@@ -290,6 +335,11 @@ class MistakeController
             return ApiResponse::message('请求校验失败', 422, $validator->errors());
         }
 
+        $aiService = $this->aiService();
+        if ($aiService === null) {
+            return ApiResponse::message('AI 分析组件未安装（服务器缺少 hyperf/guzzle），请联系管理员启用', 503);
+        }
+
         $config = [
             'provider' => $validator->string('provider'),
             'apiKey' => $validator->string('apiKey'),
@@ -298,11 +348,11 @@ class MistakeController
             'endpoint' => $validator->string('endpoint'),
         ];
 
-        if (! $this->aiService->validateConfig($config)) {
+        if (! $aiService->validateConfig($config)) {
             return ApiResponse::message('AI 配置无效', 422);
         }
 
-        $result = $this->aiService->analyze($student, $config);
+        $result = $aiService->analyze($student, $config);
 
         if (isset($result['error'])) {
             return ApiResponse::message($result['error'], 500);
@@ -319,6 +369,11 @@ class MistakeController
      */
     public function getAIConfig(): ResponseInterface
     {
+        $aiService = $this->aiService();
+        if ($aiService === null) {
+            return ApiResponse::message('AI 分析组件未安装（服务器缺少 hyperf/guzzle），请联系管理员启用', 503);
+        }
+
         return ApiResponse::data([
             'providers' => [
                 [
@@ -348,7 +403,7 @@ class MistakeController
                     ],
                 ],
             ],
-            'defaultConfig' => $this->aiService->getDefaultConfig(),
+            'defaultConfig' => $aiService->getDefaultConfig(),
         ]);
     }
 }

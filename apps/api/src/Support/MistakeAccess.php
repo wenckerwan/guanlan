@@ -28,6 +28,15 @@ class MistakeAccess
         return ! $user instanceof User;
     }
 
+    /**
+     * 编号比较口径：纯数字编号去掉前导零，兼容旧账号（如 "2"）与新编号（"000002"）。
+     * 不做空白 trim：带空白的请求编号必须原样判为不匹配。
+     */
+    public static function normalizeCode(string $code): string
+    {
+        return ctype_digit($code) ? ltrim($code, '0') : $code;
+    }
+
     public static function canViewCode(string $code, ?User $user = null): bool
     {
         $user ??= Auth::user();
@@ -41,9 +50,12 @@ class MistakeAccess
             return false;
         }
 
-        $bound = trim((string) $user->mistake_code);
+        $bound = self::normalizeCode(trim((string) $user->mistake_code));
+        if ($bound === '') {
+            return false;
+        }
 
-        return $bound !== '' && hash_equals($bound, $code);
+        return hash_equals($bound, self::normalizeCode($code));
     }
 
     public static function canViewStudent(MistakeStudent $student, ?User $user = null): bool
@@ -67,7 +79,9 @@ class MistakeAccess
         if ($user instanceof User) {
             $bound = trim((string) $user->mistake_code);
             if ($bound !== '') {
+                // 同时带上原始与归一化形式，命中新旧两种编号格式
                 $codes[] = $bound;
+                $codes[] = self::normalizeCode($bound);
             }
         }
 

@@ -86,6 +86,12 @@ namespace {
     $check('admin sees 999', MistakeAccess::canViewCode('999', $admin), true);
     // 大小写/空白不应误判为同一编号
     $check('bound user blocked from padded id', MistakeAccess::canViewCode(' 7 ', $bound7), false);
+    // 旧账号编号（"7"）与新格式零填充编号（"000007"）应视为同一编号
+    $check('bound user sees zero-padded own code', MistakeAccess::canViewCode('000007', $bound7), true);
+    $boundPadded = new User('user', '000007');
+    $check('zero-padded bound user sees short code', MistakeAccess::canViewCode('7', $boundPadded), true);
+    $check('zero-padded bound user blocked from 8', MistakeAccess::canViewCode('8', $boundPadded), false);
+    $check('bound user blocked from leading-zero variant of 8', MistakeAccess::canViewCode('08', $bound7), false);
 
     $student = new MistakeStudent('9');
     $check('student helper blocks guest', MistakeAccess::canViewStudent($student, $guest), false);

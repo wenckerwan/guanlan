@@ -130,6 +130,8 @@
 
 ### 1.6 后台内容管理补齐
 
+状态：`进行中`（细化规划见 [superpowers/plans/2026-09-29-admin-update-plan.md](superpowers/plans/2026-09-29-admin-update-plan.md)，按阶段 A~E 推进）
+
 | 项 | 内容 |
 |---|---|
 | 现状 | 只能改时政热点与真题分析 |

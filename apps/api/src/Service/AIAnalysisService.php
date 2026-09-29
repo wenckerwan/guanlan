@@ -34,6 +34,37 @@ class AIAnalysisService
     }
 
     /**
+     * URL 出网校验：baseUrl / endpoint 来自用户输入，拒绝内网与保留地址，防 SSRF。
+     */
+    private function assertAllowedUrl(string $url): ?string
+    {
+        if (! preg_match('~^https?://~i', $url)) {
+            return '仅支持 http/https 地址';
+        }
+
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+        if ($host === '') {
+            return '地址缺少主机名';
+        }
+
+        if ($host === 'localhost'
+            || str_ends_with($host, '.localhost')
+            || str_ends_with($host, '.local')
+            || str_ends_with($host, '.internal')) {
+            return '不允许访问内网地址';
+        }
+
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            $flags = FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE;
+            if (filter_var($host, FILTER_VALIDATE_IP, $flags) === false) {
+                return '不允许访问内网/保留 IP 地址';
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * 使用 OpenAI API
      */
     private function analyzeWithOpenAI(MistakeStudent $student, array $config): array
@@ -44,6 +75,11 @@ class AIAnalysisService
 
         if (empty($apiKey)) {
             return ['error' => 'OpenAI API Key 未配置'];
+        }
+
+        $baseUrlError = $this->assertAllowedUrl($baseUrl);
+        if ($baseUrlError !== null) {
+            return ['error' => "Base URL 无效: {$baseUrlError}"];
         }
 
         $prompt = $this->buildPrompt($student);
@@ -100,6 +136,11 @@ class AIAnalysisService
             return ['error' => 'Claude API Key 未配置'];
         }
 
+        $baseUrlError = $this->assertAllowedUrl($baseUrl);
+        if ($baseUrlError !== null) {
+            return ['error' => "Base URL 无效: {$baseUrlError}"];
+        }
+
         $prompt = $this->buildPrompt($student);
 
         try {
@@ -148,6 +189,11 @@ class AIAnalysisService
 
         if (empty($endpoint)) {
             return ['error' => '自定义 API 端点未配置'];
+        }
+
+        $endpointError = $this->assertAllowedUrl($endpoint);
+        if ($endpointError !== null) {
+            return ['error' => "API 端点无效: {$endpointError}"];
         }
 
         $prompt = $this->buildPrompt($student);
