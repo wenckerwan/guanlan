@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch, onMounted } from 'vue'
-import { ArrowLeft, BookOpen, Check, RotateCcw, Send, Sparkles } from 'lucide-vue-next'
+import { marked } from 'marked'
+import { ArrowLeft, BookOpen, Check, FileText, RotateCcw, Send, Sparkles } from 'lucide-vue-next'
 import type { Handbook, MistakeItemsPayload, MistakeItem } from '~/types/api'
 import { displayAnswer, isCorrect } from '~/utils/quiz.mjs'
 import { normalizePage } from '~/utils/pagination.mjs'
@@ -48,6 +49,41 @@ onMounted(async () => {
   }
 })
 const showAnalysis = computed(() => !!analysis.value && !analysis.value.isDefault && !!analysis.value.html)
+
+// AI 分析报告：登录后自动展示最新一份，可在历史报告间切换
+type SavedReport = { id: number; title: string; createdAt: string }
+const aiReports = ref<SavedReport[]>([])
+const activeReportId = ref<number | null>(null)
+const reportMarkdown = ref('')
+const reportHtml = computed(() => {
+  if (!reportMarkdown.value) return ''
+  try {
+    return marked.parse(reportMarkdown.value, { async: false }) as string
+  } catch {
+    return '<pre>' + reportMarkdown.value.replace(/</g, '&lt;') + '</pre>'
+  }
+})
+
+async function openAiReport(id: number) {
+  try {
+    const data = await request<{ id: number; markdown: string }>(`/mistakes/analysis-reports/${id}`)
+    reportMarkdown.value = data.markdown
+    activeReportId.value = id
+  } catch {
+    reportMarkdown.value = ''
+    activeReportId.value = null
+  }
+}
+
+onMounted(async () => {
+  if (!isLoggedIn.value) return
+  try {
+    aiReports.value = await request<SavedReport[]>(`/mistakes/students/${code}/analysis-reports`)
+    if (aiReports.value.length) await openAiReport(aiReports.value[0].id)
+  } catch {
+    aiReports.value = []
+  }
+})
 
 const redoOpen = reactive<Record<number, boolean>>({})
 const redoChoices = reactive<Record<number, string[]>>({})
@@ -170,6 +206,23 @@ async function submitRedo(item: MistakeItem) {
         </div>
       </section>
 
+      <section v-if="aiReports.length" class="ai-reports">
+        <header class="ai-reports-head">
+          <span class="ai-reports-title"><FileText :size="14" />AI 分析报告（更新于 {{ aiReports[0].createdAt.slice(0, 10) }}）</span>
+          <nav v-if="aiReports.length > 1" class="ai-report-switch">
+            <button
+              v-for="report in aiReports"
+              :key="report.id"
+              type="button"
+              class="chip"
+              :class="{ active: activeReportId === report.id }"
+              @click="openAiReport(report.id)"
+            >{{ report.title }}</button>
+          </nav>
+        </header>
+        <div v-if="reportHtml" class="markdown-body" v-html="reportHtml" />
+      </section>
+
       <section v-if="showAnalysis" class="mistake-analysis">
         <details open>
           <summary><Sparkles :size="14" />错题分析<time v-if="analysis?.updatedAt">（更新于 {{ analysis.updatedAt.slice(0, 10) }}）</time></summary>
@@ -249,6 +302,40 @@ async function submitRedo(item: MistakeItem) {
 </template>
 
 <style scoped>
+.ai-reports {
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.ai-reports-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.ai-reports-title {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ai-report-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.ai-reports .markdown-body {
+  margin-top: 0.75rem;
+}
+
 .mistake-analysis {
   margin: 1.5rem 0;
   padding: 1rem 1.25rem;

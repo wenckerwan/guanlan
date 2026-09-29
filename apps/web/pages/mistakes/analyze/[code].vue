@@ -176,6 +176,9 @@ async function loadReports() {
   if (import.meta.client && !isLoggedIn.value) return
   try {
     savedReports.value = await request<SavedReport[]>(`/mistakes/students/${code}/analysis-reports`)
+    if (savedReports.value.length && !analysisResult.value) {
+      await openReport(savedReports.value[0].id)
+    }
   } catch {
     savedReports.value = []
   }
