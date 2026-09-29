@@ -1,11 +1,4 @@
 {
-  "schema_version": 1,
-  "source_manifest": {
-    "asset_count": 548,
-    "logical_document_count": 418,
-    "path": "storage/import-manifest.json",
-    "sha256": "1fc5a0b20db722345d2849b83a0496ea42d041f5fbdf076871b3a3a7240f0ed9"
-  },
   "datasets": {
     "analysis_articles.json": {
       "bytes": 404771,
@@ -20,14 +13,14 @@
       "sha256": "7e2b249e8c343dd8413e7ff13d3f93d70cd37b037e0915b65b7f37451405990c"
     },
     "mistakes.json": {
-      "bytes": 253077,
+      "bytes": 253087,
       "groups": {
         "handbooks": 2,
         "items": 91,
         "students": 1
       },
       "items": 94,
-      "sha256": "4e23484e987c70bba3e086c9ae66993b394f48d4a1bc72cd70bb86c29da7a0b2"
+      "sha256": "4bdc005a8bd6b46b9eaef8f46755626d6300c2ece641e9155061bd649c3166c0"
     },
     "mocks.json": {
       "bytes": 22736,
@@ -72,8 +65,15 @@
       "sha256": "5ed1b814489f749b75bd7b23907d0987371755ba0d0d8f2e5e8cba9d395d6ab2"
     }
   },
+  "schema_version": 1,
+  "source_manifest": {
+    "asset_count": 548,
+    "logical_document_count": 418,
+    "path": "storage/import-manifest.json",
+    "sha256": "1fc5a0b20db722345d2849b83a0496ea42d041f5fbdf076871b3a3a7240f0ed9"
+  },
   "totals": {
-    "bytes": 4216018,
+    "bytes": 4216028,
     "files": 8,
     "items": 1820
   }
