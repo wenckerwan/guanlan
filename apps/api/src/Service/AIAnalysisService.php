@@ -202,7 +202,7 @@ class AIAnalysisService
                     $payload = [
                         'model' => (string) ($config['model'] ?? '') ?: 'gpt-4o-mini',
                         'messages' => [['role' => 'user', 'content' => $message]],
-                        'max_tokens' => 20,
+                        'max_tokens' => 512,
                     ];
                 } else {
                     $payload = ['prompt' => $message];
@@ -231,7 +231,7 @@ class AIAnalysisService
                     'json' => [
                         'model' => (string) ($config['model'] ?? '') ?: 'gpt-4o-mini',
                         'messages' => [['role' => 'user', 'content' => $message]],
-                        'max_tokens' => 20,
+                        'max_tokens' => 512,
                     ],
                     'http_errors' => false,
                     'timeout' => 30,
@@ -254,7 +254,7 @@ class AIAnalysisService
                 ],
                 'json' => [
                     'model' => (string) ($config['model'] ?? '') ?: 'claude-3-5-haiku-latest',
-                    'max_tokens' => 32,
+                    'max_tokens' => 512,
                     'messages' => [['role' => 'user', 'content' => $message]],
                 ],
                 'http_errors' => false,
@@ -310,6 +310,12 @@ class AIAnalysisService
             return ['ok' => false, 'latencyMs' => $latencyMs, 'reply' => '', 'error' => "请求被拒绝，HTTP {$status}: " . mb_substr($raw, 0, 200)];
         }
         if ($reply === '') {
+            $body = json_decode($raw, true);
+            $reasoning = (string) ($body['choices'][0]['message']['reasoning_content'] ?? '');
+            if ($reasoning !== '') {
+                return ['ok' => false, 'latencyMs' => $latencyMs, 'reply' => '', 'error' => '这是推理型模型（先思考后回答），测试消息的输出额度被思考过程占满。请重试一次，或换用非推理模型（如 deepseek-chat）'];
+            }
+
             return ['ok' => false, 'latencyMs' => $latencyMs, 'reply' => '', 'error' => '模型没有返回内容。' . $this->htmlHint($raw)];
         }
 
@@ -437,7 +443,7 @@ class AIAnalysisService
                         ],
                     ],
                     'temperature' => 0.7,
-                    'max_tokens' => 4000,
+                    'max_tokens' => (int) ($config['max_tokens'] ?? 4000),
                 ],
                 'timeout' => 60,
             ]);
@@ -557,7 +563,7 @@ class AIAnalysisService
                         ['role' => 'user', 'content' => $prompt],
                     ],
                     'temperature' => 0.7,
-                    'max_tokens' => 4000,
+                    'max_tokens' => 8000,
                 ];
             } else {
                 $payload = [
@@ -721,6 +727,8 @@ PROMPT;
             if (trim((string) ($config['model'] ?? '')) === '') {
                 $config['model'] = 'deepseek-chat';
             }
+            // 推理型模型的思考过程也消耗输出额度，分析长文需要更大空间
+            $config['max_tokens'] = 8000;
         }
 
         return $config;
