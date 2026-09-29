@@ -83,6 +83,7 @@ export type PaperSection = {
 }
 
 export type Paper = {
+  id: number
   pid: string
   year: number
   label: string

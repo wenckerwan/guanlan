@@ -34,6 +34,14 @@ const labels: Record<string, string> = {
 const trendSeries = computed(() => fillTrend(data.value?.registrationTrend ?? {}, lastNDays(new Date(), 14)))
 const trendMax = computed(() => Math.max(1, ...trendSeries.value.map((item) => item.count)))
 const trendSum = computed(() => trendTotal(trendSeries.value))
+
+const attemptSeries = computed(() => fillTrend((data.value as { attemptsTrend?: Record<string, number> } | null)?.attemptsTrend ?? {}, lastNDays(new Date(), 14)))
+const attemptMax = computed(() => Math.max(1, ...attemptSeries.value.map((item) => item.count)))
+const attemptSum = computed(() => trendTotal(attemptSeries.value))
+
+const statusLabels: Record<string, string> = { published: '已发布', hidden: '已隐藏' }
+const statusNames: Record<string, string> = { hotspots: '时政热点', analysis_articles: '真题分析', predictions: '时政预测' }
+const recentAudit = computed(() => (data.value as { recentAudit?: { action: string; targetType: string; targetId: string; adminEmail: string; createdAt: string }[] } | null)?.recentAudit ?? [])
 </script>
 
 <template>
@@ -54,6 +62,26 @@ const trendSum = computed(() => trendTotal(trendSeries.value))
       </div>
     </div>
 
+    <div class="section-heading compact"><div><span class="section-kicker">近 14 天</span><h2>作答趋势（共 {{ attemptSum }} 次）</h2></div></div>
+    <div class="trend-chart" role="img" aria-label="近 14 天作答趋势柱状图">
+      <div v-for="item in attemptSeries" :key="item.day" class="trend-col">
+        <div class="trend-bar accent" :style="{ height: `${Math.round((item.count / attemptMax) * 100)}%` }" :title="`${item.day}：${item.count}`" />
+        <small>{{ item.day.slice(5) }}</small>
+      </div>
+    </div>
+
+    <div class="section-heading compact"><div><span class="section-kicker">内容状态</span><h2>上下线分布</h2></div></div>
+    <table class="admin-table">
+      <thead><tr><th>内容</th><th>已发布</th><th>已隐藏</th></tr></thead>
+      <tbody>
+        <tr v-for="(dist, key) in (data as { statusCounts?: Record<string, Record<string, number>> } | null)?.statusCounts ?? {}" :key="key">
+          <td>{{ statusNames[key] ?? key }}</td>
+          <td>{{ dist.published ?? 0 }}</td>
+          <td>{{ dist.hidden ?? 0 }}</td>
+        </tr>
+      </tbody>
+    </table>
+
     <div class="section-heading compact"><div><span class="section-kicker">最近注册</span><h2>新用户</h2></div></div>
     <ul class="record-list">
       <li v-for="item in data?.recentUsers ?? []" :key="item.id">
@@ -62,6 +90,17 @@ const trendSum = computed(() => trendTotal(trendSeries.value))
         <time>{{ item.createdAt.slice(0, 10) }}</time>
       </li>
     </ul>
+
+    <div class="section-heading compact"><div><span class="section-kicker">操作审计</span><h2>最近 5 条</h2></div></div>
+    <ul class="record-list">
+      <li v-for="(item, index) in recentAudit" :key="index">
+        <span class="record-type">{{ item.action }}</span>
+        <span class="record-title">{{ item.targetType }}#{{ item.targetId }}</span>
+        <span class="admin-meta">{{ item.adminEmail }}</span>
+        <time>{{ item.createdAt.slice(0, 16).replace('T', ' ') }}</time>
+      </li>
+    </ul>
+    <p v-if="!recentAudit.length" class="admin-meta">暂无操作记录。</p>
   </section>
 </template>
 
@@ -91,6 +130,8 @@ const trendSum = computed(() => trendTotal(trendSeries.value))
   border-radius: 3px 3px 0 0;
   opacity: 0.85;
 }
+
+.trend-bar.accent { background: var(--accent, #10b981); }
 
 .trend-col small {
   font-size: 0.625rem;

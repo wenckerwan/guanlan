@@ -27,7 +27,8 @@ class AdminService
 {
     public function __construct(
         private MistakeService $mistakeService,
-        private MistakeProfileService $mistakeProfiles
+        private MistakeProfileService $mistakeProfiles,
+        private AuthService $authService
     ) {
     }
 
@@ -63,6 +64,44 @@ class AdminService
             $perDay[(string) $row->day] = (int) $row->total;
         }
 
+        // 近 14 天作答趋势
+        $attemptRows = Attempt::query()
+            ->selectRaw("DATE(created_at) as day, count(*) as total")
+            ->where('created_at', '>=', $since)
+            ->groupBy(Db::raw('DATE(created_at)'))
+            ->get();
+        $attemptsPerDay = [];
+        foreach ($attemptRows as $row) {
+            $attemptsPerDay[(string) $row->day] = (int) $row->total;
+        }
+
+        // 内容上下线分布
+        $statusCounts = [];
+        foreach (['hotspots' => Hotspot::class, 'analysis_articles' => AnalysisArticle::class, 'predictions' => Prediction::class] as $key => $model) {
+            $rows = $model::query()->selectRaw('status, count(*) as total')->groupBy('status')->get();
+            $statusCounts[$key] = [];
+            foreach ($rows as $row) {
+                $statusCounts[$key][(string) ($row->status ?? 'published')] = (int) $row->total;
+            }
+        }
+
+        // 最近 5 条审计日志
+        $recentAudit = [];
+        $auditRows = Db::table('admin_audit_logs')
+            ->leftJoin('users', 'users.id', '=', 'admin_audit_logs.admin_id')
+            ->orderByDesc('admin_audit_logs.id')
+            ->limit(5)
+            ->get(['admin_audit_logs.action', 'admin_audit_logs.target_type', 'admin_audit_logs.target_id', 'admin_audit_logs.created_at', 'users.email as admin_email']);
+        foreach ($auditRows as $row) {
+            $recentAudit[] = [
+                'action' => (string) $row->action,
+                'targetType' => (string) $row->target_type,
+                'targetId' => (string) $row->target_id,
+                'adminEmail' => (string) ($row->admin_email ?? ''),
+                'createdAt' => (string) $row->created_at,
+            ];
+        }
+
         return [
             'counts' => $counts,
             'recentUsers' => User::query()->orderByDesc('id')->limit(5)
@@ -77,6 +116,9 @@ class AdminService
                 ->all(),
             'todayUsers' => User::query()->where('created_at', '>=', date('Y-m-d') . ' 00:00:00')->count(),
             'registrationTrend' => $perDay,
+            'attemptsTrend' => $attemptsPerDay,
+            'statusCounts' => $statusCounts,
+            'recentAudit' => $recentAudit,
         ];
     }
 
@@ -124,6 +166,152 @@ class AdminService
         $user->save();
 
         return $user;
+    }
+
+    public function createUser(string $email, string $password, string $displayName, string $role): array
+    {
+        $result = $this->authService->register($email, $password, $displayName);
+        if (isset($result['error'])) {
+            return $result;
+        }
+        $user = $result['user'];
+        if (in_array($role, ['user', 'admin'], true) && $role !== 'user') {
+            $user->role = $role;
+            $user->save();
+        }
+
+        return ['user' => $user];
+    }
+
+    public function resetPassword(int $id, string $password): ?User
+    {
+        if (mb_strlen($password) < 6) {
+            throw new \RuntimeException('密码至少 6 位');
+        }
+        $user = User::find($id);
+        if (! $user) {
+            return null;
+        }
+        $user->password_hash = password_hash($password, PASSWORD_DEFAULT);
+        $user->save();
+
+        return $user;
+    }
+
+    /** 审计日志分页（含操作人邮箱） */
+    public function auditLogs(int $page = 1, int $perPage = 20, string $action = '', int $adminId = 0): array
+    {
+        $query = Db::table('admin_audit_logs')->leftJoin('users', 'users.id', '=', 'admin_audit_logs.admin_id');
+        if ($action !== '') {
+            $query->where('admin_audit_logs.action', 'like', $action . '%');
+        }
+        if ($adminId > 0) {
+            $query->where('admin_audit_logs.admin_id', $adminId);
+        }
+        $total = (int) (clone $query)->count();
+        $rows = $query
+            ->orderByDesc('admin_audit_logs.id')
+            ->forPage(max(1, $page), max(1, min(100, $perPage)))
+            ->get([
+                'admin_audit_logs.id',
+                'admin_audit_logs.admin_id',
+                'users.email as admin_email',
+                'admin_audit_logs.action',
+                'admin_audit_logs.target_type',
+                'admin_audit_logs.target_id',
+                'admin_audit_logs.detail',
+                'admin_audit_logs.created_at',
+            ]);
+
+        $items = [];
+        foreach ($rows as $row) {
+            $items[] = [
+                'id' => (int) $row->id,
+                'adminId' => (int) $row->admin_id,
+                'adminEmail' => (string) ($row->admin_email ?? ''),
+                'action' => (string) $row->action,
+                'targetType' => (string) $row->target_type,
+                'targetId' => (string) $row->target_id,
+                'detail' => json_decode((string) ($row->detail ?? ''), true),
+                'createdAt' => (string) $row->created_at,
+            ];
+        }
+
+        return ['items' => $items, 'total' => $total, 'page' => max(1, $page), 'perPage' => max(1, min(100, $perPage))];
+    }
+
+    public function savePaper(array $data, ?int $id = null): Paper
+    {
+        $paper = $id ? Paper::find($id) : null;
+        if ($id !== null && ! $paper) {
+            throw new \RuntimeException('试卷不存在');
+        }
+
+        $year = (int) ($data['year'] ?? $paper->year ?? (int) date('Y'));
+        $pid = trim((string) ($data['pid'] ?? $paper->pid ?? ''));
+        if ($pid === '') {
+            $pid = sprintf('p-%d-%s', $year, bin2hex(random_bytes(4)));
+        }
+        $taken = Paper::query()->where('pid', $pid)->when($paper, fn ($q) => $q->where('id', '!=', $paper->id))->exists();
+        if ($taken) {
+            throw new \RuntimeException('试卷编号已存在');
+        }
+
+        $paper ??= new Paper();
+        $paper->fill([
+            'pid' => $pid,
+            'year' => $year,
+            'label' => mb_substr((string) ($data['label'] ?? $paper->label ?? ''), 0, 32),
+            'kind' => mb_substr((string) ($data['kind'] ?? $paper->kind ?? ''), 0, 16),
+            'total_score' => max(0, (int) ($data['totalScore'] ?? $paper->total_score ?? 0)),
+            'sort_order' => (int) ($data['sortOrder'] ?? $paper->sort_order ?? 0),
+            'sections' => is_array($data['sections'] ?? null) ? $data['sections'] : ($paper->sections ?? null),
+        ]);
+        $paper->save();
+        $paper->question_count = (int) Question::query()->where('pid', $paper->pid)->count();
+        $paper->save();
+
+        return $paper;
+    }
+
+    /** @return array{blocked?: bool, questions?: int, deleted?: bool} */
+    public function deletePaper(int $id, bool $force = false): array
+    {
+        $paper = Paper::find($id);
+        if (! $paper) {
+            throw new \RuntimeException('试卷不存在');
+        }
+        $questionCount = (int) Question::query()->where('pid', $paper->pid)->count();
+        if ($questionCount > 0 && ! $force) {
+            return ['blocked' => true, 'questions' => $questionCount];
+        }
+        Question::query()->where('pid', $paper->pid)->delete();
+        $paper->delete();
+
+        return ['deleted' => true, 'questions' => $questionCount];
+    }
+
+    public function updateQuestion(int $id, array $data): ?Question
+    {
+        $question = Question::find($id);
+        if (! $question) {
+            return null;
+        }
+        $question->fill([
+            'stem' => (string) ($data['stem'] ?? $question->stem),
+            'material' => (string) ($data['material'] ?? $question->material),
+            'options' => is_array($data['options'] ?? null) ? array_values($data['options']) : $question->options,
+            'answer' => mb_substr((string) ($data['answer'] ?? $question->answer), 0, 16),
+            'answer_text' => (string) ($data['answerText'] ?? $question->answer_text),
+            'analysis' => (string) ($data['analysis'] ?? $question->analysis),
+            'kaodian' => mb_substr((string) ($data['kaodian'] ?? $question->kaodian), 0, 191),
+            'module' => mb_substr((string) ($data['module'] ?? $question->module), 0, 16),
+            'module_name' => mb_substr((string) ($data['moduleName'] ?? $question->module_name), 0, 64),
+            'score' => (float) ($data['score'] ?? $question->score),
+        ]);
+        $question->save();
+
+        return $question;
     }
 
     /** @return array<int, Attempt> */
@@ -250,6 +438,23 @@ class AdminService
         $items = $query->forPage(max(1, $page), max(1, min(100, $perPage)))->get()->all();
 
         return ['items' => $items, 'total' => $total, 'page' => max(1, $page), 'perPage' => max(1, min(100, $perPage))];
+    }
+
+    public function savePrediction(array $data, int $id): ?Prediction
+    {
+        $prediction = Prediction::find($id);
+        if (! $prediction) {
+            return null;
+        }
+        if (isset($data['status'])) {
+            $prediction->status = ContentStatus::normalize((string) $data['status']);
+        }
+        if (isset($data['sortOrder'])) {
+            $prediction->sort_order = (int) $data['sortOrder'];
+        }
+        $prediction->save();
+
+        return $prediction;
     }
 
     /** 后台只读：时政预测分页 */

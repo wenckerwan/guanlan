@@ -103,7 +103,15 @@ Router::addGroup('/api/v1/admin', function () {
     Router::get('/mocks', [AdminController::class, 'mocks']);
     Router::get('/predictions', [AdminController::class, 'predictions']);
     Router::get('/users', [AdminController::class, 'users']);
+    Router::post('/users', [AdminController::class, 'createUser']);
     Router::patch('/users/{id:\d+}', [AdminController::class, 'updateUser']);
+    Router::post('/users/{id:\d+}/reset-password', [AdminController::class, 'resetUserPassword']);
+    Router::get('/audit-logs', [AdminController::class, 'auditLogs']);
+    Router::post('/papers', [AdminController::class, 'createPaper']);
+    Router::patch('/papers/{id:\d+}', [AdminController::class, 'updatePaper']);
+    Router::delete('/papers/{id:\d+}', [AdminController::class, 'deletePaper']);
+    Router::patch('/questions/{id:\d+}', [AdminController::class, 'updateQuestion']);
+    Router::patch('/predictions/{id:\d+}', [AdminController::class, 'updatePrediction']);
     Router::get('/attempts', [AdminController::class, 'attempts']);
     Router::get('/mistakes', [AdminController::class, 'mistakes']);
     Router::get('/mistakes/students', [AdminController::class, 'mistakeStudents']);

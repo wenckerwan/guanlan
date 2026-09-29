@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Model\User;
 use App\Resource\ArticleResource;
 use App\Resource\MockResource;
 use App\Resource\MistakeResource;
@@ -30,6 +31,13 @@ class AdminController
     private function page(): int
     {
         return max(1, (int) $this->request->input('page', 1));
+    }
+
+    private function user(): User
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        return $user;
     }
 
     private function perPage(): int
@@ -89,6 +97,17 @@ class AdminController
         ]);
     }
 
+    public function updatePrediction(int $id): ResponseInterface
+    {
+        $prediction = $this->service->savePrediction($this->request->all(), $id);
+        if (! $prediction) {
+            return ApiResponse::message('记录不存在', 404);
+        }
+
+        $this->audit->log($this->user(), 'prediction.update', 'prediction', (string) $id, ['status' => (string) $prediction->status]);
+        return ApiResponse::data(ArticleResource::listItem($prediction));
+    }
+
     public function overview(): ResponseInterface
     {
         return ApiResponse::data($this->service->overview());
@@ -116,9 +135,59 @@ class AdminController
             return ApiResponse::message($exception->getMessage(), 422);
         }
 
+        if ($user) {
+            $this->audit->log($this->user(), 'user.update', 'user', (string) $id, [
+                'role' => (string) $this->request->input('role', ''),
+                'status' => (string) $this->request->input('status', ''),
+            ]);
+        }
+
         return $user
             ? ApiResponse::data(UserResource::make($user))
             : ApiResponse::message('用户不存在', 404);
+    }
+
+    public function createUser(): ResponseInterface
+    {
+        $email = trim((string) $this->request->input('email', ''));
+        $password = (string) $this->request->input('password', '');
+        $displayName = trim((string) $this->request->input('displayName', ''));
+        $role = (string) $this->request->input('role', 'user');
+
+        if ($email === '' || $password === '') {
+            return ApiResponse::message('请求校验失败', 422, ['email' => '邮箱与密码不能为空']);
+        }
+
+        $result = $this->service->createUser($email, $password, $displayName, $role);
+        if (isset($result['error'])) {
+            return ApiResponse::message($result['error'], 409);
+        }
+
+        $this->audit->log($this->user(), 'user.create', 'user', (string) $result['user']->id, ['email' => $email, 'role' => $role]);
+        return ApiResponse::data(UserResource::make($result['user']), 201);
+    }
+
+    public function resetUserPassword(int $id): ResponseInterface
+    {
+        $password = (string) $this->request->input('password', '');
+        try {
+            $user = $this->service->resetPassword($id, $password);
+        } catch (\RuntimeException $exception) {
+            return ApiResponse::message($exception->getMessage(), 422);
+        }
+        if (! $user) {
+            return ApiResponse::message('用户不存在', 404);
+        }
+
+        $this->audit->log($this->user(), 'user.reset_password', 'user', (string) $id);
+        return ApiResponse::data(['ok' => true]);
+    }
+
+    public function auditLogs(): ResponseInterface
+    {
+        $action = trim((string) $this->request->input('action', ''));
+        $adminId = (int) $this->request->input('adminId', 0);
+        return ApiResponse::data($this->service->auditLogs($this->page(), $this->perPage(), $action, $adminId));
     }
 
     public function attempts(): ResponseInterface
@@ -276,18 +345,25 @@ class AdminController
             return ApiResponse::message('请求校验失败', 422, ['title' => '标题不能为空']);
         }
 
-        return ApiResponse::data(ArticleResource::detail($this->service->saveHotspot($this->request->all())), 201);
+        $hotspot = $this->service->saveHotspot($this->request->all());
+        $this->audit->log($this->user(), 'hotspot.create', 'hotspot', (string) $hotspot->id, ['title' => (string) $hotspot->title]);
+        return ApiResponse::data(ArticleResource::detail($hotspot), 201);
     }
 
     public function updateHotspot(int $id): ResponseInterface
     {
         $hotspot = $this->service->saveHotspot($this->request->all(), $id);
+        $this->audit->log($this->user(), 'hotspot.update', 'hotspot', (string) $id, ['title' => (string) $hotspot->title]);
         return ApiResponse::data(ArticleResource::detail($hotspot));
     }
 
     public function deleteHotspot(int $id): ResponseInterface
     {
-        return $this->service->deleteHotspot($id)
+        $ok = $this->service->deleteHotspot($id);
+        if ($ok) {
+            $this->audit->log($this->user(), 'hotspot.delete', 'hotspot', (string) $id);
+        }
+        return $ok
             ? ApiResponse::data(['ok' => true])
             : ApiResponse::message('记录不存在', 404);
     }
@@ -303,18 +379,78 @@ class AdminController
             return ApiResponse::message('请求校验失败', 422, ['title' => '标题不能为空']);
         }
 
-        return ApiResponse::data(ArticleResource::detail($this->service->saveAnalysis($this->request->all())), 201);
+        $article = $this->service->saveAnalysis($this->request->all());
+        $this->audit->log($this->user(), 'analysis.create', 'analysis_article', (string) $article->id, ['title' => (string) $article->title]);
+        return ApiResponse::data(ArticleResource::detail($article), 201);
     }
 
     public function updateAnalysis(int $id): ResponseInterface
     {
-        return ApiResponse::data(ArticleResource::detail($this->service->saveAnalysis($this->request->all(), $id)));
+        $article = $this->service->saveAnalysis($this->request->all(), $id);
+        $this->audit->log($this->user(), 'analysis.update', 'analysis_article', (string) $id, ['title' => (string) $article->title]);
+        return ApiResponse::data(ArticleResource::detail($article));
     }
 
     public function deleteAnalysis(int $id): ResponseInterface
     {
-        return $this->service->deleteAnalysis($id)
+        $ok = $this->service->deleteAnalysis($id);
+        if ($ok) {
+            $this->audit->log($this->user(), 'analysis.delete', 'analysis_article', (string) $id);
+        }
+        return $ok
             ? ApiResponse::data(['ok' => true])
             : ApiResponse::message('记录不存在', 404);
+    }
+
+    public function createPaper(): ResponseInterface
+    {
+        try {
+            $paper = $this->service->savePaper($this->request->all());
+        } catch (\RuntimeException $exception) {
+            return ApiResponse::message($exception->getMessage(), 422);
+        }
+
+        $this->audit->log($this->user(), 'paper.create', 'paper', (string) $paper->id, ['pid' => (string) $paper->pid]);
+        return ApiResponse::data(PaperResource::make($paper), 201);
+    }
+
+    public function updatePaper(int $id): ResponseInterface
+    {
+        try {
+            $paper = $this->service->savePaper($this->request->all(), $id);
+        } catch (\RuntimeException $exception) {
+            return ApiResponse::message($exception->getMessage(), 422);
+        }
+
+        $this->audit->log($this->user(), 'paper.update', 'paper', (string) $id, ['pid' => (string) $paper->pid]);
+        return ApiResponse::data(PaperResource::make($paper));
+    }
+
+    public function deletePaper(int $id): ResponseInterface
+    {
+        $force = filter_var($this->request->input('force', false), FILTER_VALIDATE_BOOLEAN);
+        try {
+            $result = $this->service->deletePaper($id, $force);
+        } catch (\RuntimeException $exception) {
+            return ApiResponse::message($exception->getMessage(), 404);
+        }
+
+        if (isset($result['blocked'])) {
+            return ApiResponse::message("该卷还有 {$result['questions']} 道题目，重复提交可连同题目一起删除", 409, $result);
+        }
+
+        $this->audit->log($this->user(), 'paper.delete', 'paper', (string) $id, $result);
+        return ApiResponse::data(['ok' => true] + $result);
+    }
+
+    public function updateQuestion(int $id): ResponseInterface
+    {
+        $question = $this->service->updateQuestion($id, $this->request->all());
+        if (! $question) {
+            return ApiResponse::message('题目不存在', 404);
+        }
+
+        $this->audit->log($this->user(), 'question.update', 'question', (string) $id);
+        return ApiResponse::data(QuestionResource::make($question));
     }
 }

@@ -11,6 +11,7 @@ class PaperResource
     public static function make(Paper $paper): array
     {
         return [
+            'id' => (int) $paper->id,
             'pid' => (string) $paper->pid,
             'year' => (int) $paper->year,
             'label' => (string) $paper->label,

@@ -76,6 +76,7 @@ class ArticleService
     public function predictions(string $layer = ''): array
     {
         return Prediction::query()
+            ->where('status', '<>', ContentStatus::HIDDEN)
             ->when($layer !== '', fn (Builder $q) => $q->where('layer', $layer))
             ->orderBy('sort_order')
             ->get()
@@ -84,7 +85,10 @@ class ArticleService
 
     public function predictionBySlug(string $slug): ?Prediction
     {
-        return Prediction::query()->where('slug', $slug)->first();
+        return Prediction::query()
+            ->where('slug', $slug)
+            ->where('status', '<>', ContentStatus::HIDDEN)
+            ->first();
     }
 }
 

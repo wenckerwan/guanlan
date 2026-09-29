@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Service\AdminAuditService;
 use App\Service\ShizhengScreeningService;
 use App\Support\ApiResponse;
+use App\Support\Auth;
 use Hyperf\HttpServer\Contract\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -17,6 +19,7 @@ class AdminShizhengController
 {
     public function __construct(
         private ShizhengScreeningService $service,
+        private AdminAuditService $audit,
         private RequestInterface $request
     ) {
     }
@@ -28,7 +31,9 @@ class AdminShizhengController
 
     public function saveConfig(): ResponseInterface
     {
-        return ApiResponse::data($this->service->saveConfig($this->request->all()));
+        $config = $this->service->saveConfig($this->request->all());
+        $this->audit->log(Auth::user(), 'shizheng.config.save', 'shizheng_config', 'shizheng.ai', ['model' => $config['model'], 'provider' => $config['provider']]);
+        return ApiResponse::data($config);
     }
 
     public function testConfig(): ResponseInterface
@@ -93,6 +98,9 @@ class AdminShizhengController
         }
         $auto = filter_var($this->request->input('auto', false), FILTER_VALIDATE_BOOLEAN);
         $result = $this->service->screen($date, $top, $auto);
+        if (! isset($result['error'])) {
+            $this->audit->log(Auth::user(), 'shizheng.screen', 'shizheng_candidates', $date, ['top' => $top, 'auto' => $auto]);
+        }
         return isset($result['error'])
             ? ApiResponse::message($result['error'], 422)
             : ApiResponse::data($result);
@@ -105,6 +113,8 @@ class AdminShizhengController
         if (! is_array($ids) || $ids === []) {
             return ApiResponse::message('ids 不能为空', 422);
         }
-        return ApiResponse::data($this->service->publish(array_map('intval', $ids)));
+        $result = $this->service->publish(array_map('intval', $ids));
+        $this->audit->log(Auth::user(), 'shizheng.publish', 'shizheng_candidates', implode(',', array_map('intval', $ids)), $result);
+        return ApiResponse::data($result);
     }
 }
