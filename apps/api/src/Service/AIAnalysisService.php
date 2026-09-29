@@ -23,9 +23,10 @@ class AIAnalysisService
      */
     public function analyze(MistakeStudent $student, array $config): array
     {
-        $prompt = $this->buildPrompt($student);
-
-        return $this->dispatch($config, $prompt);
+        // 提示词惰性构建：先做 Key/URL 校验，全部通过才访问考生错题数据
+        return $this->dispatch($config, function () use ($student) {
+            return $this->buildPrompt($student);
+        });
     }
 
     /**
@@ -33,19 +34,19 @@ class AIAnalysisService
      */
     public function analyzeMarkdown(MistakeStudent $student, string $markdown, array $config): array
     {
-        $prompt = $this->buildMarkdownPrompt($student, $markdown);
-
-        return $this->dispatch($config, $prompt);
+        return $this->dispatch($config, function () use ($student, $markdown) {
+            return $this->buildMarkdownPrompt($student, $markdown);
+        });
     }
 
-    private function dispatch(array $config, string $prompt): array
+    private function dispatch(array $config, \Closure $promptFactory): array
     {
         $provider = $config['provider'] ?? 'openai';
 
         return match ($provider) {
-            'openai' => $this->analyzeWithOpenAI($prompt, $config),
-            'claude' => $this->analyzeWithClaude($prompt, $config),
-            'custom' => $this->analyzeWithCustom($prompt, $config),
+            'openai' => $this->analyzeWithOpenAI($promptFactory, $config),
+            'claude' => $this->analyzeWithClaude($promptFactory, $config),
+            'custom' => $this->analyzeWithCustom($promptFactory, $config),
             default => throw new \InvalidArgumentException("不支持的 AI 提供商: {$provider}"),
         };
     }
@@ -385,7 +386,7 @@ class AIAnalysisService
     /**
      * 使用 OpenAI API
      */
-    private function analyzeWithOpenAI(string $prompt, array $config): array
+    private function analyzeWithOpenAI(\Closure $promptFactory, array $config): array
     {
         $apiKey = $config['apiKey'] ?? '';
         $baseUrl = $config['baseUrl'] ?? 'https://api.openai.com/v1';
@@ -400,6 +401,7 @@ class AIAnalysisService
             return ['error' => "Base URL 无效: {$baseUrlError}"];
         }
 
+        $prompt = $promptFactory();
         try {
             $response = $this->httpClient->post("{$baseUrl}/chat/completions", [
                 'headers' => [
@@ -447,7 +449,7 @@ class AIAnalysisService
     /**
      * 使用 Claude API (Anthropic)
      */
-    private function analyzeWithClaude(string $prompt, array $config): array
+    private function analyzeWithClaude(\Closure $promptFactory, array $config): array
     {
         $apiKey = $config['apiKey'] ?? '';
         $baseUrl = $config['baseUrl'] ?? 'https://api.anthropic.com/v1';
@@ -462,6 +464,7 @@ class AIAnalysisService
             return ['error' => "Base URL 无效: {$baseUrlError}"];
         }
 
+        $prompt = $promptFactory();
         try {
             $response = $this->httpClient->post("{$baseUrl}/messages", [
                 'headers' => [
@@ -506,7 +509,7 @@ class AIAnalysisService
     /**
      * 使用自定义 API
      */
-    private function analyzeWithCustom(string $prompt, array $config): array
+    private function analyzeWithCustom(\Closure $promptFactory, array $config): array
     {
         $endpoint = $config['endpoint'] ?? '';
         $apiKey = $config['apiKey'] ?? '';
@@ -520,6 +523,7 @@ class AIAnalysisService
             return ['error' => "API 端点无效: {$endpointError}"];
         }
 
+        $prompt = $promptFactory();
         try {
             $headers = ['Content-Type' => 'application/json'];
 
