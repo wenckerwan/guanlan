@@ -1,5 +1,61 @@
 # 更新记录
 
+## V0.1-dev.15 - 报告删除 + 错题册报告折叠 + 补更新记录 - 2026-09-29
+
+### 变更
+
+- **AI 分析报告删除**：新增 `DELETE /api/v1/mistakes/analysis-reports/{id}`（登录必需，
+  仅能删除本人报告）；分析页历史报告列表与错题册页报告切换器均加删除按钮，
+  删除当前展示的报告后自动切换到最新一份。
+- **错题册页报告区块默认折叠**：报告全文改用 `<details>` 折叠（点开才展开），
+  不再把错题列表挤出首屏；多份报告的切换器移入折叠区内。
+- 补 V0.1-dev.12 ~ dev.14 的更新记录。
+
+### 验证
+
+- `npm run build`（apps/web）通过；部署后 `/api/v1/health` 返回 V0.1-dev.15。
+
+## V0.1-dev.14 - 错题册页自动展示最新报告 + 历史切换 - 2026-09-29
+
+### 变更
+
+- **错题册页新增「AI 分析报告」区块**（`/mistakes/{code}`）：登录后自动拉取报告列表
+  并渲染最新一份（marked 渲染），报告间可切换；此前报告只能在分析页查看，错题册页无任何入口。
+- **分析页进入即展示最新报告**：已有历史报告且本次未跑新分析时，自动载入最新一份，
+  免去重新上传文件的步骤。
+
+## V0.1-dev.13 - 修复报告保存 503 - 2026-09-29
+
+### 变更
+
+- `MistakeAnalysisReport::$timestamps` 补 `bool` 类型声明，与父类
+  `Hyperf\Database\Model\Model` 的 `public bool $timestamps` 对齐；此前任何触达该模型的
+  请求都会触发继承类型冲突 Fatal，worker 异常退出返回 503，前端表现为「保存失败」。
+
+### 教训
+
+- 新增模型属性覆盖时必须带类型声明（参照 `MockQuestion.php` 的写法）；
+  「看起来跑通的代码」要在真实登录链路上验证过才算数。
+
+## V0.1-dev.12 - 错题 AI 分析白屏修复 + 报告落库 - 2026-09-29
+
+### 变更
+
+- **白屏根因修复**：分析结果渲染此前使用不存在的 `$md.render`（项目无 Nuxt 内置
+  markdown 渲染器），首次成功拿到分析结果时 Vue 应用崩溃白屏；改用 `marked` 渲染，
+  解析失败时降级为转义后的 `<pre>` 原文。
+- **分析报告落库**：新增 `mistake_analysis_reports` 表（迁移
+  `2026_09_29_000004`）与三个接口 —— `POST/GET /mistakes/students/{code}/analysis-reports`
+  （保存 / 本人报告列表，每考生滚动保留最近 20 份）、
+  `GET /mistakes/analysis-reports/{id}`（详情）；分析成功后自动保存。
+- **nginx 分析超时放宽**：`docker/nginx/production.conf` 增加
+  `proxy_read_timeout 300s`，避免 30s-1min 的分析请求被网关默认 60s 掐断。
+
+### 部署注意
+
+- `production.conf` 是单文件 bind mount，改 nginx 配置后必须
+  `docker compose ... up -d --force-recreate gateway`，仅 `--build` 不会生效。
+
 ## V0.1-dev.11 - DeepSeek 官方 API 支持 + 网页地址误配识别 - 2026-09-29
 
 ### 变更

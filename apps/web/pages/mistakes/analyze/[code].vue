@@ -209,6 +209,18 @@ async function openReport(id: number) {
   }
 }
 
+async function deleteReport(id: number) {
+  if (!window.confirm('确定删除这份分析报告？删除后不可恢复。')) return
+  try {
+    await request(`/mistakes/analysis-reports/${id}`, { method: 'DELETE' })
+    savedReports.value = savedReports.value.filter((report) => report.id !== id)
+    savedNote.value = '报告已删除'
+  } catch (err: any) {
+    savedNote.value = ''
+    analysisError.value = err?.data?.message || '删除失败'
+  }
+}
+
 onMounted(() => {
   loadReports()
 })
@@ -461,9 +473,12 @@ useHead(() => ({ title: `AI 错题分析 - ${student.value?.name || code} ｜观
         <h3>我的 AI 分析报告（{{ savedReports.length }}）</h3>
         <ul class="reports-list">
           <li v-for="report in savedReports" :key="report.id">
-            <button type="button" class="ghost-button small" @click="openReport(report.id)">
-              <FileText :size="14" />{{ report.title }}
-            </button>
+            <span class="report-row">
+              <button type="button" class="ghost-button small" @click="openReport(report.id)">
+                <FileText :size="14" />{{ report.title }}
+              </button>
+              <button type="button" class="report-delete" title="删除报告" @click="deleteReport(report.id)">×</button>
+            </span>
             <time>{{ report.createdAt.slice(0, 16) }}</time>
           </li>
         </ul>
@@ -869,6 +884,29 @@ D. 实践是人类的存在方式
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 6px;
+}
+
+.report-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.report-delete {
+  background: none;
+  border: none;
+  color: var(--text-muted, #9ca3af);
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+}
+
+.report-delete:hover {
+  color: var(--error, #ef4444);
+  background: var(--bg-secondary, #f9fafb);
 }
 
 .reports-list time {

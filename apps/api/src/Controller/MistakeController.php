@@ -559,6 +559,29 @@ class MistakeController
     }
 
     /**
+     * 删除本人的一份 AI 分析报告
+     */
+    public function deleteAnalysisReport(int $id): ResponseInterface
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return ApiResponse::message('未登录', 401);
+        }
+
+        $report = MistakeAnalysisReport::query()
+            ->where('id', $id)
+            ->where('user_id', (int) $user->id)
+            ->first();
+        if (! $report) {
+            return ApiResponse::message('报告不存在', 404);
+        }
+
+        $report->delete();
+
+        return ApiResponse::message('已删除', 200);
+    }
+
+    /**
      * 获取 AI 配置模板
      */
     public function getAIConfig(): ResponseInterface

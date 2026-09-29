@@ -75,6 +75,23 @@ async function openAiReport(id: number) {
   }
 }
 
+async function deleteAiReport(id: number) {
+  if (!window.confirm('确定删除这份分析报告？删除后不可恢复。')) return
+  try {
+    await request(`/mistakes/analysis-reports/${id}`, { method: 'DELETE' })
+    aiReports.value = aiReports.value.filter((report) => report.id !== id)
+    if (activeReportId.value === id) {
+      if (aiReports.value.length) await openAiReport(aiReports.value[0].id)
+      else {
+        activeReportId.value = null
+        reportMarkdown.value = ''
+      }
+    }
+  } catch {
+    /* 删除失败保持现状 */
+  }
+}
+
 onMounted(async () => {
   if (!isLoggedIn.value) return
   try {
@@ -207,20 +224,21 @@ async function submitRedo(item: MistakeItem) {
       </section>
 
       <section v-if="aiReports.length" class="ai-reports">
-        <header class="ai-reports-head">
-          <span class="ai-reports-title"><FileText :size="14" />AI 分析报告（更新于 {{ aiReports[0].createdAt.slice(0, 10) }}）</span>
+        <details>
+          <summary><FileText :size="14" />AI 分析报告（更新于 {{ aiReports[0].createdAt.slice(0, 10) }}）</summary>
           <nav v-if="aiReports.length > 1" class="ai-report-switch">
-            <button
+            <span
               v-for="report in aiReports"
               :key="report.id"
-              type="button"
-              class="chip"
+              class="ai-report-item"
               :class="{ active: activeReportId === report.id }"
-              @click="openAiReport(report.id)"
-            >{{ report.title }}</button>
+            >
+              <button type="button" class="ai-report-chip" @click="openAiReport(report.id)">{{ report.title }}</button>
+              <button type="button" class="report-delete" title="删除报告" @click="deleteAiReport(report.id)">×</button>
+            </span>
           </nav>
-        </header>
-        <div v-if="reportHtml" class="markdown-body" v-html="reportHtml" />
+          <div v-if="reportHtml" class="markdown-body" v-html="reportHtml" />
+        </details>
       </section>
 
       <section v-if="showAnalysis" class="mistake-analysis">
@@ -310,15 +328,8 @@ async function submitRedo(item: MistakeItem) {
   border-radius: 8px;
 }
 
-.ai-reports-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-.ai-reports-title {
+.ai-reports summary {
+  cursor: pointer;
   display: flex;
   align-items: center;
   gap: 0.375rem;
@@ -330,6 +341,49 @@ async function submitRedo(item: MistakeItem) {
   display: flex;
   flex-wrap: wrap;
   gap: 0.375rem;
+  margin: 0.75rem 0;
+}
+
+.ai-report-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.25rem 0.375rem 0.25rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.ai-report-item.active {
+  border-color: var(--primary, #b91c1c);
+  background: var(--primary-light, #fef2f2);
+}
+
+.ai-report-chip {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+  padding: 0;
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-delete {
+  background: none;
+  border: none;
+  color: var(--text-muted, #9ca3af);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0.25rem;
+  border-radius: 4px;
+}
+
+.report-delete:hover {
+  color: var(--error, #ef4444);
 }
 
 .ai-reports .markdown-body {
