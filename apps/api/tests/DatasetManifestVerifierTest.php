@@ -38,8 +38,12 @@ $removeDirectory = static function (string $path) use (&$removeDirectory): void 
 };
 
 try {
-    mkdir($datasetRoot, 0777, true);
-    mkdir(dirname($sourceManifestPath), 0777, true);
+    if (! is_dir($datasetRoot)) {
+        mkdir($datasetRoot, 0777, true);
+    }
+    if (! is_dir(dirname($sourceManifestPath))) {
+        mkdir(dirname($sourceManifestPath), 0777, true);
+    }
 
     $datasets = [
         'analysis_articles.json' => [['id' => 1]],
@@ -61,34 +65,63 @@ try {
         'logical_document_count' => 1,
     ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
 
-    $builder = dirname(__DIR__, 3) . '/tools/ingest/dataset_manifest.py';
     $manifestPath = $datasetRoot . '/../dataset-manifest.json';
-    $builderCode = <<<'PYTHON'
-import importlib.util
-import sys
-from pathlib import Path
 
-builder_path = Path(sys.argv[1])
-spec = importlib.util.spec_from_file_location('dataset_manifest', builder_path)
-if spec is None or spec.loader is None:
-    raise RuntimeError('unable to load dataset_manifest.py')
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
-manifest = module.build_manifest(Path(sys.argv[2]), Path(sys.argv[3]))
-module.write_manifest(Path(sys.argv[4]), manifest)
-PYTHON;
-    $command = sprintf(
-        'python3 -c %s %s %s %s %s',
-        escapeshellarg($builderCode),
-        escapeshellarg($builder),
-        escapeshellarg($datasetRoot),
-        escapeshellarg($sourceManifestPath),
-        escapeshellarg($manifestPath),
-    );
-    exec($command, $output, $exitCode);
-    if ($exitCode !== 0) {
-        throw new RuntimeException('fixture manifest builder failed');
-    }
+    // 纯 PHP 复刻 tools/ingest/dataset_manifest.py 的 build_manifest 算法，
+    // 让本测试不依赖 python3（api 容器是纯 PHP 镜像）。字段口径与 verifier 一致。
+    $buildFixtureManifest = static function (string $datasetDir, string $sourceManifestPath, string $outputPath): void {
+        $required = [
+            'analysis_articles.json', 'hotspots.json', 'mistakes.json', 'mocks.json',
+            'papers.json', 'predictions.json', 'questions.json', 'stats.json',
+        ];
+        $source = json_decode((string) file_get_contents($sourceManifestPath), true, 512, JSON_THROW_ON_ERROR);
+        $datasets = [];
+        $totalItems = 0;
+        $totalBytes = 0;
+        foreach ($required as $name) {
+            $path = $datasetDir . '/' . $name;
+            $bytes = filesize($path);
+            $payload = json_decode((string) file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+            if (array_is_list($payload)) {
+                $items = count($payload);
+                $groups = [];
+            } else {
+                $items = 0;
+                $groups = [];
+                foreach ($payload as $key => $value) {
+                    if (is_array($value) && array_is_list($value)) {
+                        $groups[(string) $key] = count($value);
+                        $items += count($value);
+                    }
+                }
+                ksort($groups);
+            }
+            $datasets[$name] = [
+                'bytes' => $bytes,
+                'groups' => $groups === [] ? new stdClass() : $groups,
+                'items' => $items,
+                'sha256' => hash_file('sha256', $path),
+            ];
+            $totalItems += $items;
+            $totalBytes += $bytes;
+        }
+        file_put_contents($outputPath, json_encode([
+            'schema_version' => 1,
+            'source_manifest' => [
+                'asset_count' => $source['asset_count'],
+                'logical_document_count' => $source['logical_document_count'],
+                'path' => 'storage/import-manifest.json',
+                'sha256' => hash_file('sha256', $sourceManifestPath),
+            ],
+            'datasets' => $datasets,
+            'totals' => [
+                'bytes' => $totalBytes,
+                'files' => count($required),
+                'items' => $totalItems,
+            ],
+        ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+    };
+    $buildFixtureManifest($datasetRoot, $sourceManifestPath, $manifestPath);
 
     $verifier = new DatasetManifestVerifier();
     $verifier->verify($fixtureRoot);

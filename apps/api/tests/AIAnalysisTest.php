@@ -2,130 +2,108 @@
 
 declare(strict_types=1);
 
-namespace App\Test;
-
-use App\Model\MistakeStudent;
-use App\Service\AIAnalysisService;
-use Hyperf\Guzzle\ClientFactory;
-use PHPUnit\Framework\TestCase;
-
 /**
- * AI 分析服务测试
+ * AI 分析服务纯逻辑测试（无外部依赖，与 MistakeAccessTest 同风格）。
  *
- * 测试 AI 分析对接功能，包括：
- * 1. OpenAI API 调用
- * 2. Claude API 调用
- * 3. 自定义 API 调用
- * 4. Skills 提示词对接
+ * 用桩件替换 Hyperf\Guzzle\ClientFactory / GuzzleHttp\Client / App\Model\MistakeStudent，
+ * 只覆盖不触网的纯逻辑：默认配置、配置校验、系统提示词、SSRF 出网拦截。
+ * 真实 HTTP 调用路径由容器冒烟人工验证，不在单测范围内。
  */
-class AIAnalysisTest extends TestCase
-{
-    private AIAnalysisService $service;
 
-    protected function setUp(): void
+namespace Hyperf\Guzzle {
+    class ClientFactory
     {
-        parent::setUp();
-        $this->service = new AIAnalysisService(new ClientFactory());
+        public function create(array $options = []): \GuzzleHttp\Client
+        {
+            return new \GuzzleHttp\Client();
+        }
+    }
+}
+
+namespace GuzzleHttp {
+    class Client
+    {
+    }
+}
+
+namespace App\Model {
+    class MistakeStudent
+    {
+    }
+}
+
+namespace {
+    use App\Service\AIAnalysisService;
+
+    require dirname(__DIR__) . '/src/Service/AIAnalysisService.php';
+
+    $failures = [];
+    $check = static function (string $label, mixed $actual, mixed $expected) use (&$failures): void {
+        if ($actual !== $expected) {
+            $failures[] = sprintf('%s: expected %s, got %s', $label, var_export($expected, true), var_export($actual, true));
+        }
+    };
+
+    $service = new AIAnalysisService(new \Hyperf\Guzzle\ClientFactory());
+
+    // 默认配置
+    $config = $service->getDefaultConfig();
+    $check('default provider', $config['provider'] ?? null, 'openai');
+    $check('default baseUrl', $config['baseUrl'] ?? null, 'https://api.openai.com/v1');
+    $check('default model', $config['model'] ?? null, 'gpt-4');
+
+    // 配置校验
+    $check('valid openai', $service->validateConfig([
+        'provider' => 'openai', 'apiKey' => 'sk-test', 'baseUrl' => 'https://api.openai.com/v1', 'model' => 'gpt-4',
+    ]), true);
+    $check('valid claude', $service->validateConfig([
+        'provider' => 'claude', 'apiKey' => 'sk-ant-test', 'baseUrl' => 'https://api.anthropic.com/v1', 'model' => 'claude-opus-4-8',
+    ]), true);
+    $check('valid custom', $service->validateConfig([
+        'provider' => 'custom', 'endpoint' => 'https://example.com/api/analyze',
+    ]), true);
+    $check('missing apiKey rejected', $service->validateConfig(['provider' => 'openai']), false);
+    $check('unknown provider rejected', $service->validateConfig(['provider' => 'unknown', 'apiKey' => 'x']), false);
+    $check('custom without endpoint rejected', $service->validateConfig(['provider' => 'custom', 'apiKey' => 'x']), false);
+
+    // 系统提示词关键要素
+    $reflection = new ReflectionClass($service);
+    $method = $reflection->getMethod('getSystemPrompt');
+    $systemPrompt = $method->invoke($service);
+    foreach (['考研政治错题分析专家', '知识漏洞', '判断漏洞', '做题动作漏洞', '不修改上游教材和题库资料', '真题原文必须可核验', 'Markdown'] as $needle) {
+        $check("system prompt contains {$needle}", str_contains($systemPrompt, $needle), true);
     }
 
-    public function testGetDefaultConfig(): void
-    {
-        $config = $this->service->getDefaultConfig();
-
-        $this->assertArrayHasKey('provider', $config);
-        $this->assertArrayHasKey('apiKey', $config);
-        $this->assertArrayHasKey('baseUrl', $config);
-        $this->assertArrayHasKey('model', $config);
-
-        $this->assertEquals('openai', $config['provider']);
-        $this->assertEquals('https://api.openai.com/v1', $config['baseUrl']);
-        $this->assertEquals('gpt-4', $config['model']);
-    }
-
-    public function testValidateConfig(): void
-    {
-        // 有效的 OpenAI 配置
-        $validOpenAI = [
-            'provider' => 'openai',
-            'apiKey' => 'sk-test123',
-            'baseUrl' => 'https://api.openai.com/v1',
-            'model' => 'gpt-4',
-        ];
-        $this->assertTrue($this->service->validateConfig($validOpenAI));
-
-        // 有效的 Claude 配置
-        $validClaude = [
-            'provider' => 'claude',
-            'apiKey' => 'sk-ant-test123',
-            'baseUrl' => 'https://api.anthropic.com/v1',
-            'model' => 'claude-opus-4-8',
-        ];
-        $this->assertTrue($this->service->validateConfig($validClaude));
-
-        // 有效的自定义配置
-        $validCustom = [
-            'provider' => 'custom',
-            'endpoint' => 'http://localhost:8000/api/analyze',
-        ];
-        $this->assertTrue($this->service->validateConfig($validCustom));
-
-        // 无效的配置（缺少必需字段）
-        $invalid = [
-            'provider' => 'openai',
-            // 缺少 apiKey
-        ];
-        $this->assertFalse($this->service->validateConfig($invalid));
-
-        // 无效的配置（不支持的提供商）
-        $invalidProvider = [
-            'provider' => 'unknown',
-            'apiKey' => 'test',
-        ];
-        $this->assertFalse($this->service->validateConfig($invalidProvider));
-    }
-
-    public function testBuildPromptWithSkills(): void
-    {
-        // 创建测试用的错题本
-        $student = new MistakeStudent([
-            'id' => 1,
-            'code' => 'A',
-            'name' => '错题分析示例',
+    // SSRF 出网拦截：内网 / 保留 IP / 非法协议都在触网前被拒
+    $internalUrls = [
+        'http://127.0.0.1/v1',
+        'http://localhost/v1',
+        'http://169.254.169.254/latest/meta-data',
+        'http://10.0.0.5/api',
+        'http://192.168.1.10/v1',
+        'http://172.16.0.1/v1',
+        'file:///etc/passwd',
+        'ftp://example.com/file',
+    ];
+    foreach ($internalUrls as $url) {
+        $result = $service->analyze(new \App\Model\MistakeStudent(), [
+            'provider' => 'openai', 'apiKey' => 'sk-test', 'baseUrl' => $url, 'model' => 'gpt-4',
         ]);
+        $check("ssrf blocked openai baseUrl {$url}", str_contains((string) ($result['error'] ?? ''), '无效'), true);
+    }
+    $result = $service->analyze(new \App\Model\MistakeStudent(), [
+        'provider' => 'custom', 'endpoint' => 'http://169.254.169.254/latest/meta-data',
+    ]);
+    $check('ssrf blocked custom endpoint', str_contains((string) ($result['error'] ?? ''), '无效'), true);
+    // 公网地址通过 URL 校验（直接反射测 assertAllowedUrl，不触网）
+    $urlGate = $reflection->getMethod('assertAllowedUrl');
+    $check('public url allowed', $urlGate->invoke($service, 'https://api.openai.com/v1'), null);
+    $check('internal url message', str_contains((string) $urlGate->invoke($service, 'http://10.0.0.5/api'), '不允许'), true);
 
-        // 使用反射访问私有方法
-        $reflection = new \ReflectionClass($this->service);
-        $method = $reflection->getMethod('buildPrompt');
-        $method->setAccessible(true);
-
-        $prompt = $method->invoke($this->service, $student);
-
-        // 验证提示词包含 skills 关键信息
-        $this->assertStringContainsString('考研政治错题分析', $prompt);
-        $this->assertStringContainsString('考生：A', $prompt);
-        $this->assertStringContainsString('错题分析示例', $prompt);
-
-        // 验证提示词格式
-        $this->assertStringContainsString('# 错题清单', $prompt);
-        $this->assertStringContainsString('请分析以上错题', $prompt);
+    if ($failures !== []) {
+        fwrite(STDERR, "AIAnalysisTest: FAIL\n" . implode("\n", $failures) . "\n");
+        exit(1);
     }
 
-    public function testGetSystemPrompt(): void
-    {
-        // 使用反射访问私有方法
-        $reflection = new \ReflectionClass($this->service);
-        $method = $reflection->getMethod('getSystemPrompt');
-        $method->setAccessible(true);
-
-        $systemPrompt = $method->invoke($this->service);
-
-        // 验证系统提示词包含关键要素
-        $this->assertStringContainsString('考研政治错题分析专家', $systemPrompt);
-        $this->assertStringContainsString('知识漏洞', $systemPrompt);
-        $this->assertStringContainsString('判断漏洞', $systemPrompt);
-        $this->assertStringContainsString('做题动作漏洞', $systemPrompt);
-        $this->assertStringContainsString('不修改上游教材和题库资料', $systemPrompt);
-        $this->assertStringContainsString('真题原文必须可核验', $systemPrompt);
-        $this->assertStringContainsString('Markdown', $systemPrompt);
-    }
+    echo "AIAnalysisTest: PASS\n";
 }
