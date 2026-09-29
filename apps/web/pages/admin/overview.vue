@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import type { AdminOverview } from '~/types/api'
+import type { AdminOverview, LeaderboardEntry } from '~/types/api'
 import { fillTrend, lastNDays, trendTotal } from '~/utils/trend.mjs'
 
 definePageMeta({ name: 'admin-overview' })
@@ -16,6 +16,17 @@ onMounted(async () => {
     data.value = null
   }
 })
+
+const { data: leaderboardData } = useApiFetch<{ period: string; items: LeaderboardEntry[] }>('/stats/leaderboard?period=week&limit=10', { period: 'week', items: [] }, { lazy: true, server: false })
+const leaderboard = computed(() => leaderboardData.value?.items ?? [])
+
+function formatDuration(seconds: number) {
+  if (seconds < 60) return `${seconds} 秒`
+  if (seconds < 3600) return `${Math.round(seconds / 60)} 分钟`
+  const h = Math.floor(seconds / 3600)
+  const m = Math.round((seconds % 3600) / 60)
+  return m ? `${h} 小时 ${m} 分` : `${h} 小时`
+}
 
 const labels: Record<string, string> = {
   users: '用户',
@@ -54,57 +65,94 @@ const recentAudit = computed(() => (data.value as { recentAudit?: { action: stri
     </div>
     <p v-if="data" class="admin-meta">今日新增用户：{{ data.todayUsers }}</p>
 
-    <div class="section-heading compact"><div><span class="section-kicker">近 14 天</span><h2>注册趋势（共 {{ trendSum }} 人）</h2></div></div>
-    <div class="trend-chart" role="img" aria-label="近 14 天注册趋势柱状图">
-      <div v-for="item in trendSeries" :key="item.day" class="trend-col">
-        <div class="trend-bar" :style="{ height: `${Math.round((item.count / trendMax) * 100)}%` }" :title="`${item.day}：${item.count}`" />
-        <small>{{ item.day.slice(5) }}</small>
+    <div class="overview-grid">
+      <div>
+        <div class="section-heading compact"><div><span class="section-kicker">近 14 天</span><h2>注册趋势（共 {{ trendSum }} 人）</h2></div></div>
+        <div class="trend-chart" role="img" aria-label="近 14 天注册趋势柱状图">
+          <div v-for="item in trendSeries" :key="item.day" class="trend-col">
+            <div class="trend-bar" :style="{ height: `${Math.round((item.count / trendMax) * 100)}%` }" :title="`${item.day}：${item.count}`" />
+            <small>{{ item.day.slice(5) }}</small>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-heading compact"><div><span class="section-kicker">近 14 天</span><h2>作答趋势（共 {{ attemptSum }} 次）</h2></div></div>
+        <div class="trend-chart" role="img" aria-label="近 14 天作答趋势柱状图">
+          <div v-for="item in attemptSeries" :key="item.day" class="trend-col">
+            <div class="trend-bar accent" :style="{ height: `${Math.round((item.count / attemptMax) * 100)}%` }" :title="`${item.day}：${item.count}`" />
+            <small>{{ item.day.slice(5) }}</small>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-heading compact"><div><span class="section-kicker">内容状态</span><h2>上下线分布</h2></div></div>
+        <table class="admin-table">
+          <thead><tr><th>内容</th><th>已发布</th><th>已隐藏</th></tr></thead>
+          <tbody>
+            <tr v-for="(dist, key) in (data as { statusCounts?: Record<string, Record<string, number>> } | null)?.statusCounts ?? {}" :key="key">
+              <td>{{ statusNames[key] ?? key }}</td>
+              <td>{{ dist.published ?? 0 }}</td>
+              <td>{{ dist.hidden ?? 0 }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div>
+        <div class="section-heading compact"><div><span class="section-kicker">本周学习时长</span><h2>学习排行</h2></div></div>
+        <ol v-if="leaderboard.length" class="leaderboard-list">
+          <li v-for="(item, i) in leaderboard" :key="item.userId">
+            <b class="leaderboard-rank" :class="`rank-${i + 1}`">{{ i + 1 }}</b>
+            <span class="leaderboard-name">{{ item.displayName || '同学' }}</span>
+            <UserGroupBadge :group="item.userGroup" :role="item.role" />
+            <small>{{ formatDuration(item.seconds) }}</small>
+          </li>
+        </ol>
+        <p v-else class="admin-meta">本周暂无学习时长记录。</p>
+      </div>
+
+      <div>
+        <div class="section-heading compact"><div><span class="section-kicker">最近注册</span><h2>新用户</h2></div></div>
+        <ul class="record-list">
+          <li v-for="item in data?.recentUsers ?? []" :key="item.id">
+            <span class="record-type">{{ item.role }}</span>
+            <span class="record-title">{{ item.displayName || item.email }}</span>
+            <time>{{ item.createdAt.slice(0, 10) }}</time>
+          </li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="section-heading compact"><div><span class="section-kicker">操作审计</span><h2>最近 5 条</h2></div></div>
+        <ul class="record-list">
+          <li v-for="(item, index) in recentAudit" :key="index">
+            <span class="record-type">{{ item.action }}</span>
+            <span class="record-title">{{ item.targetType }}#{{ item.targetId }}</span>
+            <span class="admin-meta">{{ item.adminEmail }}</span>
+            <time>{{ item.createdAt.slice(0, 16).replace('T', ' ') }}</time>
+          </li>
+        </ul>
+        <p v-if="!recentAudit.length" class="admin-meta">暂无操作记录。</p>
       </div>
     </div>
-
-    <div class="section-heading compact"><div><span class="section-kicker">近 14 天</span><h2>作答趋势（共 {{ attemptSum }} 次）</h2></div></div>
-    <div class="trend-chart" role="img" aria-label="近 14 天作答趋势柱状图">
-      <div v-for="item in attemptSeries" :key="item.day" class="trend-col">
-        <div class="trend-bar accent" :style="{ height: `${Math.round((item.count / attemptMax) * 100)}%` }" :title="`${item.day}：${item.count}`" />
-        <small>{{ item.day.slice(5) }}</small>
-      </div>
-    </div>
-
-    <div class="section-heading compact"><div><span class="section-kicker">内容状态</span><h2>上下线分布</h2></div></div>
-    <table class="admin-table">
-      <thead><tr><th>内容</th><th>已发布</th><th>已隐藏</th></tr></thead>
-      <tbody>
-        <tr v-for="(dist, key) in (data as { statusCounts?: Record<string, Record<string, number>> } | null)?.statusCounts ?? {}" :key="key">
-          <td>{{ statusNames[key] ?? key }}</td>
-          <td>{{ dist.published ?? 0 }}</td>
-          <td>{{ dist.hidden ?? 0 }}</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="section-heading compact"><div><span class="section-kicker">最近注册</span><h2>新用户</h2></div></div>
-    <ul class="record-list">
-      <li v-for="item in data?.recentUsers ?? []" :key="item.id">
-        <span class="record-type">{{ item.role }}</span>
-        <span class="record-title">{{ item.displayName || item.email }}</span>
-        <time>{{ item.createdAt.slice(0, 10) }}</time>
-      </li>
-    </ul>
-
-    <div class="section-heading compact"><div><span class="section-kicker">操作审计</span><h2>最近 5 条</h2></div></div>
-    <ul class="record-list">
-      <li v-for="(item, index) in recentAudit" :key="index">
-        <span class="record-type">{{ item.action }}</span>
-        <span class="record-title">{{ item.targetType }}#{{ item.targetId }}</span>
-        <span class="admin-meta">{{ item.adminEmail }}</span>
-        <time>{{ item.createdAt.slice(0, 16).replace('T', ' ') }}</time>
-      </li>
-    </ul>
-    <p v-if="!recentAudit.length" class="admin-meta">暂无操作记录。</p>
   </section>
 </template>
 
 <style scoped>
+.overview-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem 2rem;
+}
+
+@media (min-width: 900px) {
+  .overview-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .trend-chart {
   display: flex;
   align-items: flex-end;
@@ -138,4 +186,14 @@ const recentAudit = computed(() => (data.value as { recentAudit?: { action: stri
   color: var(--text-muted);
   white-space: nowrap;
 }
+
+.leaderboard-list { margin: 0.75rem 0 0; padding: 0; list-style: none; }
+.leaderboard-list li { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px dashed #e4e1da; font-size: 0.8125rem; }
+.leaderboard-list li:last-child { border-bottom: none; }
+.leaderboard-rank { flex: none; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: #f3f4f6; color: #6b7280; font-size: 11px; font-weight: 700; }
+.leaderboard-rank.rank-1 { background: #fde68a; color: #92400e; }
+.leaderboard-rank.rank-2 { background: #e5e7eb; color: #374151; }
+.leaderboard-rank.rank-3 { background: #fed7aa; color: #9a3412; }
+.leaderboard-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #5c5e59; }
+.leaderboard-list small { flex: none; color: #8a8c86; font-variant-numeric: tabular-nums; }
 </style>

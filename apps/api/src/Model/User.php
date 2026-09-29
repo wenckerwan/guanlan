@@ -7,6 +7,7 @@ namespace App\Model;
 use Hyperf\Database\Model\Model;
 use Hyperf\Database\Model\Relations\HasMany;
 use Hyperf\Database\Model\Relations\HasOne;
+use App\Support\UserGroup;
 
 class User extends Model
 {
@@ -39,6 +40,11 @@ class User extends Model
     public function isActive(): bool
     {
         return $this->status === 'active';
+    }
+
+    public function group(): string
+    {
+        return UserGroup::normalize($this->user_group ?? null);
     }
 
     public function accountId(): string

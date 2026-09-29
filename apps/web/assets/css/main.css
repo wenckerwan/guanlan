@@ -411,3 +411,14 @@ a.record-title:hover { color:var(--red); }
 /* 访客配额：锁定分组标题 */
 .gated-heading { margin-top:22px; }
 .gated-heading .section-kicker { display:inline-flex; align-items:center; gap:4px; color:var(--gold); }
+
+/* 首页学习时长排行 */
+.leaderboard-list { margin:14px 0 0; padding:0; list-style:none; }
+.leaderboard-list li { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px dashed #e4e1da; font-size:12px; }
+.leaderboard-list li:last-child { border-bottom:none; }
+.leaderboard-rank { flex:none; width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; background:#f3f4f6; color:#6b7280; font-size:11px; font-weight:700; }
+.leaderboard-rank.rank-1 { background:#fde68a; color:#92400e; }
+.leaderboard-rank.rank-2 { background:#e5e7eb; color:#374151; }
+.leaderboard-rank.rank-3 { background:#fed7aa; color:#9a3412; }
+.leaderboard-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#5c5e59; }
+.leaderboard-list small { flex:none; color:#8a8c86; font-variant-numeric:tabular-nums; }

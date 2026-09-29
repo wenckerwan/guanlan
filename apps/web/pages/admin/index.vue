@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { BarChart3, FileText, Newspaper, Users, ScrollText, Target, Lightbulb, ClipboardList, Rss, History } from 'lucide-vue-next'
+import { BarChart3, FileText, Newspaper, Users, ScrollText, Target, Lightbulb, ClipboardList, Rss, History, ArrowLeft } from 'lucide-vue-next'
 
 const router = useRouter()
 const { user, isAdmin, restore, token } = useAuth()
@@ -38,11 +38,42 @@ const nav = [
         <NuxtLink class="primary-link" to="/">返回首页</NuxtLink>
       </div>
       <template v-else>
-        <nav class="admin-nav">
-          <NuxtLink v-for="item in nav" :key="item.to" :to="item.to"><component :is="item.icon" :size="15" />{{ item.label }}</NuxtLink>
-        </nav>
+        <div class="admin-topbar">
+          <nav class="admin-nav">
+            <NuxtLink v-for="item in nav" :key="item.to" :to="item.to"><component :is="item.icon" :size="15" />{{ item.label }}</NuxtLink>
+          </nav>
+          <NuxtLink class="admin-back" to="/"><ArrowLeft :size="15" />返回站点</NuxtLink>
+        </div>
         <NuxtPage />
       </template>
     </main>
   </div>
 </template>
+
+<style scoped>
+.admin-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.admin-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--line, #e5e1d8);
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  color: var(--text-muted, #6b7280);
+  background: #fff;
+  white-space: nowrap;
+}
+
+.admin-back:hover {
+  color: var(--red, #b91c1c);
+  border-color: var(--red, #b91c1c);
+}
+</style>

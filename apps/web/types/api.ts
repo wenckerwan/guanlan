@@ -255,14 +255,26 @@ export type MockDetail = {
 
 /* ---------- 用户与后台 ---------- */
 
+export type UserGroup = 'guest' | 'user' | 'vip' | 'svip' | 'sssvip'
+
 export type User = {
   id: number
   email: string
   displayName: string
   role: string
   status: string
+  userGroup?: UserGroup
+  features?: { aiReportDailyLimit?: number }
   mistakeCode?: string
   createdAt: string
+}
+
+export type LeaderboardEntry = {
+  userId: number
+  displayName: string
+  role: string
+  userGroup: UserGroup
+  seconds: number
 }
 
 export type AuthPayload = {

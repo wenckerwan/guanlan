@@ -37,6 +37,24 @@ const query = reactive({ date: new Date(Date.now() - 86400000).toISOString().sli
 const items = ref<Candidate[]>([])
 const lastResult = ref('')
 
+const PROVIDER_PRESETS: Record<string, { baseUrl: string; model: string }> = {
+  deepseek: { baseUrl: 'https://api.deepseek.com', model: 'deepseek-chat' },
+  openai: { baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
+  claude: { baseUrl: 'https://api.anthropic.com/v1', model: 'claude-opus-4-8' },
+  custom: { baseUrl: '', model: '' },
+}
+
+function onProviderChange() {
+  const preset = PROVIDER_PRESETS[config.provider]
+  if (!preset || !preset.baseUrl) return
+  if (!config.baseUrl || Object.values(PROVIDER_PRESETS).some(p => p.baseUrl && p.baseUrl === config.baseUrl)) {
+    config.baseUrl = preset.baseUrl
+  }
+  if (!config.model || Object.values(PROVIDER_PRESETS).some(p => p.model && p.model === config.model)) {
+    config.model = preset.model
+  }
+}
+
 async function loadConfig() {
   const data = await request<AiConfig>('/admin/shizheng/config')
   Object.assign(config, data)
@@ -120,9 +138,14 @@ onMounted(async () => {
 
     <form class="admin-form" @submit.prevent="saveConfig">
       <label><span>AI 提供商</span>
-        <select v-model="config.provider"><option value="openai">OpenAI 兼容</option><option value="claude">Claude</option></select>
+        <select v-model="config.provider" @change="onProviderChange">
+          <option value="deepseek">DeepSeek (官方)</option>
+          <option value="openai">OpenAI 兼容</option>
+          <option value="claude">Claude</option>
+          <option value="custom">自定义</option>
+        </select>
       </label>
-      <label><span>Base URL</span><input v-model="config.baseUrl" /></label>
+      <label><span>Base URL</span><input v-model="config.baseUrl" :placeholder="PROVIDER_PRESETS[config.provider]?.baseUrl || 'https://...'" /></label>
       <label><span>模型</span><input v-model="config.model" /></label>
       <label><span>API Key {{ config.hasKey ? '（已配置，留空不修改）' : '' }}</span>
         <input v-model="config.apiKey" type="password" autocomplete="new-password" placeholder="sk-..." />

@@ -25,6 +25,8 @@ use Hyperf\HttpServer\Router\Router;
 Router::get('/api/v1/health', [HealthController::class, 'index']);
 Router::get('/api/v1/home', [HomeController::class, 'index']);
 Router::get('/api/v1/stats/overview', [StatsController::class, 'overview']);
+Router::post('/api/v1/stats/heartbeat', [StatsController::class, 'heartbeat'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
+Router::get('/api/v1/stats/leaderboard', [StatsController::class, 'leaderboard']);
 Router::get('/api/v1/search', [SearchController::class, 'index'], ['middleware' => [AuthMiddleware::class]]);
 
 // 学科

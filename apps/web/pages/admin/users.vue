@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import type { User } from '~/types/api'
+import type { User, UserGroup } from '~/types/api'
+
+const GROUP_OPTIONS: { value: UserGroup; label: string }[] = [
+  { value: 'user', label: '普通用户' },
+  { value: 'vip', label: 'VIP' },
+  { value: 'svip', label: 'SVIP' },
+  { value: 'sssvip', label: 'SSSVIP' },
+]
 
 const { request, restore } = useAuth()
 const items = ref<User[]>([])
@@ -18,7 +25,7 @@ onMounted(async () => {
   await load()
 })
 
-async function update(user: User, patch: { role?: string; status?: string; mistakeCode?: string }) {
+async function update(user: User, patch: { role?: string; status?: string; mistakeCode?: string; userGroup?: string }) {
   try {
     const updated = await request<User>(`/admin/users/${user.id}`, { method: 'PATCH', body: patch })
     items.value = items.value.map((item) => (item.id === updated.id ? updated : item))
@@ -27,6 +34,13 @@ async function update(user: User, patch: { role?: string; status?: string; mista
   } catch (exception) {
     const data = (exception as { data?: { message?: string } })?.data
     message.value = data?.message || '更新失败'
+  }
+}
+
+function changeGroup(user: User, event: Event) {
+  const group = (event.target as HTMLSelectElement).value
+  if (group && group !== user.userGroup) {
+    void update(user, { userGroup: group })
   }
 }
 
@@ -103,12 +117,17 @@ async function confirmReset() {
     </form>
 
     <table class="admin-table">
-      <thead><tr><th>邮箱</th><th>昵称</th><th>角色</th><th>状态</th><th>账号 ID（绑定错题）</th><th>操作</th></tr></thead>
+      <thead><tr><th>邮箱</th><th>昵称</th><th>角色</th><th>用户组</th><th>状态</th><th>账号 ID（绑定错题）</th><th>操作</th></tr></thead>
       <tbody>
         <tr v-for="user in items" :key="user.id">
           <td>{{ user.email }}</td>
           <td>{{ user.displayName }}</td>
           <td>{{ user.role }}</td>
+          <td>
+            <select :value="user.userGroup || 'user'" aria-label="用户组" @change="changeGroup(user, $event)">
+              <option v-for="option in GROUP_OPTIONS" :key="option.value" :value="option.value">{{ option.label }}</option>
+            </select>
+          </td>
           <td>{{ user.status }}</td>
           <td class="admin-bind">
             <input v-model="draft[user.id]" type="text" :placeholder="user.mistakeCode || '未绑定'" aria-label="账号 ID" />

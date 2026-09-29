@@ -18,6 +18,7 @@ use App\Model\Prediction;
 use App\Model\Question;
 use App\Model\User;
 use App\Support\ContentStatus;
+use App\Support\UserGroup;
 use Hyperf\DbConnection\Db;
 
 /**
@@ -138,7 +139,7 @@ class AdminService
             ->all();
     }
 
-    public function updateUser(int $id, string $role = '', string $status = '', ?string $mistakeCode = null): ?User
+    public function updateUser(int $id, string $role = '', string $status = '', ?string $mistakeCode = null, string $userGroup = ''): ?User
     {
         $user = User::find($id);
         if (! $user) {
@@ -149,6 +150,12 @@ class AdminService
         }
         if (in_array($status, ['active', 'disabled'], true)) {
             $user->status = $status;
+        }
+        if ($userGroup !== '') {
+            if (! in_array($userGroup, UserGroup::ALL, true)) {
+                throw new \RuntimeException('无效的用户组');
+            }
+            $user->user_group = $userGroup;
         }
         if ($mistakeCode !== null) {
             $code = trim($mistakeCode);

@@ -129,7 +129,8 @@ class AdminController
                 $id,
                 (string) $this->request->input('role', ''),
                 (string) $this->request->input('status', ''),
-                $mistakeCode
+                $mistakeCode,
+                (string) $this->request->input('userGroup', '')
             );
         } catch (\RuntimeException $exception) {
             return ApiResponse::message($exception->getMessage(), 422);
@@ -139,6 +140,7 @@ class AdminController
             $this->audit->log($this->user(), 'user.update', 'user', (string) $id, [
                 'role' => (string) $this->request->input('role', ''),
                 'status' => (string) $this->request->input('status', ''),
+                'userGroup' => (string) $this->request->input('userGroup', ''),
             ]);
         }
 

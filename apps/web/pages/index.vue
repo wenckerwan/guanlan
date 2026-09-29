@@ -1,12 +1,23 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { ArrowRight, BookOpen, CalendarDays, ChevronRight, ClipboardList, FileText, Newspaper, Search, Sparkles, TrendingUp } from 'lucide-vue-next'
-import type { HomePayload } from '~/types/api'
+import type { HomePayload, LeaderboardEntry } from '~/types/api'
 import { sortHotspots } from '~/utils/home.mjs'
 
 useHead({ title: '观澜｜考研政治知识库', meta: [{ name: 'description', content: '观澜考研政治知识库：真题、时政、错题分析与模拟押题一站式复习。' }] })
 
 const { data: home } = await useApiFetch<HomePayload>('/home', { hotspots: [], documents: [], subjects: [], stats: undefined })
+
+const { data: leaderboardData } = useApiFetch<{ period: string; items: LeaderboardEntry[] }>('/stats/leaderboard?period=week&limit=10', { period: 'week', items: [] }, { lazy: true, server: false })
+const leaderboard = computed(() => leaderboardData.value?.items ?? [])
+
+function formatDuration(seconds: number) {
+  if (seconds < 60) return `${seconds} 秒`
+  if (seconds < 3600) return `${Math.round(seconds / 60)} 分钟`
+  const h = Math.floor(seconds / 3600)
+  const m = Math.round((seconds % 3600) / 60)
+  return m ? `${h} 小时 ${m} 分` : `${h} 小时`
+}
 
 const router = useRouter()
 const query = ref('')
@@ -96,6 +107,18 @@ function submitSearch() {
               <span class="reading-copy"><strong>{{ document.title }}</strong><small>{{ document.meta }}</small></span>
             </NuxtLink>
             <div v-if="!documents.length" class="empty-state"><FileText :size="18" />暂无可继续阅读的资料。</div>
+          </div>
+          <div class="saved-block">
+            <div class="section-heading compact"><div><span class="section-kicker">本周学习时长</span><h2>学习排行</h2></div></div>
+            <ol v-if="leaderboard.length" class="leaderboard-list">
+              <li v-for="(item, i) in leaderboard" :key="item.userId">
+                <b class="leaderboard-rank" :class="`rank-${i + 1}`">{{ i + 1 }}</b>
+                <span class="leaderboard-name">{{ item.displayName || '同学' }}</span>
+                <UserGroupBadge :group="item.userGroup" :role="item.role" />
+                <small>{{ formatDuration(item.seconds) }}</small>
+              </li>
+            </ol>
+            <p v-else class="empty-state"><ClipboardList :size="18" />还没有学习时长记录，登录后开始学习即可上榜。</p>
           </div>
           <div class="saved-block">
             <div class="section-heading compact"><div><span class="section-kicker">快捷入口</span><h2>我的学习</h2></div></div>

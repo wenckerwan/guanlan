@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Resource;
 
 use App\Model\User;
+use App\Support\UserGroup;
 
 class UserResource
 {
@@ -16,6 +17,8 @@ class UserResource
             'displayName' => (string) $user->display_name,
             'role' => (string) $user->role,
             'status' => (string) $user->status,
+            'userGroup' => $user->group(),
+            'features' => UserGroup::features($user->group()),
             'mistakeCode' => (string) ($user->mistake_code ?? ''),
             'createdAt' => (string) ($user->created_at ?? ''),
         ];

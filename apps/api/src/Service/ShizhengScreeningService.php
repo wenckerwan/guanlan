@@ -27,6 +27,14 @@ class ShizhengScreeningService
 
     private const PRIORITY_RANK = ['绝高', '极高', '很高', '高', '中高', '中'];
 
+    /** 各供应商的默认接入参数（与错题 AI 的 getAIConfig 预设一致） */
+    private const PROVIDER_PRESETS = [
+        'deepseek' => ['baseUrl' => 'https://api.deepseek.com', 'model' => 'deepseek-chat'],
+        'openai' => ['baseUrl' => 'https://api.openai.com/v1', 'model' => 'gpt-4o-mini'],
+        'claude' => ['baseUrl' => 'https://api.anthropic.com/v1', 'model' => 'claude-opus-4-8'],
+        'custom' => ['baseUrl' => '', 'model' => ''],
+    ];
+
     private Client $httpClient;
 
     public function __construct(ClientFactory $clientFactory)
@@ -70,12 +78,30 @@ class ShizhengScreeningService
         if ($apiKey === '' || str_contains($apiKey, '*')) {
             $apiKey = $current['apiKey'];
         }
+        $provider = self::PROVIDER_PRESETS[$data['provider'] ?? ''] !== null
+            ? ($data['provider'])
+            : 'openai';
+        $preset = self::PROVIDER_PRESETS[$provider];
+        $oldPreset = self::PROVIDER_PRESETS[$current['provider']] ?? [];
+
+        $baseUrl = rtrim(trim((string) ($data['baseUrl'] ?? '')), '/');
+        // 切换供应商时，空值或仍是旧供应商预设的地址/模型自动换成新预设
+        if ($baseUrl === '' || ($provider !== $current['provider'] && $baseUrl === $oldPreset['baseUrl'])) {
+            $baseUrl = $preset['baseUrl'];
+        }
+        if ($baseUrl === '') {
+            $baseUrl = $current['baseUrl'];
+        }
+        $model = trim((string) ($data['model'] ?? ''));
+        if ($model === '' || ($provider !== $current['provider'] && $model === $oldPreset['model'])) {
+            $model = $preset['model'] !== '' ? $preset['model'] : $current['model'];
+        }
+
         $config = [
-            'provider' => in_array($data['provider'] ?? '', ['openai', 'claude'], true)
-                ? $data['provider'] : 'openai',
+            'provider' => $provider,
             'apiKey' => $apiKey,
-            'baseUrl' => rtrim(trim((string) ($data['baseUrl'] ?? $current['baseUrl'])), '/') ?: $current['baseUrl'],
-            'model' => trim((string) ($data['model'] ?? $current['model'])) ?: $current['model'],
+            'baseUrl' => $baseUrl,
+            'model' => $model,
             'subjectId' => max(1, (int) ($data['subjectId'] ?? $current['subjectId'])),
             'topN' => min(30, max(1, (int) ($data['topN'] ?? $current['topN']))),
         ];

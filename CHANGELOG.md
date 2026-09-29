@@ -1,5 +1,25 @@
 # 更新记录
 
+## V0.1-dev.20 - 用户组体系 + 学习时长排行 + 时政 AI 供应商 + 后台体验 - 2026-09-29
+
+### 变更
+
+- **用户组体系**：users 表新增 `user_group`（迁移 `2026_09_30_000003`，未注册游客为隐式 guest），
+  组别：普通用户 / VIP / SVIP / SSSVIP，管理员由 role 判定。
+  - 新增 `UserGroup` 支持类：组别常量 + 权益映射（当前含每日 AI 分析报告次数：5/20/50/200，管理员不限），
+    错题 AI 报告保存时按组校验每日次数（429 提示升级）。
+  - 新增 `UserGroupBadge` 全站徽章组件：灰/蓝/紫/金/红金渐变/红 六档配色。
+  - 用户组由后台手动指定：用户管理页下拉修改（PATCH /admin/users/{id} 的 userGroup 字段），落审计。
+  - /auth/me 与后台用户列表均返回 userGroup + features。
+- **学习时长统计**：
+  - users 浏览时前端每 30 秒心跳上报（页面不可见暂停），POST /api/v1/stats/heartbeat（需登录）。
+  - 新表 `user_study_stats`（迁移 `2026_09_30_000004`）按用户按天累计秒数。
+  - 公开排行榜 GET /api/v1/stats/leaderboard?period=week|total（仅返回昵称 + 组徽章 + 时长）。
+  - 首页侧栏新增「学习排行」卡片；后台总览新增同款卡片。
+- **时政 AI 供应商**：支持 DeepSeek（官方预设 api.deepseek.com / deepseek-chat）、OpenAI 兼容、Claude、自定义；
+  切换供应商自动带出预设地址/模型；DeepSeek 走 OpenAI 兼容通道；测试连接按当前配置实测。
+- **后台体验**：后台导航新增「返回站点」按钮；总览页改双列网格布局（趋势/分布/排行/审计一屏尽览）。
+
 ## V0.1-dev.19 - 后台管理系统完善 - 2026-09-29
 
 ### 变更

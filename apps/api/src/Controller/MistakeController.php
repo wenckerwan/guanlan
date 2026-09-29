@@ -14,6 +14,7 @@ use App\Service\MistakeService;
 use App\Support\ApiResponse;
 use App\Support\Auth;
 use App\Support\MistakeAccess;
+use App\Support\UserGroup;
 use App\Support\Validator;
 use Hyperf\Context\ApplicationContext;
 use Hyperf\HttpServer\Contract\RequestInterface;
@@ -567,6 +568,18 @@ class MistakeController
             $title = 'AI 分析 ' . date('Y-m-d H:i');
         }
         $title = mb_substr($title, 0, 100);
+
+        // 用户组每日报告次数限制（管理员不限）
+        if (! $user->isAdmin()) {
+            $limit = (int) (UserGroup::features($user->group())['aiReportDailyLimit'] ?? 0);
+            $usedToday = MistakeAnalysisReport::query()
+                ->where('user_id', (int) $user->id)
+                ->where('created_at', '>=', date('Y-m-d 00:00:00'))
+                ->count();
+            if ($usedToday >= $limit) {
+                return ApiResponse::message("今日 AI 分析次数已达上限（{$limit} 次），升级用户组可获得更多次数", 429);
+            }
+        }
 
         $report = MistakeAnalysisReport::create([
             'user_id' => (int) $user->id,
