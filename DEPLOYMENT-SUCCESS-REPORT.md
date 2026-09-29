@@ -11,7 +11,7 @@
 ```
 Commit: f5d1fe6
 Branch: v0.1-dev.7
-Author: Claude Opus 4.8
+Author: 管理员
 Message: feat: 优化错题功能，集成复习系统
 ```
 
@@ -285,7 +285,7 @@ curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/mistakes
 
 ---
 
-**部署人员**: Claude Code (Opus 4.8)  
+**部署人员**: 管理员  
 **报告版本**: v1.0 - 2026-09-28  
 **Git Commit**: f5d1fe6  
 **服务器**: 189.24.79.27

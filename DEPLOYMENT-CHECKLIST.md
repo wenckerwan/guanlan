@@ -36,7 +36,6 @@ git commit -m "feat: 优化错题功能，集成复习系统
 - 优化登录引导流程
 - 改进错误处理和降级逻辑
 
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ### 2. 推送到远程仓库

@@ -270,7 +270,6 @@ git commit -m "feat: 优化错题功能，集成复习系统
 - 优化登录引导流程
 - 改进错误处理和降级逻辑
 
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 
 # 推送到服务器
 git push origin v0.1-dev.7
@@ -345,5 +344,5 @@ ssh root-189 "cd /root/guanlan && git pull && docker-compose restart web"
 
 ---
 
-**优化人员**: Claude Code (Opus 4.8)  
+**优化人员**: 管理员  
 **报告版本**: v1.0 - 2026-09-28

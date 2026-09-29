@@ -42,6 +42,7 @@ const markdown = ref('')
 const sourceFile = ref('')
 const saving = ref(false)
 const dirty = ref(false)
+const previewOpen = ref(false)
 
 type ReviewStat = {
   code: string
@@ -296,10 +297,23 @@ async function save() {
         </label>
         <label class="wide"><span>来源文件名</span><input v-model="sourceFile" placeholder="如 mistakes-A-2026-09.md" /></label>
         <label class="wide"><span>Markdown 内容</span><textarea v-model="markdown" rows="12" @input="dirty = true"></textarea></label>
-        <button class="primary-button" type="submit" :disabled="saving || !dirty">
-          {{ saving ? '保存中…' : '保存并发布' }}
-        </button>
+        <div class="edit-actions">
+          <button class="primary-button" type="submit" :disabled="saving || !dirty">
+            {{ saving ? '保存中…' : '保存并发布' }}
+          </button>
+          <button class="ghost-button" type="button" @click="previewOpen = !previewOpen">
+            {{ previewOpen ? '收起预览' : '预览已发布渲染' }}
+          </button>
+        </div>
       </form>
+
+      <section v-if="previewOpen" class="preview-panel">
+        <p class="admin-meta">
+          {{ dirty ? '以下为最近一次保存的渲染结果，当前编辑未保存。' : '当前已发布内容的渲染结果。' }}
+        </p>
+        <div v-if="profile && !profile.isDefault" class="markdown-body" v-html="profile.html" />
+        <p v-else class="empty-state">尚未发布过内容。</p>
+      </section>
     </template>
   </section>
 </template>
@@ -350,5 +364,13 @@ tr.active {
 
 .upload-hint {
   color: var(--text-muted);
+}
+
+.preview-panel {
+  margin: 1rem 0 2rem;
+  padding: 1.25rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
 }
 </style>

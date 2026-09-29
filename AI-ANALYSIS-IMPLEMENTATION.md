@@ -279,7 +279,6 @@ git commit -m "feat: 实现 AI 错题分析前端功能
 - 分析报告展示和下载
 - 集成到错题详情页
 
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ### 2. 推送到远程仓库
@@ -419,6 +418,6 @@ Authorization: Bearer YOUR_API_KEY
 
 ---
 
-**实现人员**: Claude Opus 4.8  
+**实现人员**: 管理员  
 **文档版本**: v1.0 - 2026-09-28  
 **文件路径**: [apps/web/pages/mistakes/[code]/analyze.vue](apps/web/pages/mistakes/[code]/analyze.vue)

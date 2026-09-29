@@ -391,5 +391,5 @@ ssh root-189 "cd /root/guanlan && git pull && docker-compose restart web"
 
 ---
 
-**验证人员**: Claude Code (Opus 4.8)  
+**验证人员**: 管理员  
 **报告版本**: v1.0 - 2026-09-28
