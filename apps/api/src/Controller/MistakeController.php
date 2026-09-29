@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Model\MistakeAnalysisReport;
 use App\Model\MistakeProfile;
 use App\Model\MistakeReview;
 use App\Resource\MistakeResource;
@@ -443,6 +444,118 @@ class MistakeController
         ];
 
         return ApiResponse::data($aiService->chatTest($config));
+    }
+
+    /**
+     * 保存 AI 分析报告到本人名下（每考生保留最近 20 份）
+     */
+    public function saveAnalysisReport(string $code): ResponseInterface
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return ApiResponse::message('未登录', 401);
+        }
+
+        $student = $this->service->student($code);
+        if (! $student) {
+            return ApiResponse::message('考生不存在', 404);
+        }
+        if (! MistakeAccess::canViewStudent($student)) {
+            return ApiResponse::message('该错题本仅对应账号和管理员可见', 403);
+        }
+
+        $validator = new Validator($this->request->all());
+        $validator->required('markdown', '分析报告')
+            ->max('markdown', 200000, '分析报告');
+        if ($validator->fails()) {
+            return ApiResponse::message('请求校验失败', 422, $validator->errors());
+        }
+
+        $markdown = $validator->string('markdown');
+        $title = trim((string) $this->request->input('title', ''));
+        if ($title === '') {
+            $title = 'AI 分析 ' . date('Y-m-d H:i');
+        }
+        $title = mb_substr($title, 0, 100);
+
+        $report = MistakeAnalysisReport::create([
+            'user_id' => (int) $user->id,
+            'student_code' => (string) $student->code,
+            'title' => $title,
+            'markdown' => $markdown,
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        // 只保留最近 20 份
+        $keepIds = MistakeAnalysisReport::query()
+            ->where('user_id', (int) $user->id)
+            ->where('student_code', (string) $student->code)
+            ->orderByDesc('id')
+            ->limit(20)
+            ->pluck('id')
+            ->all();
+        MistakeAnalysisReport::query()
+            ->where('user_id', (int) $user->id)
+            ->where('student_code', (string) $student->code)
+            ->whereNotIn('id', $keepIds)
+            ->delete();
+
+        return ApiResponse::data([
+            'id' => (int) $report->id,
+            'title' => $title,
+            'createdAt' => (string) $report->created_at,
+        ], 201);
+    }
+
+    /**
+     * 本人针对某考生的 AI 分析报告列表
+     */
+    public function analysisReports(string $code): ResponseInterface
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return ApiResponse::message('未登录', 401);
+        }
+
+        $rows = MistakeAnalysisReport::query()
+            ->where('user_id', (int) $user->id)
+            ->where('student_code', $code)
+            ->orderByDesc('id')
+            ->limit(20)
+            ->get();
+
+        return ApiResponse::data(array_map(static fn ($row) => [
+            'id' => (int) $row->id,
+            'title' => (string) $row->title,
+            'createdAt' => (string) $row->created_at,
+        ], $rows->all()));
+    }
+
+    /**
+     * 读取本人的一份 AI 分析报告
+     */
+    public function analysisReport(int $id): ResponseInterface
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return ApiResponse::message('未登录', 401);
+        }
+
+        $report = MistakeAnalysisReport::query()
+            ->where('id', $id)
+            ->where('user_id', (int) $user->id)
+            ->first();
+        if (! $report) {
+            return ApiResponse::message('报告不存在', 404);
+        }
+
+        return ApiResponse::data([
+            'id' => (int) $report->id,
+            'studentCode' => (string) $report->student_code,
+            'title' => (string) $report->title,
+            'markdown' => (string) $report->markdown,
+            'createdAt' => (string) $report->created_at,
+        ]);
     }
 
     /**

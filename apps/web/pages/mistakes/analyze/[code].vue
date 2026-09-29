@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
+import { marked } from 'marked'
 import { ArrowLeft, Upload, Sparkles, Settings, FileText, Download } from 'lucide-vue-next'
 import type { MistakeStudent } from '~/types/api'
 
@@ -157,6 +158,58 @@ ${result.error || '未知错误'}
   }
 }
 
+// 分析报告：marked 渲染 + 保存/历史
+const reportHtml = computed(() => {
+  if (!analysisResult.value) return ''
+  try {
+    return marked.parse(analysisResult.value, { async: false }) as string
+  } catch {
+    return '<pre>' + analysisResult.value.replace(/</g, '&lt;') + '</pre>'
+  }
+})
+
+type SavedReport = { id: number; title: string; createdAt: string }
+const savedReports = ref<SavedReport[]>([])
+const savedNote = ref('')
+
+async function loadReports() {
+  if (import.meta.client && !isLoggedIn.value) return
+  try {
+    savedReports.value = await request<SavedReport[]>(`/mistakes/students/${code}/analysis-reports`)
+  } catch {
+    savedReports.value = []
+  }
+}
+
+async function saveReport() {
+  if (!analysisResult.value) return
+  try {
+    await request(`/mistakes/students/${code}/analysis-reports`, {
+      method: 'POST',
+      body: { markdown: analysisResult.value, title: 'AI 分析 ' + new Date().toLocaleString('zh-CN', { hour12: false }) },
+    })
+    savedNote.value = '已自动保存到你的分析报告'
+    await loadReports()
+  } catch {
+    savedNote.value = '保存失败（报告仍可在当前页面查看/下载）'
+  }
+}
+
+async function openReport(id: number) {
+  try {
+    const data = await request<{ markdown: string; title: string }>(`/mistakes/analysis-reports/${id}`)
+    analysisResult.value = data.markdown
+    savedNote.value = `正在查看历史报告：${data.title}`
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  } catch (err: any) {
+    analysisError.value = err?.data?.message || '读取报告失败'
+  }
+}
+
+onMounted(() => {
+  loadReports()
+})
+
 // 开始分析：全部经由后端代理转发，浏览器不再直连 AI 提供商
 async function analyzeWithAI() {
   if (!markdown.value) {
@@ -190,6 +243,9 @@ async function analyzeWithAI() {
       { method: 'POST', body: { ...aiConfig, markdown: markdown.value } },
     )
     analysisResult.value = data.content
+    if (isLoggedIn.value) {
+      await saveReport()
+    }
   } catch (error: any) {
     analysisError.value = error?.data?.message || error?.message || 'AI 分析失败，请检查配置或使用「测试连接」排查'
   } finally {
@@ -209,23 +265,6 @@ function downloadResult() {
   a.download = `错题分析_${student.value?.code}_${new Date().toISOString().slice(0, 10)}.md`
   a.click()
   URL.revokeObjectURL(url)
-}
-
-// 保存分析到服务器（开发环境跳过）
-async function saveAnalysis() {
-  if (!analysisResult.value) return
-
-  if (isDev) {
-    alert('✅ 开发模式：分析结果已在本地保存')
-    return
-  }
-
-  if (!mockLoggedIn.value) {
-    alert('请先登录')
-    return
-  }
-
-  alert('功能开发中...')
 }
 
 useHead(() => ({ title: `AI 错题分析 - ${student.value?.name || code} ｜观澜` }))
@@ -407,13 +446,24 @@ useHead(() => ({ title: `AI 错题分析 - ${student.value?.name || code} ｜观
             <button type="button" class="ghost-button small" @click="downloadResult">
               <Download :size="16" />下载
             </button>
-            <button type="button" class="ghost-button small" @click="saveAnalysis">
-              保存{{ isDev ? '（测试）' : '' }}
-            </button>
+            <span v-if="savedNote" class="saved-note">{{ savedNote }}</span>
           </div>
         </div>
 
-        <div class="markdown-content" v-html="$md.render(analysisResult)" />
+        <div class="markdown-content" v-html="reportHtml" />
+      </section>
+
+      <!-- 历史分析报告 -->
+      <section v-if="savedReports.length" class="reports-section">
+        <h3>我的 AI 分析报告（{{ savedReports.length }}）</h3>
+        <ul class="reports-list">
+          <li v-for="report in savedReports" :key="report.id">
+            <button type="button" class="ghost-button small" @click="openReport(report.id)">
+              <FileText :size="14" />{{ report.title }}
+            </button>
+            <time>{{ report.createdAt.slice(0, 16) }}</time>
+          </li>
+        </ul>
       </section>
 
       <!-- 使用说明 -->
@@ -781,5 +831,46 @@ D. 实践是人类的存在方式
 
 .test-result.fail {
   color: var(--error, #ef4444);
+}
+</style>
+
+<style scoped>
+.saved-note {
+  font-size: 0.8125rem;
+  color: var(--success, #16a34a);
+}
+
+.reports-section {
+  margin: 2rem 0;
+}
+
+.reports-section h3 {
+  font-size: 1.0625rem;
+  margin-bottom: 0.75rem;
+}
+
+.reports-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.reports-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.reports-list time {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
 </style>
