@@ -25,6 +25,16 @@
     `mistake.profile.replace`。
 - **前端**：新增 `admin/mistakes.vue`（考生列表 → 条目分页浏览 → Markdown 编辑器：
   .md 文件上传或直接粘贴、来源文件名、保存发布），后台导航加「错题」入口。
+- **B3 错题条目维护**：`PATCH /admin/mistakes/items/{id}`，管理员可改全局
+  `action` / `errorType` / `module`（空请求 422、至少提供一个字段），写审计
+  `mistake.item.update`（记录实际写入字段）。这是管理员改全局字段的正式通道，
+  替代 dev.7 修复中「普通用户降级写全局 action」的旧路径遗留场景。
+- **B2 复习数据看板**：`GET /admin/mistakes/review-stats`，按考生汇总错题数、
+  学习者数、复习次数、正确率、new/reviewing/mastered/snoozed 分布与逾期数；
+  单条 SQL（students 左联 items 左联 reviews，一次 group by），不逐用户循环。
+  前端在错题后台页内嵌看板表格，逾期数红色高亮。
+- **条目编辑 UI**：条目表新增「编辑」入口，行内表单修改行动建议/错因/模块，
+  保存后本地同步更新。
 
 ### 验证
 
@@ -37,6 +47,8 @@
   PUT 上传后回读 sourceFile 一致、非管理员 403 × 2、考生端 detail 200 且带内容），
   待容器内执行。
 - 审计落库断言依赖真实数据库，待容器冒烟覆盖。
+- B3 冒烟补例：PATCH 200 且回读一致、非管理员 403、不存在 404、空字段 422；
+  B2 冒烟补例：review-stats 200。待容器内执行。
 
 ## V0.1-dev.8 - 后台内容管理补齐 - 2026-09-29
 

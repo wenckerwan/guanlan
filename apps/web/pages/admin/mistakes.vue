@@ -43,6 +43,69 @@ const sourceFile = ref('')
 const saving = ref(false)
 const dirty = ref(false)
 
+type ReviewStat = {
+  code: string
+  name: string
+  itemCount: number
+  learners: number
+  reviewCount: number
+  correctCount: number
+  accuracy: number
+  new: number
+  reviewing: number
+  mastered: number
+  snoozed: number
+  overdue: number
+}
+
+const stats = ref<ReviewStat[]>([])
+
+async function loadStats() {
+  try {
+    stats.value = await request<ReviewStat[]>('/admin/mistakes/review-stats')
+  } catch {
+    stats.value = []
+  }
+}
+
+// 条目编辑（B3）
+const editing = ref<MistakeItem | null>(null)
+const editForm = ref({ action: '', errorType: '', module: '' })
+const editSaving = ref(false)
+
+function startEdit(item: MistakeItem) {
+  editing.value = item
+  editForm.value = { action: item.action, errorType: item.errorType, module: item.module }
+}
+
+function cancelEdit() {
+  editing.value = null
+}
+
+async function saveEdit() {
+  const item = editing.value
+  if (!item) return
+  editSaving.value = true
+  message.value = ''
+  try {
+    const updated = await request<MistakeItem>(`/admin/mistakes/items/${item.id}`, {
+      method: 'PATCH',
+      body: {
+        action: editForm.value.action,
+        errorType: editForm.value.errorType,
+        module: editForm.value.module,
+      },
+    })
+    items.value = items.value.map((row) => (row.id === updated.id ? updated : row))
+    editing.value = null
+    message.value = `已更新错题 #${updated.id}`
+  } catch (exception) {
+    message.value = (exception as { data?: { message?: string } })?.data?.message || '更新失败'
+  } finally {
+    editSaving.value = false
+  }
+}
+
 async function loadStudents() {
   try {
     students.value = await request<AdminMistakeStudent[]>('/admin/mistakes/students')
@@ -51,7 +114,10 @@ async function loadStudents() {
   }
 }
 
-onMounted(loadStudents)
+onMounted(() => {
+  loadStudents()
+  loadStats()
+})
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / perPage)))
 
@@ -159,10 +225,30 @@ async function save() {
     </table>
     <div v-if="!students.length" class="empty-state">暂无考生。</div>
 
+    <div class="section-heading compact"><div><span class="section-kicker">复习数据看板</span><h2>按考生汇总</h2></div></div>
+    <table class="admin-table">
+      <thead><tr><th>考生</th><th>错题数</th><th>学习者</th><th>复习次数</th><th>正确率</th><th>新题</th><th>复习中</th><th>已掌握</th><th>已暂停</th><th>逾期</th></tr></thead>
+      <tbody>
+        <tr v-for="stat in stats" :key="stat.code">
+          <td>{{ stat.code }} · {{ stat.name }}</td>
+          <td>{{ stat.itemCount }}</td>
+          <td>{{ stat.learners }}</td>
+          <td>{{ stat.reviewCount }}</td>
+          <td>{{ stat.reviewCount ? Math.round(stat.accuracy * 100) + '%' : '—' }}</td>
+          <td>{{ stat.new }}</td>
+          <td>{{ stat.reviewing }}</td>
+          <td>{{ stat.mastered }}</td>
+          <td>{{ stat.snoozed }}</td>
+          <td :class="{ 'overdue-cell': stat.overdue > 0 }">{{ stat.overdue }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div v-if="!stats.length" class="empty-state">暂无复习数据。</div>
+
     <template v-if="activeCode">
       <div class="section-heading compact"><div><span class="section-kicker">考生 {{ activeCode }}</span><h2>错题条目（{{ total }}）</h2></div></div>
       <table class="admin-table">
-        <thead><tr><th>#</th><th>模块</th><th>错因</th><th>题干</th><th>正确答案</th></tr></thead>
+        <thead><tr><th>#</th><th>模块</th><th>错因</th><th>题干</th><th>正确答案</th><th>操作</th></tr></thead>
         <tbody>
           <tr v-for="item in items" :key="item.id">
             <td>{{ item.sourceNo }}</td>
@@ -170,9 +256,23 @@ async function save() {
             <td>{{ item.errorType }}</td>
             <td class="admin-stem">{{ item.stem }}</td>
             <td>{{ item.correctAnswer }}</td>
+            <td class="admin-actions">
+              <button type="button" class="ghost-button small" @click="startEdit(item)">编辑</button>
+            </td>
           </tr>
         </tbody>
       </table>
+
+      <form v-if="editing" class="admin-form edit-form" @submit.prevent="saveEdit">
+        <div class="section-heading compact"><div><span class="section-kicker">错题 #{{ editing.id }}</span><h2>编辑全局字段</h2></div></div>
+        <label class="wide"><span>行动建议（全局）</span><textarea v-model="editForm.action" rows="3"></textarea></label>
+        <label><span>错因</span><input v-model="editForm.errorType" /></label>
+        <label><span>模块</span><input v-model="editForm.module" /></label>
+        <div class="edit-actions">
+          <button class="primary-button" type="submit" :disabled="editSaving">{{ editSaving ? '保存中…' : '保存' }}</button>
+          <button class="ghost-button" type="button" @click="cancelEdit">取消</button>
+        </div>
+      </form>
       <div class="pagination-row">
         <button type="button" class="ghost-button small" :disabled="page <= 1" @click="page -= 1">上一页</button>
         <span class="admin-meta">第 {{ page }} / {{ totalPages }} 页</span>
@@ -207,6 +307,24 @@ async function save() {
 <style scoped>
 tr.active {
   background: var(--primary-light, rgba(59, 130, 246, 0.08));
+}
+
+.overdue-cell {
+  color: var(--error, #ef4444);
+  font-weight: 600;
+}
+
+.edit-form {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 0.75rem;
+  grid-column: 1 / -1;
 }
 
 .pagination-row {

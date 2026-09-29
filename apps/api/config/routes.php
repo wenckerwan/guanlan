@@ -102,6 +102,8 @@ Router::addGroup('/api/v1/admin', function () {
     Router::get('/mistakes/students/{code}/items', [AdminController::class, 'mistakeItems']);
     Router::get('/mistakes/students/{code}/profile', [AdminController::class, 'mistakeProfile']);
     Router::put('/mistakes/students/{code}/profile', [AdminController::class, 'saveMistakeProfile']);
+    Router::patch('/mistakes/items/{id:\d+}', [AdminController::class, 'updateMistakeItem']);
+    Router::get('/mistakes/review-stats', [AdminController::class, 'mistakeReviewStats']);
     Router::get('/hotspots', [AdminController::class, 'hotspots']);
     Router::post('/hotspots', [AdminController::class, 'createHotspot']);
     Router::patch('/hotspots/{id:\d+}', [AdminController::class, 'updateHotspot']);

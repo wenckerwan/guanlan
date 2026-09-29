@@ -364,4 +364,90 @@ class AdminService
             'updatedAt' => (string) $profile->updated_at,
         ];
     }
+
+    /** B3：管理员维护错题条目全局字段，返回实际写入的字段名列表 */
+    public function updateMistakeItem(int $id, array $data): array
+    {
+        $item = MistakeItem::query()->find($id);
+        if (! $item) {
+            return [];
+        }
+        return $this->fillMistakeItem($item, $data);
+    }
+
+    public function mistakeItemExists(int $id): bool
+    {
+        return MistakeItem::query()->where('id', $id)->exists();
+    }
+
+    public function mistakeItem(int $id): ?MistakeItem
+    {
+        return MistakeItem::query()->find($id);
+    }
+
+    private function fillMistakeItem(MistakeItem $item, array $data): array
+    {
+        $fill = [];
+        if (array_key_exists('action', $data) && $data['action'] !== null) {
+            $fill['action'] = (string) $data['action'];
+        }
+        if (array_key_exists('errorType', $data) && $data['errorType'] !== null) {
+            $fill['error_type'] = (string) $data['errorType'];
+        }
+        if (array_key_exists('module', $data) && $data['module'] !== null) {
+            $fill['module'] = (string) $data['module'];
+        }
+
+        if ($fill !== []) {
+            $item->fill($fill)->save();
+        }
+
+        return array_keys($fill);
+    }
+
+    /** @return array<int, array<string, mixed>> B2：按考生汇总复习数据，单条 group by */
+    public function mistakeReviewStats(): array
+    {
+        $rows = Db::table('mistake_students as s')
+            ->leftJoin('mistake_items as i', 'i.student_id', '=', 's.id')
+            ->leftJoin('mistake_reviews as r', 'r.mistake_item_id', '=', 'i.id')
+            ->groupBy('s.id', 's.code', 's.name')
+            ->orderBy('s.code')
+            ->selectRaw(implode(', ', [
+                's.code as code',
+                's.name as name',
+                'count(distinct i.id) as item_count',
+                'count(distinct r.user_id) as learners',
+                'coalesce(sum(r.review_count), 0) as review_count',
+                'coalesce(sum(r.correct_count), 0) as correct_count',
+                'sum(case when r.status = \'new\' then 1 else 0 end) as status_new',
+                'sum(case when r.status = \'reviewing\' then 1 else 0 end) as status_reviewing',
+                'sum(case when r.status = \'mastered\' then 1 else 0 end) as status_mastered',
+                'sum(case when r.status = \'snoozed\' then 1 else 0 end) as status_snoozed',
+                'sum(case when r.next_review_at is not null and r.next_review_at < curdate() and r.status <> \'mastered\' then 1 else 0 end) as overdue',
+            ]))
+            ->get();
+
+        $out = [];
+        foreach ($rows as $row) {
+            $reviewCount = (int) $row->review_count;
+            $correctCount = (int) $row->correct_count;
+            $out[] = [
+                'code' => (string) $row->code,
+                'name' => (string) $row->name,
+                'itemCount' => (int) $row->item_count,
+                'learners' => (int) $row->learners,
+                'reviewCount' => $reviewCount,
+                'correctCount' => $correctCount,
+                'accuracy' => $reviewCount > 0 ? round($correctCount / $reviewCount, 4) : 0,
+                'new' => (int) $row->status_new,
+                'reviewing' => (int) $row->status_reviewing,
+                'mastered' => (int) $row->status_mastered,
+                'snoozed' => (int) $row->status_snoozed,
+                'overdue' => (int) $row->overdue,
+            ];
+        }
+
+        return $out;
+    }
 }

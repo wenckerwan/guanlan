@@ -220,6 +220,51 @@ class AdminController
         return ApiResponse::data($profile);
     }
 
+    /** B3：管理员维护错题条目全局字段（action / errorType / module） */
+    public function updateMistakeItem(int $id): ResponseInterface
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return ApiResponse::message('未登录', 401);
+        }
+
+        $input = [
+            'action' => $this->request->input('action'),
+            'errorType' => $this->request->input('errorType'),
+            'module' => $this->request->input('module'),
+        ];
+        $provided = array_filter($input, static fn ($v) => $v !== null);
+        if ($provided === []) {
+            return ApiResponse::message('请求校验失败', 422, ['fields' => '至少提供一个可更新字段']);
+        }
+
+        if (isset($provided['action']) && mb_strlen((string) $provided['action']) > 20000) {
+            return ApiResponse::message('请求校验失败', 422, ['action' => '行动建议过长']);
+        }
+
+        $updatedFields = $this->service->updateMistakeItem($id, $provided);
+        if ($updatedFields === [] && ! $this->service->mistakeItemExists($id)) {
+            return ApiResponse::message('错题不存在', 404);
+        }
+
+        $this->audit->log($user, 'mistake.item.update', 'mistake_item', (string) $id, [
+            'fields' => $updatedFields,
+        ]);
+
+        $item = $this->service->mistakeItem($id);
+        if (! $item) {
+            return ApiResponse::message('错题不存在', 404);
+        }
+
+        return ApiResponse::data(MistakeResource::item($item));
+    }
+
+    /** B2：按考生汇总复习数据（与考生端 review-summary 同口径） */
+    public function mistakeReviewStats(): ResponseInterface
+    {
+        return ApiResponse::data($this->service->mistakeReviewStats());
+    }
+
     public function hotspots(): ResponseInterface
     {
         return ApiResponse::data(ArticleResource::collection($this->service->hotspots()));

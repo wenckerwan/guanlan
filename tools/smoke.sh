@@ -111,6 +111,16 @@ printf 'mist profile PUT (user) %s (expect 403)\n' "$(code -H "Authorization: Be
 printf 'student detail (user) %s (expect 200)\n' "$(code -H "Authorization: Bearer $U_TOKEN" "$B/mistakes/students/A/detail")"
 printf 'detail carries html  %s (expect 1)\n' "$(curl -s -H "Authorization: Bearer $U_TOKEN" "$B/mistakes/students/A/detail" | grep -c 'markdown-body\|B1 smoke')"
 
+# B3 错题条目维护：PATCH 200 / 非管理员 403 / 不存在 404 / 空字段 422
+B3_ITEM_ID=$(curl -s "${AUTH[@]}" "$B/admin/mistakes/students/A/items?perPage=1" | sed -n 's/.*"items":\[{"id":\([0-9]*\).*/\1/p')
+printf 'mist item PATCH    %s\n' "$(code "${AUTH[@]}" -X PATCH "$B/admin/mistakes/items/$B3_ITEM_ID" -H 'Content-Type: application/json' -d '{"action":"B3 smoke 建议","errorType":"概念混淆"}')"
+printf 'mist item reread   %s (expect 1)\n' "$(curl -s "${AUTH[@]}" "$B/admin/mistakes/students/A/items?perPage=1" | grep -c 'B3 smoke 建议')"
+printf 'mist item (user)   %s (expect 403)\n' "$(code -H "Authorization: Bearer $U_TOKEN" -X PATCH "$B/admin/mistakes/items/$B3_ITEM_ID" -H 'Content-Type: application/json' -d '{"action":"x"}')"
+printf 'mist item 404      %s (expect 404)\n' "$(code "${AUTH[@]}" -X PATCH "$B/admin/mistakes/items/99999999" -H 'Content-Type: application/json' -d '{"action":"x"}')"
+printf 'mist item empty    %s (expect 422)\n' "$(code "${AUTH[@]}" -X PATCH "$B/admin/mistakes/items/$B3_ITEM_ID" -H 'Content-Type: application/json' -d '{}')"
+# B2 复习数据看板
+printf 'mist review-stats  %s\n' "$(code "${AUTH[@]}" "$B/admin/mistakes/review-stats")"
+
 
 echo; echo "=== 11. 详情页 404 ==="
 printf 'analysis/404     %s\n' "$(code "$B/analysis/nope")"
