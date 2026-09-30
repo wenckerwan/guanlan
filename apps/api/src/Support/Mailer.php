@@ -18,7 +18,7 @@ class Mailer
      */
     public static function accounts(): array
     {
-        $json = (string) env('MAIL_ACCOUNTS', '');
+        $json = self::envVar('MAIL_ACCOUNTS', '');
         if ($json !== '') {
             $decoded = json_decode($json, true);
             if (is_array($decoded)) {
@@ -33,7 +33,7 @@ class Mailer
                         'username' => (string) $item['username'],
                         'password' => (string) ($item['password'] ?? ''),
                         'from' => (string) ($item['from'] ?? $item['username']),
-                        'name' => (string) ($item['name'] ?? env('MAIL_FROM_NAME', '观澜')),
+                        'name' => (string) ($item['name'] ?? self::envVar('MAIL_FROM_NAME', '观澜')),
                     ];
                 }
                 if ($accounts !== []) {
@@ -42,23 +42,24 @@ class Mailer
             }
         }
 
-        $user = (string) env('MAIL_USERNAME', '');
-        if ($user === '' || (string) env('MAIL_PASSWORD', '') === '') {
+        $user = self::envVar('MAIL_USERNAME', '');
+        if ($user === '' || self::envVar('MAIL_PASSWORD', '') === '') {
             return [];
         }
         return [[
-            'host' => (string) env('MAIL_HOST', 'smtp.exmail.qq.com'),
-            'port' => (int) env('MAIL_PORT', 465),
+            'host' => self::envVar('MAIL_HOST', 'smtp.exmail.qq.com'),
+            'port' => (int) self::envVar('MAIL_PORT', 465),
             'username' => $user,
-            'password' => (string) env('MAIL_PASSWORD', ''),
-            'from' => (string) env('MAIL_FROM_ADDRESS', $user),
-            'name' => (string) env('MAIL_FROM_NAME', '观澜'),
+            'password' => self::envVar('MAIL_PASSWORD', ''),
+            'from' => self::envVar('MAIL_FROM_ADDRESS', $user),
+            'name' => self::envVar('MAIL_FROM_NAME', '观澜'),
         ]];
     }
 
     public static function enabled(): bool
     {
-        return (bool) env('MAIL_ENABLED', false) && self::accounts() !== [];
+        $flag = strtolower(self::envVar('MAIL_ENABLED', 'false'));
+        return in_array($flag, ['1', 'true', 'yes', 'on'], true) && self::accounts() !== [];
     }
 
     public static function send(string $to, string $subject, string $html): bool
@@ -82,8 +83,7 @@ class Mailer
      * @param array{host:string,port:int,username:string,password:string,from:string,name:string} $account
      */
     private static function sendWith(array $account, string $to, string $subject, string $html): bool
-    {
-        $host = $account['host'];
+    {        $host = $account['host'];
         $port = $account['port'];
         $user = $account['username'];
         $pass = $account['password'];
@@ -178,5 +178,14 @@ class Mailer
         } catch (Throwable) {
             return false;
         }
+    }
+
+    private static function envVar(string $key, string $default): string
+    {
+        $value = getenv($key);
+        if ($value === false || $value === '') {
+            return $default;
+        }
+        return $value;
     }
 }
