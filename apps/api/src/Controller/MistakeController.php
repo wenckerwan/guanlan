@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Model\MistakeAnalysisReport;
 use App\Model\MistakeProfile;
 use App\Model\MistakeReview;
+use App\Model\MistakeStudent;
 use App\Resource\MistakeResource;
 use App\Service\AIAnalysisService;
 use App\Service\MistakeReviewService;
