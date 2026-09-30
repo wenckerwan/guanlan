@@ -80,6 +80,7 @@ data/      SQLite 库 + 原文存档 + 每日 JSON 存档（top10_YYYY-MM-DD.jso
 ./venv/bin/python deploy/repair_body_from_raw.py  # dry-run 列出待重提正文；加 --apply 才写库
 ./venv/bin/python deploy/delete_junk_articles.py  # dry-run 列出纯页脚空壳稿；加 --apply 先导出再删
 bash deploy/check_site_noise_breakdown.sh     # 只读：网站侧候选/热点的页脚噪声统计
+./venv/bin/python deploy/check_candidate_orphans.py 2026-09-29  # 只读：候选池孤儿/重复行
 ```
 
 写库前一律先 `cp data/crawl.db data/crawl.db.bak-$(date +%Y%m%d-%H%M)`。
@@ -116,6 +117,9 @@ bash deploy/check_site_noise_breakdown.sh     # 只读：网站侧候选/热点�
   另外 `--date` 默认「今天减一天」，跨零点补昨天的数据必须显式传日期。
 - **别用 `pkill -f` 停远端任务**：模式串会匹配到承载它的那条 ssh 命令自身，
   会话被杀（exit 255）而目标任务存活。先 `pgrep -af` 看清 PID 再逐个 `kill`。
+- **候选 upsert 以 `(publish_date, title)` 为键**：标题清洗规则改过之后重推，
+  会新建一行干净标题的候选，旧的脏标题行留在池子里成为重复。
+  重推后跑 `deploy/check_candidate_orphans.py <date>` 核一遍孤儿与重复。
 
 ## 合规
 

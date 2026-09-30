@@ -26,7 +26,8 @@
 - **`pipeline.py --no-screen`**：只刷新候选池、绝不触发筛选与发布。用于「正文修好后想把候选池重推一遍」这种场景——服务端 `upsertCandidates()` 只写 source/channel/url/payload，不动 `ai_priority`/`ai_reason`/`hotspot_id`，且 `status='published'` 的行保持原状，所以重推是安全的（实测 337 条全部 updated、已发布 10 条状态不变）。该标志同时会跳过 `--legacy` 的本地直推，语义是「本次不发布任何内容」。
 - **历史正文就地重提**：新增 `deploy/repair_body_from_raw.py`（默认 dry-run，`--apply` 才写库）——用 `raw_path` 存档的原始 HTML 按新规则重提正文，只更新 `body` 一列。判据是「旧正文命中 JS 特征、或**任一行**是版式残留、或残留页脚」+「存档还在」+「新正文三类问题都没有且汉字数 ≥ `MIN_BODY_CJK`」。逐行扫描而非只看首行，因为实测 id=172 的日期来源行夹在正文中间。两轮共修复 **61 篇**（含 id=86 的 `showPlayer` JS 污染），修前备份 `data/crawl.db.bak-beforebody-20261001-0127`，修后质量扫描 JS 特征 0 篇、异常 0 篇。配套 `deploy/diff_body.py <id>` 只读逐段对比：本次减少的字符全部是页脚噪声，真内容一句没丢。
 - **垃圾行删除**：新增 `deploy/delete_junk_articles.py`（默认 dry-run，`--apply` 先导出整行到 `data/deleted_articles_<ts>.json` 再删）。判据三条同时满足：正文每一行都是页脚/版式残留、按现行规则重提得到 0 个汉字、存档 HTML 存在。实测删除上述 6 篇 edu「每日一闻/每日一句」空壳稿，2026-09-29 由 605 篇收敛到 **599 篇有效稿件**。这 6 条从未进入网站候选池（被相关性过滤挡掉了），已用 `deploy/run_delete_junk_candidates.sh` 核验——该脚本备份行数为 0 时会**主动中止**而不是继续删。
-- **只读核查工具**：`deploy/check_site_titles.py`（网站侧标题乱码/后缀扫描）、`deploy/check_site_noise_breakdown.sh`（候选/热点页脚噪声总量 + 按特征分解）、`deploy/check_hotspot_summary_head.sh`、`deploy/inspect_articles.py`（打印某几篇的旧正文全文与存档 `<p>` 段）。均不写库，且 MySQL 口令一律从容器自身的 `$MYSQL_ROOT_PASSWORD` 读取（此前有一版把生产口令硬编码进了脚本，已改写并 amend 掉未推送的提交）；容器内 mysql 客户端必须带 `--default-character-set=utf8mb4`，否则中文全部返回 `?`。
+- **候选 upsert 以标题为键，洗标题会产生重复行**：`upsertCandidates()` 用 `(publish_date, title)` 定位，所以标题被 `_clean_title()` 洗过之后重推，会**新建**一行干净标题的候选，旧的脏标题行留在池子里（实测 id=321「向新而生--文化--人民网」与 id=394「向新而生」并存）。新增 `deploy/check_candidate_orphans.py`（只读，比对网站候选标题与爬虫库标题，报孤儿与同标题重复），配合 `deploy/run_delete_orphan_candidate.sh`（备份为空则**主动中止**）清掉了这一行；09-29 候选池收敛为 294 行 / 孤儿 0。
+- **只读核查工具**：`deploy/check_site_titles.py`（网站侧标题乱码/后缀扫描）、`deploy/check_site_noise_breakdown.sh`（候选/热点页脚噪声总量 + 按特征分解）、`deploy/check_hotspot_summary_head.sh`、`deploy/inspect_articles.py`（打印某几篇的旧正文全文与存档 `<p>` 段）、`deploy/check_candidate_orphans.py`。均不写库，且 MySQL 口令一律从容器自身的 `$MYSQL_ROOT_PASSWORD` 读取（此前有一版把生产口令硬编码进了脚本，已改写并 amend 掉未推送的提交）；容器内 mysql 客户端必须带 `--default-character-set=utf8mb4`，否则中文全部返回 `?`。
 
 ### 测试
 
@@ -40,7 +41,7 @@
 - **补抓结果**：2026-09-29 从 143 篇恢复到 605 篇，剔除 6 篇页脚空壳稿后为 **599 篇有效稿件**，九个频道全部有数据（politics 56 / world 60 / society 57 / culture·env·finance·legal·opinion·theory 各 60），此前 politics / world / society 因正文截断 bug 为 0。整轮 00:28:37 结束（日志标记「本次新增合计 462 篇」），早于 03:30 的 cron。
 - **线上重发**：先前一次 pipeline 在抓取尚未跑完时被误触发，用不完整数据发布了 10 条热点。已用备份过的事务脚本 `deploy/rollback_premature_publish_20260930.sql` 回滚（删 2026-09-29 的 98 条候选 + hotspots id 306-315，保留人工录入的 302-305），再用完整数据重跑 `pipeline.py --date 2026-09-29`，服务端 AI 筛选发布 hotspots **316-325**，公开接口已验证。
 - **已发布内容的最后一处噪声**：hotspots id=322（以法治力量筑牢民族团结进步根基）的 summary 与 html 里嵌着「2026年09月28日08:35 来源：光明日报222」——它是 AI 从未过滤的正文里摘出来的。用 `deploy/fix_hotspot_322_dateline.sql`（`REGEXP_REPLACE`，跑前 mysqldump 备份该行到 `deploy/backup_hotspot_322_*.sql`）就地剥掉，`<strong>来源：</strong>people theory` 这类正常元数据行不受影响。修完 10 条已发布热点噪声计数为 0。
-- **候选池重推**：正文修好后用 `pipeline.py --date 2026-09-29 --no-screen` 把 337 条候选重推两遍，payload 里的日期来源行由 38 条降到 2 条（剩下的 2 条是「数据来源：科技部等 制图：蔡华伟」这种正当的图表署名，不是噪声），已发布 10 条的 status 与 ai_* 结果未被触碰。
+- **候选池重推**：正文修好后用 `pipeline.py --date 2026-09-29 --no-screen` 把 337 条候选重推两遍，payload 里的日期来源行由 38 条降到 2 条（剩下的 2 条是「数据来源：科技部等 制图：蔡华伟」这种正当的图表署名，不是噪声），已发布 10 条的 status 与 ai_* 结果未被触碰；末态 294 行（284 pending + 10 published）。
 - **教训（重要）**：`pkill -f 'shizheng-daily.sh'` 经 ssh 执行时，模式串会匹配到承载它的那条 ssh 命令自身，导致会话被杀（exit 255）而目标 wrapper 存活——正是这次误发布的直接原因。以后停远端任务一律先 `pgrep -af` 看清 PID 再逐个 `kill`，且模式串不要出现在调用命令里。
 - **重跑须知**：`pipeline.py --no-push` 仍会 `db.mark_refined()`，同一日期第二次跑会得到「候选 0 条」；重跑前需 `UPDATE articles SET refined=0 WHERE publish_date='<date>'`。另外 `--date` 默认是「今天减一天」，跨零点后跑昨天的数据必须显式传日期。
 
