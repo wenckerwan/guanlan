@@ -175,7 +175,8 @@ class Mailer
             $write('QUIT');
             fclose($socket);
             return true;
-        } catch (Throwable) {
+        } catch (Throwable $exception) {
+            error_log('[Mailer] send failed: ' . $exception->getMessage());
             return false;
         }
     }

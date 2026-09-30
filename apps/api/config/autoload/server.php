@@ -22,6 +22,8 @@ return [
     ],
     'settings' => [
         Constant::OPTION_ENABLE_COROUTINE => true,
+        // 让 stream_socket_client/fgets/fwrite 等阻塞 IO 在协程中可用（Mailer SMTP 发信依赖）
+        Constant::OPTION_HOOK_FLAGS => SWOOLE_HOOK_ALL,
         Constant::OPTION_WORKER_NUM => swoole_cpu_num(),
         Constant::OPTION_PID_FILE => BASE_PATH . '/runtime/hyperf.pid',
         Constant::OPTION_OPEN_TCP_NODELAY => true,
