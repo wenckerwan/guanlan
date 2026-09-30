@@ -83,7 +83,8 @@ class Mailer
      * @param array{host:string,port:int,username:string,password:string,from:string,name:string} $account
      */
     private static function sendWith(array $account, string $to, string $subject, string $html): bool
-    {        $host = $account['host'];
+    {
+        $host = $account['host'];
         $port = $account['port'];
         $user = $account['username'];
         $pass = $account['password'];
@@ -98,18 +99,36 @@ class Mailer
             }
             stream_set_timeout($socket, 15);
 
+            // Swoole 协程 hooks 下 fgets 不可靠，改用 fread 循环；终止条件为「末行形如 250 ...（第 4 字符为空格）」
             $read = static function () use ($socket): string {
                 $data = '';
-                while ($line = fgets($socket, 515)) {
-                    $data .= $line;
-                    if (isset($line[3]) && $line[3] === ' ') {
+                $deadline = microtime(true) + 15;
+                while (microtime(true) < $deadline) {
+                    $chunk = @fread($socket, 8192);
+                    if (is_string($chunk) && $chunk !== '') {
+                        $data .= $chunk;
+                    }
+                    if (preg_match('/(?:^|\r\n)\d{3} [^\r\n]*\r\n$/s', $data)) {
                         break;
+                    }
+                    if ($chunk === false || $chunk === '') {
+                        usleep(50000);
                     }
                 }
                 return $data;
             };
             $write = static function (string $command) use ($socket): void {
-                fwrite($socket, $command . "\r\n");
+                $buffer = $command . "\r\n";
+                $written = 0;
+                $deadline = microtime(true) + 15;
+                while ($written < strlen($buffer) && microtime(true) < $deadline) {
+                    $n = @fwrite($socket, substr($buffer, $written));
+                    if ($n === false || $n === 0) {
+                        usleep(20000);
+                        continue;
+                    }
+                    $written += $n;
+                }
             };
             $expect = static function (string $data, string $codes): void {
                 $ok = false;
