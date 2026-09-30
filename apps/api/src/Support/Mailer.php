@@ -9,24 +9,86 @@ use Throwable;
 /**
  * 轻量 SMTP 发信（PHP 原生 stream，无第三方依赖）。
  * 465 走隐式 SSL，587 走 STARTTLS；配置全部来自环境变量 MAIL_*。
+ * 支持发件账号池：MAIL_ACCOUNTS 为 JSON 数组时多账号轮流发、失败自动切换。
  */
 class Mailer
 {
+    /**
+     * @return array<int, array{host:string,port:int,username:string,password:string,from:string,name:string}>
+     */
+    public static function accounts(): array
+    {
+        $json = (string) env('MAIL_ACCOUNTS', '');
+        if ($json !== '') {
+            $decoded = json_decode($json, true);
+            if (is_array($decoded)) {
+                $accounts = [];
+                foreach ($decoded as $item) {
+                    if (! is_array($item) || (string) ($item['username'] ?? '') === '') {
+                        continue;
+                    }
+                    $accounts[] = [
+                        'host' => (string) ($item['host'] ?? 'smtp.exmail.qq.com'),
+                        'port' => (int) ($item['port'] ?? 465),
+                        'username' => (string) $item['username'],
+                        'password' => (string) ($item['password'] ?? ''),
+                        'from' => (string) ($item['from'] ?? $item['username']),
+                        'name' => (string) ($item['name'] ?? env('MAIL_FROM_NAME', '观澜')),
+                    ];
+                }
+                if ($accounts !== []) {
+                    return $accounts;
+                }
+            }
+        }
+
+        $user = (string) env('MAIL_USERNAME', '');
+        if ($user === '' || (string) env('MAIL_PASSWORD', '') === '') {
+            return [];
+        }
+        return [[
+            'host' => (string) env('MAIL_HOST', 'smtp.exmail.qq.com'),
+            'port' => (int) env('MAIL_PORT', 465),
+            'username' => $user,
+            'password' => (string) env('MAIL_PASSWORD', ''),
+            'from' => (string) env('MAIL_FROM_ADDRESS', $user),
+            'name' => (string) env('MAIL_FROM_NAME', '观澜'),
+        ]];
+    }
+
     public static function enabled(): bool
     {
-        return (bool) env('MAIL_ENABLED', false)
-            && (string) env('MAIL_USERNAME', '') !== ''
-            && (string) env('MAIL_PASSWORD', '') !== '';
+        return (bool) env('MAIL_ENABLED', false) && self::accounts() !== [];
     }
 
     public static function send(string $to, string $subject, string $html): bool
     {
-        $host = (string) env('MAIL_HOST', 'smtp.exmail.qq.com');
-        $port = (int) env('MAIL_PORT', 465);
-        $user = (string) env('MAIL_USERNAME', '');
-        $pass = (string) env('MAIL_PASSWORD', '');
-        $from = (string) env('MAIL_FROM_ADDRESS', $user);
-        $fromName = (string) env('MAIL_FROM_NAME', '观澜');
+        $accounts = self::accounts();
+        if ($accounts === []) {
+            return false;
+        }
+        // 随机起点轮流使用账号，失败则顺延尝试下一个
+        $start = count($accounts) > 1 ? random_int(0, count($accounts) - 1) : 0;
+        for ($i = 0; $i < count($accounts); ++$i) {
+            $account = $accounts[($start + $i) % count($accounts)];
+            if (self::sendWith($account, $to, $subject, $html)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @param array{host:string,port:int,username:string,password:string,from:string,name:string} $account
+     */
+    private static function sendWith(array $account, string $to, string $subject, string $html): bool
+    {
+        $host = $account['host'];
+        $port = $account['port'];
+        $user = $account['username'];
+        $pass = $account['password'];
+        $from = $account['from'];
+        $fromName = $account['name'];
 
         try {
             $transport = $port === 465 ? sprintf('ssl://%s:%d', $host, $port) : sprintf('tcp://%s:%d', $host, $port);
