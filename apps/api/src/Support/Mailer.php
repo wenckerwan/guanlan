@@ -130,7 +130,8 @@ class Mailer
                     $written += $n;
                 }
             };
-            $expect = static function (string $data, string $codes): void {
+            $step = 'connect';
+            $expect = static function (string $data, string $codes) use ($socket, &$step): void {
                 $ok = false;
                 foreach (explode(',', $codes) as $code) {
                     if (str_starts_with($data, $code)) {
@@ -138,17 +139,22 @@ class Mailer
                     }
                 }
                 if (! $ok) {
-                    throw new \RuntimeException('SMTP unexpected response: ' . substr($data, 0, 200));
+                    $meta = stream_get_meta_data($socket);
+                    $state = sprintf('eof=%s timed_out=%s blocked=%s', var_export($meta['eof'], true), var_export($meta['timed_out'], true), var_export($meta['blocked'], true));
+                    throw new \RuntimeException("SMTP step [{$step}] unexpected response [{$state}]: " . substr($data, 0, 200));
                 }
             };
 
+            $step = 'banner';
             $expect($read(), '220');
             $write('EHLO guanlan');
+            $step = 'ehlo';
             $ehlo = $read();
             $expect($ehlo, '250');
 
             if ($port !== 465 && str_contains($ehlo, 'STARTTLS')) {
                 $write('STARTTLS');
+                $step = 'starttls';
                 $expect($read(), '220');
                 if (! stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
                     throw new \RuntimeException('STARTTLS failed');
@@ -157,17 +163,23 @@ class Mailer
                 $expect($read(), '250');
             }
 
+            $step = 'auth-user';
             $write('AUTH LOGIN');
             $expect($read(), '334');
+            $step = 'auth-username';
             $write(base64_encode($user));
             $expect($read(), '334');
+            $step = 'auth-password';
             $write(base64_encode($pass));
             $expect($read(), '235');
 
+            $step = 'mail-from';
             $write(sprintf('MAIL FROM:<%s>', $from));
             $expect($read(), '250');
+            $step = 'rcpt-to';
             $write(sprintf('RCPT TO:<%s>', $to));
             $expect($read(), '250,251');
+            $step = 'data';
             $write('DATA');
             $expect($read(), '354');
 
@@ -189,6 +201,7 @@ class Mailer
             // SMTP 行以点开头会被误判为结束符，补一个点（点透明）
             $data = preg_replace('/^\./m', '..', $data) ?? $data;
             $write($data);
+            $step = 'data-end';
             $expect($read(), '250');
 
             $write('QUIT');
