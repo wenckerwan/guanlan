@@ -197,10 +197,10 @@ class Mailer
             ];
             $body = base64_encode($html);
             $body = chunk_split($body);
-            $data = implode("\r\n", $headers) . "\r\n\r\n" . $body . "\r\n.";
-            // SMTP 行以点开头会被误判为结束符，补一个点（点透明）
-            $data = preg_replace('/^\./m', '..', $data) ?? $data;
-            $write($data);
+            $payload = implode("\r\n", $headers) . "\r\n\r\n" . $body;
+            // 点透明：正文行首的点补一个点（先填充，再追加 SMTP 终止符 \r\n.\r\n）
+            $payload = preg_replace('/^\./m', '..', $payload) ?? $payload;
+            $write($payload . "\r\n.\r\n");
             $step = 'data-end';
             $expect($read(), '250');
 
