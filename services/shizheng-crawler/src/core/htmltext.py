@@ -23,6 +23,23 @@ RE_P = re.compile(r"<p[^>]*>(.*?)</p>", re.S)
 RE_DIV_OPEN = re.compile(r"<div\b", re.I)
 RE_DIV_ANY = re.compile(r"<div\b|</div\s*>", re.I)
 RE_ONLY_DIGITS = re.compile(r"^[\d\s.,、-]+$")
+# 日期来源行：「2025年03月07日14:51 来源：人民网」这类版式残留，不是正文。
+# 必须同时满足「短」+「带来源或时:分」才算，否则会误杀
+# 「2025年9月29日，中共中央政治局召开会议……」这种真正文首句。
+RE_DATELINE = re.compile(r"^\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日")
+RE_TIME_OR_SOURCE = re.compile(r"\d{1,2}:\d{2}|来源[:：]|责编[:：]|责任编辑[:：]")
+# 报纸版次行：「2026年09月29日 第01版」
+RE_EDITION = re.compile(r"^\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日\s*第\s*\d+\s*版")
+RE_SOURCE_LINE = re.compile(r"^(来源|责编|责任编辑|编辑)[:：]")
+# 人民网页脚特征。这些行都很长（>40 字），is_boilerplate 的「短行」门槛拦不住，
+# 而整页 `<p>` 兜底（页面没有正文容器时）会把它们扫进来 —— 实测「每日一闻/每日一句」
+# 这类短条目 6 篇正文尾部都带着许可证号与版权行。
+# 用高特异度串（带空格的版权行、许可证全称、举报电话、社概况链接堆），
+# 避免把真正讨论「版权」「许可」的稿子误判成噪声。
+RE_FOOTER = re.compile(
+    r"人\s*民\s*网\s*版\s*权\s*所\s*有|互联网新闻信息服务许可证|增值电信业务经营许可证"
+    r"|信息网络传播视听节目许可证|网络文化经营许可证|违法和不良信息举报电话"
+    r"|人民日报社概况|all rights reserved", re.I)
 RE_CJK = re.compile(r"[\u4e00-\u9fff]")
 # mojibake 特征：连续出现拉丁补充区（含 C1 控制区 \u0080-\u009f，latin-1 型乱码的
 # 招牌）/西里尔区/数学符号区的怪字符，正常中文稿不会有。
@@ -81,14 +98,36 @@ def match_div_inner(html: str, open_tag_start: int) -> str:
     return html[inner_start:]
 
 
+def is_boilerplate(t: str) -> bool:
+    """版式残留判定：日期来源行 / 纯来源行 / 责编行 / 报纸版次行。"""
+    if RE_SOURCE_LINE.match(t) and len(t) <= 40:
+        return True
+    if RE_EDITION.match(t):
+        return True
+    if RE_DATELINE.match(t) and len(t) <= 40 and RE_TIME_OR_SOURCE.search(t):
+        return True
+    if t.startswith("本版责编") or ("责编：" in t and len(t) <= 40):
+        return True
+    return False
+
+
+def is_footer(t: str) -> bool:
+    """人民网页脚行判定（版权行 / 许可证号 / 举报电话 / 社概况链接堆）。"""
+    return bool(t) and bool(RE_FOOTER.search(t))
+
+
 def paragraphs(seg: str, min_len: int = 15, skip_prefixes=()) -> list:
-    """从 HTML 片段里抽 `<p>` 文本，过滤图注/页脚/纯数字。"""
+    """从 HTML 片段里抽 `<p>` 文本，过滤图注/页脚/纯数字/日期来源行。"""
     out = []
     for raw in RE_P.findall(seg):
         t = clean_text(raw)
         if len(t) < min_len:
             continue
         if RE_ONLY_DIGITS.match(t):
+            continue
+        if is_boilerplate(t):
+            continue
+        if is_footer(t):
             continue
         if any(t.startswith(p) for p in skip_prefixes):
             continue

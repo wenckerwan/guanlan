@@ -20,13 +20,29 @@
 - **历史数据就地修复**：`deploy/repair_mojibake.py`（默认 dry-run，`--apply` 才写库）已修复库里 10 条乱码标题，例如 `еЕіиЊєеѓМж∞СзЪДдЄЙйЗНеКЯе§Ђ...` → 《兴边富民的三重功夫（前沿观察）》；正文无一条受影响。修库前已备份 `data/crawl.db.bak-20260930-2215`。
 - **假稿过滤**：删除 3 条「本版责编：×××」版权行假稿（正文 170+ 字但几乎全是 URL），并补两层防护——`list_edition()` 直接跳过责编行（旧规则因标题是乱码而失效），入库前要求正文汉字数 ≥ `MIN_BODY_CJK`（默认 30，可环境变量覆盖），新增 `htmltext.cjk_count()`。
 - **标题去站点后缀**：人民网 `<title>` 形如「×××--时政--人民网」「×××--教育--人民网」「×××-理论-中国共产党新闻网」，频道段是任意词不能写死，故按「1~2 个短分隔段（≤12 字）+ 已知站名 + 行尾」锚定剥离，剥完仍 ≥4 字才采用；分隔符只认半角 `-`/`--`，因为全角竖线「｜」「丨」常出现在真标题内部（实测「原来你是这样的人大代表｜灭火英雄跨界守护文化根脉--2024年全国两会--人民网」，把竖线当分隔符会连副标题一起剥掉）。新增 `people_sitemap._clean_title()`，历史数据由 `deploy/clean_title_suffix.py` 拉齐（默认 dry-run）。
+- **版式残留不再当正文**：人民网/报纸版页面里「2025年03月07日14:51 来源：人民网」「来源：光明日报」「责编：×××」「2026年09月29日 第01版」这类日期来源行此前会被当成正文首段（实测 people 库 533 篇里 59 篇中招），进而污染下游 AI 摘要（已发布的热点 id=322 摘要就以「2026年09月28日08:35 来源：光明日报222」开头）。新增 `htmltext.is_boilerplate()`，`paragraphs()` 抽取时跳过。判定要求「短 + 带时:分或来源/责编」，避免误杀「2025年9月29日，中共中央政治局召开会议……」这种真正的文首句。
+- **页脚不再当正文**：页面没有正文容器时走整页 `<p>` 兜底，会把人民网页脚（社概况链接堆、许可证号、举报电话、带空格的版权行）扫进正文——实测 edu 频道「每日一闻/每日一句」6 篇的正文**全部 521 字都是页脚**，而 `len(body) < 60` 与 `MIN_BODY_CJK=30` 两道闸都拦不住（页脚本身就有 211 个汉字）。新增 `htmltext.is_footer()` / `RE_FOOTER`（高特异度串，谈「版权」「许可证」的正规稿件不会误判），`paragraphs()` 一并过滤。
+- **候选推送分批，绕开网关 413**：一次性 POST 337 条候选超过 nginx `client_max_body_size`（约 1 MB），网关直接返回 **HTTP 413**，而且 `pipeline.py` 只把异常打到日志里，容易被误判成「跑成功了」。`push_hotspots.push_candidates()` 现按 `CANDIDATE_BATCH=40` 分批推送并累加 created/updated/skipped。
+- **`pipeline.py --no-screen`**：只刷新候选池、绝不触发筛选与发布。用于「正文修好后想把候选池重推一遍」这种场景——服务端 `upsertCandidates()` 只写 source/channel/url/payload，不动 `ai_priority`/`ai_reason`/`hotspot_id`，且 `status='published'` 的行保持原状，所以重推是安全的（实测 337 条全部 updated、已发布 10 条状态不变）。该标志同时会跳过 `--legacy` 的本地直推，语义是「本次不发布任何内容」。
+- **历史正文就地重提**：新增 `deploy/repair_body_from_raw.py`（默认 dry-run，`--apply` 才写库）——用 `raw_path` 存档的原始 HTML 按新规则重提正文，只更新 `body` 一列。判据是「旧正文命中 JS 特征、或**任一行**是版式残留、或残留页脚」+「存档还在」+「新正文三类问题都没有且汉字数 ≥ `MIN_BODY_CJK`」。逐行扫描而非只看首行，因为实测 id=172 的日期来源行夹在正文中间。两轮共修复 **61 篇**（含 id=86 的 `showPlayer` JS 污染），修前备份 `data/crawl.db.bak-beforebody-20261001-0127`，修后质量扫描 JS 特征 0 篇、异常 0 篇。配套 `deploy/diff_body.py <id>` 只读逐段对比：本次减少的字符全部是页脚噪声，真内容一句没丢。
+- **垃圾行删除**：新增 `deploy/delete_junk_articles.py`（默认 dry-run，`--apply` 先导出整行到 `data/deleted_articles_<ts>.json` 再删）。判据三条同时满足：正文每一行都是页脚/版式残留、按现行规则重提得到 0 个汉字、存档 HTML 存在。实测删除上述 6 篇 edu「每日一闻/每日一句」空壳稿，2026-09-29 由 605 篇收敛到 **599 篇有效稿件**。这 6 条从未进入网站候选池（被相关性过滤挡掉了），已用 `deploy/run_delete_junk_candidates.sh` 核验——该脚本备份行数为 0 时会**主动中止**而不是继续删。
+- **只读核查工具**：`deploy/check_site_titles.py`（网站侧标题乱码/后缀扫描）、`deploy/check_site_noise_breakdown.sh`（候选/热点页脚噪声总量 + 按特征分解）、`deploy/check_hotspot_summary_head.sh`、`deploy/inspect_articles.py`（打印某几篇的旧正文全文与存档 `<p>` 段）。均不写库，且 MySQL 口令一律从容器自身的 `$MYSQL_ROOT_PASSWORD` 读取（此前有一版把生产口令硬编码进了脚本，已改写并 amend 掉未推送的提交）；容器内 mysql 客户端必须带 `--default-character-set=utf8mb4`，否则中文全部返回 `?`。
 
 ### 测试
 
 - 新增 `tests/test_fetcher_delay.py`（10 项离线单测）：Crawl-delay 解析（含行内注释、只对 `User-agent: *` 生效）、robots 每主机只读一次、声明值优先、`paper.people.com.cn` 固定 12s 且不查 robots、sitemap 去重与频道白名单过滤。
-- 新增 `tests/test_htmltext.py`（29 项离线单测）：嵌套 `<div>` 不被截断（回归 0 篇 bug）、script 不进正文、责编/版权块被排除、`ozoom` 容器、整页兜底、div 配平与截断退化；乱码自愈覆盖 mac-cyrillic / latin-1 / cp1251 无损回解、**库里真实样本 id=64**、`errors='replace'` 丢字节时不崩不误改；`decode_html` 声明优先于 chardet、gb18030 页、自愈、空输入；`declared_charset` 头/meta/缺失；`cjk_count` 与链接堆假稿回归；`_clean_title` 双横线/单横线后缀、短标题保留、正常标题不动、乱码标题修复。本地与服务器 venv 均 39 项全绿。
+- 新增 `tests/test_htmltext.py`（38 项离线单测）：嵌套 `<div>` 不被截断（回归 0 篇 bug）、script 不进正文、责编/版权块被排除、`ozoom` 容器、整页兜底、div 配平与截断退化；乱码自愈覆盖 mac-cyrillic / latin-1 / cp1251 无损回解、**库里真实样本 id=64**、`errors='replace'` 丢字节时不崩不误改；`decode_html` 声明优先于 chardet、gb18030 页、自愈、空输入；`declared_charset` 头/meta/缺失；`cjk_count` 与链接堆假稿回归；`is_boilerplate` 命中 8 种版式行且**不误杀** 5 种真文首句（含「2025年9月29日，中共中央政治局召开会议……」）；`is_footer` 命中 6 种真实页脚行、不误判谈版权/许可证的正规稿件、整页兜底路径不带页脚（回归那 6 篇空壳稿）；`_clean_title` 双横线/单横线后缀、短标题保留、正常标题不动、乱码标题修复。本地与服务器 venv 均 **48 项全绿**（含 test_fetcher_delay 10 项）。
 - 服务器 `deploy/probe_delay.py` 只读探针实测：`www.people.cn -> 120s`、`finance/culture/theory/paper.people.com.cn -> 12s`、sitemap 去重后 9 个频道、pipeline 依赖（`src.core.db`、`src.config`）导入正常。
 - 服务器 `deploy/smoke_fetch.py` 真实抓取冒烟（`politics.people.com.cn`）：限速口径 `-> 默认 12s`，两次请求发起间隔 12.7s（≥12s 且远小于旧的 120s），**正文提取长度由修复前的 0 变为 77 字**（此前正是这里断言失败暴露了截断 bug），`SMOKE_OK`。
+
+### 09-29 补抓与线上善后（2026-10-01 凌晨）
+
+- **补抓结果**：2026-09-29 从 143 篇恢复到 605 篇，剔除 6 篇页脚空壳稿后为 **599 篇有效稿件**，九个频道全部有数据（politics 56 / world 60 / society 57 / culture·env·finance·legal·opinion·theory 各 60），此前 politics / world / society 因正文截断 bug 为 0。整轮 00:28:37 结束（日志标记「本次新增合计 462 篇」），早于 03:30 的 cron。
+- **线上重发**：先前一次 pipeline 在抓取尚未跑完时被误触发，用不完整数据发布了 10 条热点。已用备份过的事务脚本 `deploy/rollback_premature_publish_20260930.sql` 回滚（删 2026-09-29 的 98 条候选 + hotspots id 306-315，保留人工录入的 302-305），再用完整数据重跑 `pipeline.py --date 2026-09-29`，服务端 AI 筛选发布 hotspots **316-325**，公开接口已验证。
+- **已发布内容的最后一处噪声**：hotspots id=322（以法治力量筑牢民族团结进步根基）的 summary 与 html 里嵌着「2026年09月28日08:35 来源：光明日报222」——它是 AI 从未过滤的正文里摘出来的。用 `deploy/fix_hotspot_322_dateline.sql`（`REGEXP_REPLACE`，跑前 mysqldump 备份该行到 `deploy/backup_hotspot_322_*.sql`）就地剥掉，`<strong>来源：</strong>people theory` 这类正常元数据行不受影响。修完 10 条已发布热点噪声计数为 0。
+- **候选池重推**：正文修好后用 `pipeline.py --date 2026-09-29 --no-screen` 把 337 条候选重推两遍，payload 里的日期来源行由 38 条降到 2 条（剩下的 2 条是「数据来源：科技部等 制图：蔡华伟」这种正当的图表署名，不是噪声），已发布 10 条的 status 与 ai_* 结果未被触碰。
+- **教训（重要）**：`pkill -f 'shizheng-daily.sh'` 经 ssh 执行时，模式串会匹配到承载它的那条 ssh 命令自身，导致会话被杀（exit 255）而目标 wrapper 存活——正是这次误发布的直接原因。以后停远端任务一律先 `pgrep -af` 看清 PID 再逐个 `kill`，且模式串不要出现在调用命令里。
+- **重跑须知**：`pipeline.py --no-push` 仍会 `db.mark_refined()`，同一日期第二次跑会得到「候选 0 条」；重跑前需 `UPDATE articles SET refined=0 WHERE publish_date='<date>'`。另外 `--date` 默认是「今天减一天」，跨零点后跑昨天的数据必须显式传日期。
 
 ## V0.1-dev.25 - 上传错题自动加入错题本 - 2026-09-30
 

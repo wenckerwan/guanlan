@@ -32,8 +32,17 @@ cp .env.example .env           # 填 LLM_API_KEY、GUANLAN_* 三项
 
 python -m src.main --mode daily            # 抓昨天（约 2.5~3 小时）
 python pipeline.py --no-push               # 只提炼+选条+存档 JSON，不推网站
+python pipeline.py --no-screen             # 只刷新候选池，不触发筛选/发布
 python pipeline.py                         # 完整流程（推送到观澜）
 python -m src.main --mode stats            # 库内状态
+```
+
+`--date YYYY-MM-DD` 指定处理哪天（默认「今天减一天」，跨零点补昨天的数据必须显式传）。
+同一天要重跑，先把 `refined` 标记复位，否则会「候选 0 条」：
+
+```bash
+./venv/bin/python -c "import sqlite3;c=sqlite3.connect('data/crawl.db');\
+c.execute(\"UPDATE articles SET refined=0 WHERE publish_date='2026-09-29'\");c.commit()"
 ```
 
 ## 部署到服务器（root-189）
@@ -61,11 +70,21 @@ data/      SQLite 库 + 原文存档 + 每日 JSON 存档（top10_YYYY-MM-DD.jso
 ## 测试与自检
 
 ```bash
-./venv/bin/python -m unittest tests.test_htmltext tests.test_fetcher_delay   # 39 项离线单测
+./venv/bin/python -m unittest tests.test_htmltext tests.test_fetcher_delay   # 48 项离线单测
 ./venv/bin/python deploy/probe_delay.py       # 只读：打印各主机限速口径 + sitemap 去重结果
 ./venv/bin/python deploy/smoke_fetch.py       # 真实抓 1 篇：验证限速间隔与正文提取
+./venv/bin/python deploy/check_body_quality.py  # 只读：正文 JS 污染 / 长度 / 各频道样例
+./venv/bin/python deploy/inspect_articles.py 325 342   # 只读：看某几篇的旧正文与存档 <p> 段
+./venv/bin/python deploy/diff_body.py 87      # 只读：逐段对比某篇正文的旧值与重提值
 ./venv/bin/python deploy/repair_mojibake.py   # dry-run 列出乱码标题；加 --apply 才写库
+./venv/bin/python deploy/repair_body_from_raw.py  # dry-run 列出待重提正文；加 --apply 才写库
+./venv/bin/python deploy/delete_junk_articles.py  # dry-run 列出纯页脚空壳稿；加 --apply 先导出再删
+bash deploy/check_site_noise_breakdown.sh     # 只读：网站侧候选/热点的页脚噪声统计
 ```
+
+写库前一律先 `cp data/crawl.db data/crawl.db.bak-$(date +%Y%m%d-%H%M)`。
+所有 `deploy/` 下的核查脚本访问网站 MySQL 时都从容器自身的 `$MYSQL_ROOT_PASSWORD` 取口令，
+不把凭据写进代码。
 
 ## 已知坑（均为实测踩到，已在代码里留注释）
 
@@ -79,8 +98,24 @@ data/      SQLite 库 + 原文存档 + 每日 JSON 存档（top10_YYYY-MM-DD.jso
 - **正文里可能有 `<script>showPlayer({...})</script>`**：不先剥 script 就会把播放器 JS 存成正文。
 - **版权行「本版责编：×××」也是链接**：会被当稿件抓进来（正文全是 URL）。已按标题前缀过滤，
   并要求正文汉字数 ≥ `MIN_BODY_CJK`。
+- **页脚也能骗过汉字数闸门**：edu 频道「每日一闻/每日一句」这类页面里没有正文 `<p>`，
+  整页兜底会把页脚（社概况链接堆、许可证号、举报电话、版权行）当正文——实测 521 字里
+  **211 个是汉字**，`len(body) < 60` 和 `MIN_BODY_CJK=30` 全都拦不住。
+  现在由 `htmltext.is_footer()` 按高特异度串识别（谈「版权」「许可证」的正规稿件不会误判）。
 - **限速语义**：`Crawl-delay` 按「两次请求的**发起时刻**」计（`_last_hit` 记发起时刻），
   所以实测间隔 ≥ 声明值；不要改成「上次响应结束到下次发起」。
+- **日期来源行会被当正文首段**：「2025年03月07日14:51 来源：人民网」这类版式行
+  （people 库 533 篇里实测 59 篇）会顺着候选 payload 污染下游 AI 摘要。
+  现在由 `htmltext.is_boilerplate()` 过滤；判定要求「短 + 带时:分或来源/责编」，
+  所以「2025年9月29日，中共中央政治局召开会议……」这种真文首句不会被误杀。
+- **一次推太多候选会撞 413**：网关 nginx `client_max_body_size` 约 1 MB，337 条候选
+  一次性 POST 直接被拒（HTTP 413），且异常只落在日志里，容易误判成「跑成功了」。
+  `push_candidates()` 已按 `CANDIDATE_BATCH=40` 分批。
+- **`--no-push` 也会消耗 `refined` 标记**：同一天第二次跑会得到「候选 0 条」，
+  需先 `UPDATE articles SET refined=0 WHERE publish_date='<date>'`。
+  另外 `--date` 默认「今天减一天」，跨零点补昨天的数据必须显式传日期。
+- **别用 `pkill -f` 停远端任务**：模式串会匹配到承载它的那条 ssh 命令自身，
+  会话被杀（exit 255）而目标任务存活。先 `pgrep -af` 看清 PID 再逐个 `kill`。
 
 ## 合规
 

@@ -11,6 +11,8 @@ import requests
 log = logging.getLogger("push")
 
 TIMEOUT = 30
+# 单次候选推送条数：太大撞 gateway 的 client_max_body_size（实测 337 条 → HTTP 413）
+CANDIDATE_BATCH = 40
 
 
 class GuanlanClient:
@@ -54,15 +56,32 @@ class GuanlanClient:
     # ---------- 服务端 AI 筛选（需观澜 shizheng 补丁）----------
 
     def push_candidates(self, date: str, items: list):
-        """推送当天候选到候选池。返回 (ok, result_or_none)；404 表示补丁未部署"""
-        r = requests.post(f"{self.base}/api/v1/admin/shizheng/candidates",
-                          headers=self._headers(),
-                          json={"date": date, "items": items}, timeout=120)
-        if r.status_code == 404:
-            return False, None
-        r.raise_for_status()
-        log.info("候选已推送：%s", r.json().get("data"))
-        return True, r.json().get("data")
+        """**分批**推送当天候选到候选池。返回 (ok, 汇总结果)；404 表示补丁未部署。
+
+        为什么分批：2026-09-30 修好正文提取后候选从 98 条涨到 337 条，一次性 POST
+        直接撞 gateway 的 `client_max_body_size`，返回 **413 Request Entity Too Large**，
+        整轮推送全废。服务端按 (日期, 标题) upsert，所以分批/重试都是幂等的。
+        """
+        total = {"created": 0, "updated": 0, "skipped": 0}
+        batches = [items[i:i + CANDIDATE_BATCH]
+                   for i in range(0, len(items), CANDIDATE_BATCH)]
+        for idx, chunk in enumerate(batches, 1):
+            if not chunk:
+                continue
+            r = requests.post(f"{self.base}/api/v1/admin/shizheng/candidates",
+                              headers=self._headers(),
+                              json={"date": date, "items": chunk}, timeout=120)
+            if r.status_code == 404:
+                return False, None
+            r.raise_for_status()
+            data = r.json().get("data") or {}
+            for k in total:
+                if isinstance(data.get(k), int):
+                    total[k] += data[k]
+            log.info("候选已推送 第 %d/%d 批（%d 条）：%s",
+                     idx, len(batches), len(chunk), data)
+        log.info("候选推送合计：%s", total)
+        return True, total
 
     def screen(self, date: str, top: int, auto: bool = True):
         """触发服务端 AI 筛选（auto=True 时筛完自动发布）"""

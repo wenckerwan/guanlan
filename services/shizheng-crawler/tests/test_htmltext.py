@@ -189,6 +189,116 @@ class CjkCountTest(unittest.TestCase):
         self.assertEqual(htmltext.cjk_count(None), 0)
 
 
+class BoilerplateTest(unittest.TestCase):
+    """版式残留（日期来源行 / 责编行）过滤。
+
+    实测 2026-09-30：people 库 533 篇正文里有 59 篇首段是
+    「2025年03月07日14:51 来源：人民网」这种版式行，不是正文。
+    """
+
+    NOISE = (
+        "2025年03月07日14:51 来源：人民网",
+        "2026年09月29日 08:32 来源：新华社",
+        "来源：人民日报",
+        "责编：袁勃、赵欣悦",
+        "责任编辑：张三",
+        "编辑：李四",
+        "本版责编：吕钟正 吴 凯",
+        "2026年09月29日 第01版",
+    )
+
+    REAL = (
+        # 真正的文首句，绝不能被误杀
+        "2025年9月29日，中共中央政治局召开会议，分析研究当前经济形势和经济工作。",
+        "2026年9月29日，庆祝中华人民共和国成立77周年招待会在北京人民大会堂举行。",
+        "来源可靠的大国重器项目在今年取得突破性进展，为后续工程奠定了基础。",
+        "责编在会议上强调，要把好稿件的政治关和质量关，确保导向正确。",
+        "新华社北京9月29日电 中共中央总书记、国家主席、中央军委主席近日作出重要指示。",
+    )
+
+    def test_noise_detected(self):
+        for t in self.NOISE:
+            self.assertTrue(htmltext.is_boilerplate(t), t)
+
+    def test_real_sentences_kept(self):
+        for t in self.REAL:
+            self.assertFalse(htmltext.is_boilerplate(t), t)
+
+    def test_plain_body_not_boilerplate(self):
+        self.assertFalse(htmltext.is_boilerplate(
+            "会议指出，要着力抓好粮食生产、耕地保护、农民增收三件大事。"))
+
+    def test_paragraphs_skips_dateline(self):
+        seg = """
+        <p>2025年03月07日14:51 来源：人民网</p>
+        <p>这是真正的正文第一段，长度足够通过最小字数过滤这一关。</p>
+        <p>（责编：袁勃、赵欣悦）</p>
+        <p>这是真正的正文第二段，用于验证只留下内容段落。</p>
+        """
+        parts = htmltext.paragraphs(seg)
+        self.assertEqual(parts, [
+            "这是真正的正文第一段，长度足够通过最小字数过滤这一关。",
+            "这是真正的正文第二段，用于验证只留下内容段落。",
+        ])
+
+    def test_extract_body_first_line_is_content(self):
+        html = ('<div id="rm_txt_zw">'
+                '<p>2026年09月29日 08:32 来源：人民网</p>'
+                '<p>本报北京9月29日电 全国民族团结进步表彰大会今日在京召开。</p>'
+                '</div>')
+        body = htmltext.extract_body(html)
+        self.assertTrue(body.startswith("本报北京"), body)
+        self.assertNotIn("来源：人民网", body)
+
+
+class FooterTest(unittest.TestCase):
+    """人民网页脚行过滤。
+
+    实测：页面没有正文容器时走整页 `<p>` 兜底，会把页脚扫进正文
+    （「每日一闻/每日一句」这类短条目 6 篇尾部都带着许可证号与版权行）。
+    """
+
+    FOOTER = (
+        "人民日报社概况 | 关于人民网 | 报社招聘 | 招聘英才 | 广告服务 | 合作加盟 | 供稿服务 | 数据服务 | 网站声明 | 网站律师 | 信息保护 | 联系我们",
+        "人民日报违法和不良信息举报电话：010-65363263 举报邮箱：jubao@people.cn",
+        "人民网服务邮箱：kf@people.cn 违法和不良信息举报电话：010-65363636 举报邮箱：rmwjubao@people.cn",
+        "互联网新闻信息服务许可证10120170001 | 增值电信业务经营许可证B1-20060139 | 广播电视节目制作经营许可证（广媒）字第172号",
+        "信息网络传播视听节目许可证0104065 | 网络文化经营许可证 京网文[2023]4961-141号 | 京ICP证000006号",
+        "人 民 网 版 权 所 有 ，未 经 书 面 授 权 禁 止 使 用Copyright © 1997-2026 by www.people.com.cn. all rights reserved",
+    )
+
+    def test_footer_detected(self):
+        for t in self.FOOTER:
+            self.assertTrue(htmltext.is_footer(t), t[:50])
+
+    def test_normal_text_not_footer(self):
+        """谈版权/许可的正规稿件不能被误判成页脚。"""
+        for t in ("著作权法修改草案强化了数字环境下的版权保护，明确了平台责任。",
+                  "市场监管总局简化了食品经营许可证的办理流程，压缩审批时限。",
+                  "会议强调要加强网络空间治理，压实平台主体责任，保护未成年人。"):
+            self.assertFalse(htmltext.is_footer(t), t[:40])
+
+    def test_paragraphs_drops_footer(self):
+        seg = ("<p>这是真正的正文段落，长度足够通过最小字数过滤这一关卡。</p>"
+               "<p>人 民 网 版 权 所 有 ，未 经 书 面 授 权 禁 止 使 用</p>"
+               "<p>互联网新闻信息服务许可证10120170001 | 增值电信业务经营许可证B1-20060139</p>")
+        self.assertEqual(htmltext.paragraphs(seg),
+                         ["这是真正的正文段落，长度足够通过最小字数过滤这一关卡。"])
+
+    def test_whole_page_fallback_excludes_footer(self):
+        """回归：没有正文容器时整页兜底也不能带页脚。"""
+        html = ("<html><body>"
+                "<p>大熊猫“平平”“福双”抵达美国动物园，开启新一轮合作保护研究。</p>"
+                "<p>中美双方将围绕大熊猫保护、疾病防控等议题开展联合研究。</p>"
+                "<p>人民日报社概况 | 关于人民网 | 报社招聘 | 招聘英才 | 广告服务 | 联系我们</p>"
+                "<p>人 民 网 版 权 所 有 ，未 经 书 面 授 权 禁 止 使 用</p>"
+                "</body></html>")
+        body = htmltext.extract_body(html)
+        self.assertIn("大熊猫", body)
+        self.assertFalse(htmltext.is_footer(body), body[-80:])
+        self.assertNotIn("报社招聘", body)
+
+
 class TitleCleanTest(unittest.TestCase):
     def setUp(self):
         from src.sources import people_sitemap as ps

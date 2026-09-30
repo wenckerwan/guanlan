@@ -95,6 +95,9 @@ def main() -> int:
     ap.add_argument("--date", help="处理哪天 YYYY-MM-DD（默认昨天）")
     ap.add_argument("--top", type=int, default=DAILY_TOP_N)
     ap.add_argument("--no-push", action="store_true", help="只存档 JSON，不推网站")
+    ap.add_argument("--no-screen", action="store_true",
+                    help="只刷新候选池，不触发服务端 AI 筛选/发布"
+                         "（已发布条目与 ai_* 结果不受影响）")
     ap.add_argument("--legacy", action="store_true",
                     help="强制旧流程：本地选条直推 hotspots（跳过服务端筛选）")
     ap.add_argument("-v", "--verbose", action="store_true")
@@ -132,6 +135,9 @@ def main() -> int:
         # 新流程：推全部候选 → 服务端 AI 筛选并发布（需观澜 shizheng 补丁）
         ok, _ = client.push_candidates(target, items)
         if ok:
+            if args.no_screen:
+                log.info("--no-screen：候选池已刷新，跳过服务端筛选/发布")
+                return 0
             try:
                 client.screen(target, args.top, auto=True)
                 return 0
@@ -139,6 +145,12 @@ def main() -> int:
                 alert(f"{target} 服务端筛选失败：{e}")
                 return 1
         log.warning("服务端筛选接口不可用（补丁未部署？HTTP 404），回退本地筛选直推")
+
+    if args.no_screen:
+        # 走到这里说明服务端候选接口不可用（或显式 --legacy）。
+        # --no-screen 的语义是「绝不发布」，所以本地直推也要一并跳过。
+        log.info("--no-screen：跳过本地直推 hotspots（本次不发布任何内容）")
+        return 0
 
     # 旧流程（兜底）：本地选条 → 直接写 hotspots
     picked = select_top(items, args.top)
