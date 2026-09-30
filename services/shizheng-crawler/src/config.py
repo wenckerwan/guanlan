@@ -84,6 +84,9 @@ SITEMAP_KEEP = [
 ]
 # 每频道抓取上限（pipeline 最终只选 top N，60 偏保守；可用 LIMIT_PER_CHANNEL 调整）
 LIMIT_PER_CHANNEL = int(os.getenv("LIMIT_PER_CHANNEL", "60"))
+# 正文最少汉字数：低于此值判为「链接堆/图注/版权行」等无效稿，不入库
+# （2026-09-29 实测有正文 170+ 字但几乎全是 URL 的假稿混进来）
+MIN_BODY_CJK = int(os.getenv("MIN_BODY_CJK", "30"))
 
 # ---------- 关键词过滤（初筛，降低 LLM 成本）----------
 KEYWORDS = [

@@ -53,9 +53,34 @@ crontab -e                                  # 粘贴 deploy/crontab.example 内�
 src/       抓取核心（config/main/core/sources/refine/render）
 bridge/    观澜对接（select_top10 选条 / render_html 渲染 / push_hotspots 推送）
 pipeline.py  每日总入口
-deploy/    crontab 示例、一键脚本、Dockerfile
+deploy/    crontab 示例、一键脚本、Dockerfile、只读自检脚本
+tests/     离线单测（不触网）
 data/      SQLite 库 + 原文存档 + 每日 JSON 存档（top10_YYYY-MM-DD.json）
 ```
+
+## 测试与自检
+
+```bash
+./venv/bin/python -m unittest tests.test_htmltext tests.test_fetcher_delay   # 39 项离线单测
+./venv/bin/python deploy/probe_delay.py       # 只读：打印各主机限速口径 + sitemap 去重结果
+./venv/bin/python deploy/smoke_fetch.py       # 真实抓 1 篇：验证限速间隔与正文提取
+./venv/bin/python deploy/repair_mojibake.py   # dry-run 列出乱码标题；加 --apply 才写库
+```
+
+## 已知坑（均为实测踩到，已在代码里留注释）
+
+- **非贪婪正则会静默吃掉整版正文**：`<div class="rm_txt_con...">(.*?)</div>` 在正文嵌套的
+  `<div class="bza">` 处就截断，正文变 0 字后被「长度 < 60」丢弃 —— 2026-09-29 那轮
+  politics / world / society 三个频道 0 篇入库且**不报任何错**。现在统一走
+  `core/htmltext.py` 的 `<div>` 深度配平扫描。
+- **`apparent_encoding`（chardet）对文字稀疏的页面会猜错**：人民日报版面页被猜成
+  MacCyrillic，标题变成 `еЕіиЊєеѓМж∞С...`。现在优先用 HTTP 头 / `<meta charset>`
+  声明的字符集，多候选严格解码，并用 `fix_mojibake()` 兜底自愈。
+- **正文里可能有 `<script>showPlayer({...})</script>`**：不先剥 script 就会把播放器 JS 存成正文。
+- **版权行「本版责编：×××」也是链接**：会被当稿件抓进来（正文全是 URL）。已按标题前缀过滤，
+  并要求正文汉字数 ≥ `MIN_BODY_CJK`。
+- **限速语义**：`Crawl-delay` 按「两次请求的**发起时刻**」计（`_last_hit` 记发起时刻），
+  所以实测间隔 ≥ 声明值；不要改成「上次响应结束到下次发起」。
 
 ## 合规
 

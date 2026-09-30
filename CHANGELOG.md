@@ -12,10 +12,21 @@
 - **可观测性**：每频道结束打印「新增 N 篇，耗时 X 分钟」，每主机首次限速判定时打印生效口径。
 - **预计效果**：整轮 daily 抓取从约 20 小时降到约 2.5~3 小时（人民日报 26 分钟 + sitemap 请求 20 分钟 + 文章抓取约 2 小时），不再与次日 03:30 的 cron 撞车。
 
+### 数据质量修复（同日追加，源于补抓 09-29 时的实测排查）
+
+- **正文提取重写**（新增 `src/core/htmltext.py`，rmrb / people_sitemap 共用）：旧的 `<div class="rm_txt_con[^"]*"[^>]*>(.*?)</div>` 是**非贪婪**匹配，遇到正文里嵌套的 `<div class="bza">` 就在第一个 `</div>` 处截断，正文变 0 字后被 `len(body) < 60` 静默丢弃 —— 09-29 那轮 politics / world / society 三个频道**整轮 0 篇入库**且不报错。现改为 `<div>`/`</div>` 深度配平扫描（`match_div_inner`），容器优先级 `ozoom` → `rm_txt_zw` → `rm_txt_con`，全失败再退回整页 `<p>` 扫描。
+- **JS 不再混进正文**：人民网正文 `<p>` 里嵌了 `<script>showPlayer({...})</script>`，旧逻辑把播放器 JS 当正文存库（culture 频道已中招）。现在提取前先剥 `script/style/noscript` 与 HTML 注释。
+- **编码乱码根治**：旧 fetcher 用 `r.apparent_encoding`（chardet）解码，人民日报**版面页**文字稀疏被猜成 MacCyrillic，标题变成 `еЕіиЊєеѓМж∞С...`（09-29 库里 75 条中 10 条中招）。现在 `fetcher.get()` 改走 `htmltext.decode_html(content, declared_charset(...), apparent_encoding)`：优先 HTTP 头 / `<meta charset>` / XML 声明，再依次严格尝试 chardet 猜测、utf-8、gb18030，取第一个「含中文且无替换字符」的结果；`fix_mojibake()` 作为兜底自愈（按 mac-cyrillic / cp1251 / cp1252 / latin-1 回编码再按 UTF-8 解，只有解出中文且乱码特征消失才采纳）。
+- **历史数据就地修复**：`deploy/repair_mojibake.py`（默认 dry-run，`--apply` 才写库）已修复库里 10 条乱码标题，例如 `еЕіиЊєеѓМж∞СзЪДдЄЙйЗНеКЯе§Ђ...` → 《兴边富民的三重功夫（前沿观察）》；正文无一条受影响。修库前已备份 `data/crawl.db.bak-20260930-2215`。
+- **假稿过滤**：删除 3 条「本版责编：×××」版权行假稿（正文 170+ 字但几乎全是 URL），并补两层防护——`list_edition()` 直接跳过责编行（旧规则因标题是乱码而失效），入库前要求正文汉字数 ≥ `MIN_BODY_CJK`（默认 30，可环境变量覆盖），新增 `htmltext.cjk_count()`。
+- **标题去站点后缀**：人民网 `<title>` 形如「×××--时政--人民网」「×××--教育--人民网」「×××-理论-中国共产党新闻网」，频道段是任意词不能写死，故按「1~2 个短分隔段（≤12 字）+ 已知站名 + 行尾」锚定剥离，剥完仍 ≥4 字才采用；分隔符只认半角 `-`/`--`，因为全角竖线「｜」「丨」常出现在真标题内部（实测「原来你是这样的人大代表｜灭火英雄跨界守护文化根脉--2024年全国两会--人民网」，把竖线当分隔符会连副标题一起剥掉）。新增 `people_sitemap._clean_title()`，历史数据由 `deploy/clean_title_suffix.py` 拉齐（默认 dry-run）。
+
 ### 测试
 
 - 新增 `tests/test_fetcher_delay.py`（10 项离线单测）：Crawl-delay 解析（含行内注释、只对 `User-agent: *` 生效）、robots 每主机只读一次、声明值优先、`paper.people.com.cn` 固定 12s 且不查 robots、sitemap 去重与频道白名单过滤。
+- 新增 `tests/test_htmltext.py`（29 项离线单测）：嵌套 `<div>` 不被截断（回归 0 篇 bug）、script 不进正文、责编/版权块被排除、`ozoom` 容器、整页兜底、div 配平与截断退化；乱码自愈覆盖 mac-cyrillic / latin-1 / cp1251 无损回解、**库里真实样本 id=64**、`errors='replace'` 丢字节时不崩不误改；`decode_html` 声明优先于 chardet、gb18030 页、自愈、空输入；`declared_charset` 头/meta/缺失；`cjk_count` 与链接堆假稿回归；`_clean_title` 双横线/单横线后缀、短标题保留、正常标题不动、乱码标题修复。本地与服务器 venv 均 39 项全绿。
 - 服务器 `deploy/probe_delay.py` 只读探针实测：`www.people.cn -> 120s`、`finance/culture/theory/paper.people.com.cn -> 12s`、sitemap 去重后 9 个频道、pipeline 依赖（`src.core.db`、`src.config`）导入正常。
+- 服务器 `deploy/smoke_fetch.py` 真实抓取冒烟（`politics.people.com.cn`）：限速口径 `-> 默认 12s`，两次请求发起间隔 12.7s（≥12s 且远小于旧的 120s），**正文提取长度由修复前的 0 变为 77 字**（此前正是这里断言失败暴露了截断 bug），`SMOKE_OK`。
 
 ## V0.1-dev.25 - 上传错题自动加入错题本 - 2026-09-30
 

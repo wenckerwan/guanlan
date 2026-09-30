@@ -14,6 +14,7 @@ import time, random, logging, requests
 from urllib.parse import urlparse
 from ..config import (HEADERS, TIMEOUT, RETRY, RETRY_BACKOFF,
                       DELAY_RMRB, DEFAULT_DELAY, JITTER, ROBOTS_TIMEOUT)
+from .htmltext import decode_html, declared_charset
 
 log = logging.getLogger("fetcher")
 
@@ -103,9 +104,12 @@ def get(url: str, session: requests.Session = None):
         try:
             r = sess.get(url, headers=HEADERS, timeout=TIMEOUT)
             if r.status_code == 200:
-                # 关键：必须用 apparent_encoding，页面声明的 utf-8 会乱码
-                r.encoding = r.apparent_encoding or "utf-8"
-                return 200, r.text
+                # 编码：优先 HTTP 头/meta 声明，其次 chardet 猜测，最后 utf-8/gb18030 兜底；
+                # 并对 UTF-8→cp1252 型 mojibake 自愈（旧写法只用 apparent_encoding，
+                # 对文字少的版面页会猜错，产生 10/75 篇乱码标题）。
+                return 200, decode_html(r.content,
+                                        declared_charset(r.headers, r.content),
+                                        r.apparent_encoding)
             if r.status_code in (403, 429):
                 back = RETRY_BACKOFF * attempt * 3      # 限流类退避更久
                 log.warning("HTTP %s 于 %s，退避 %.0fs", r.status_code, url, back)

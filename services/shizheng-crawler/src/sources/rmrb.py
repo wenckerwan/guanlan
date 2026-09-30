@@ -10,29 +10,28 @@
 重要教训：只抓头版会漏重要素材。
   实测 2026-09-27 第02版有《中美达成八点成果共识》，头版没有。
   因此默认抓取全部版面。
+
+编码教训（2026-09-30）：版面页文字稀疏，`apparent_encoding` 会把它猜成
+  MacCyrillic，导致标题变成 `еЕіиЊєеѓМж∞С...` 且「含"版"且含"："」的导航过滤
+  规则失效。现统一由 core.htmltext.decode_html 按 HTTP 头/meta 声明解码，标题再过
+  一遍 fix_mojibake 兜底。
 """
 import re, logging
 from datetime import date, timedelta
 from pathlib import Path
-from ..config import RMRB_LAYOUT, RMRB_CONTENT, RMRB_MAX_PAGE, RAW_DIR
-from ..core import db, fetcher
+from ..config import RMRB_LAYOUT, RMRB_CONTENT, RMRB_MAX_PAGE, RAW_DIR, MIN_BODY_CJK
+from ..core import db, fetcher, htmltext
 
 log = logging.getLogger("rmrb")
 
 RE_ARTICLE_LINK = re.compile(
     r'<a[^>]+href="([^"]*content_(\d+)\.html)"[^>]*>(.*?)</a>', re.S)
-RE_OZOOM = re.compile(r'<div[^>]*id="ozoom"[^>]*>(.*?)</div>\s*</div>', re.S)
-RE_P = re.compile(r"<p[^>]*>(.*?)</p>", re.S)
-RE_TAG = re.compile(r"<[^>]+>")
-RE_WS = re.compile(r"\s+")
 RE_EDITION = re.compile(r"第\s*(\d+)\s*版")
 
 
 def _clean(s: str) -> str:
-    s = RE_TAG.sub("", s)
-    s = s.replace("&nbsp;", " ").replace("&amp;", "&")
-    s = RE_WS.sub(" ", s)
-    return s.strip()
+    # 标题也过一遍 mojibake 自愈：版面页文字少，chardet 曾把 UTF-8 猜成 MacCyrillic
+    return htmltext.fix_mojibake(htmltext.clean_text(s))
 
 
 def detect_pages(yyyymm: str, dd: str, sess) -> int:
@@ -63,6 +62,11 @@ def list_edition(yyyymm: str, dd: str, page: int, sess):
         # 过滤版面导航行（"第01版：要闻"、"PDF下载"）
         if "版" in title and ("PDF" in title or "：" in title):
             continue
+        # 过滤版权行（"本版责编：史一棋"）。它本身是个链接，正文页只有链接堆，
+        # 2026-09-29 曾入库 2 条（id 40/68）。当时因标题是乱码，上面的
+        # 「含"版"且含"："」规则匹配不上才漏掉，编码修好后这里再兜一层。
+        if title.startswith("本版责编") or "责编：" in title:
+            continue
         if not title or len(title) < 5:
             continue
         full = href
@@ -80,20 +84,8 @@ def fetch_body(cid: str, yyyymm: str, dd: str, sess):
     status, html = fetcher.get(url, sess)
     if status != 200 or not html:
         return "", ""
-    m = RE_OZOOM.search(html)
-    seg = m.group(1) if m else html
-    parts = []
-    for p in RE_P.findall(seg):
-        t = _clean(p)
-        # 跳过图注（"这是习近平…合影"这类重复的图片说明）与页脚
-        if len(t) < 15:
-            continue
-        if t.startswith("《人民日报》") or t.startswith("人民日报 (20"):
-            continue
-        if re.match(r"^\d+$", t):
-            continue
-        parts.append(t)
-    return "\n".join(parts), html
+    # 统一走 htmltext：ozoom 容器配平匹配 + 剥 script/style + 过滤图注/页脚
+    return htmltext.extract_body(html), html
 
 
 def crawl_day(d: date, sess, pages: int = None) -> int:
@@ -119,8 +111,10 @@ def crawl_day(d: date, sess, pages: int = None) -> int:
             if db.seen(url):
                 continue
             body, art_html = fetch_body(cid, yyyymm, dd, sess)
-            if not body:
-                log.warning("    正文为空，跳过：%s", title[:40])
+            n_cjk = htmltext.cjk_count(body)
+            if n_cjk < MIN_BODY_CJK:
+                log.warning("    正文仅 %d 个汉字（<%d），判为无效稿，跳过：%s",
+                            n_cjk, MIN_BODY_CJK, title[:40])
                 continue
             raw = RAW_DIR / f"rmrb_{yyyymm}{dd}_{cid}.html"
             if art_html:
