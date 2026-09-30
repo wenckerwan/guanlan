@@ -57,7 +57,7 @@ async function handleLogout() {
   <header class="topbar">
     <div class="topbar-inner">
       <NuxtLink class="brand" to="/" aria-label="观澜首页" @click="closeMenu">
-        <span class="brand-mark">观</span>
+        <img class="brand-logo" src="/logo/guanlan-logo-64.png" alt="观澜" width="32" height="32" />
         <span><strong>观澜</strong><small>考研政治知识库</small></span>
       </NuxtLink>
 
@@ -101,7 +101,7 @@ async function handleLogout() {
           <button type="button" @click="handleLogout">退出登录</button>
         </template>
       </div>
-      <p class="drawer-note">V0.1-dev.5 · 真题 / 时政 / 错题 / 模拟</p>
+      <p class="drawer-note">V0.1-dev.24 · 真题 / 时政 / 错题 / 模拟</p>
     </aside>
   </div>
 

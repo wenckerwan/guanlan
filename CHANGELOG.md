@@ -1,5 +1,13 @@
 # 更新记录
 
+## V0.1-dev.24 - 站点 logo 接入 - 2026-09-30
+
+### 变更
+
+- **页面图标**：`nuxt.config.ts` head 声明 `favicon.ico`（16/32/48 多尺寸）、`guanlan-logo-32.png`、`apple-touch-icon.png`（180×180，iOS 书签）。
+- **页头品牌位**：`SiteHeader` 品牌区的「观」字方块替换为定稿 logo（`/logo/guanlan-logo-64.png`，32px 显示），样式类 `.brand-mark` → `.brand-logo`。
+- **静态资源入库**：`apps/web/public/` 新增 favicon.ico、apple-touch-icon.png 与 logo/ 四档尺寸（32/64/512/510×433 透明母版）。
+
 ## V0.1-dev.23 - 注册邮箱验证码（腾讯企业邮 SMTP 发信）- 2026-09-30
 
 ### 变更

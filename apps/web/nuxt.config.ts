@@ -9,5 +9,14 @@ export default defineNuxtConfig({
   nitro: {
     externals: { inline: ['vue', '@vue/server-renderer'] },
   },
-  app: { head: { htmlAttrs: { lang: 'zh-CN' } } },
+  app: {
+    head: {
+      htmlAttrs: { lang: 'zh-CN' },
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/logo/guanlan-logo-32.png' },
+        { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' },
+      ],
+    },
+  },
 })
