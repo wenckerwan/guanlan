@@ -10,7 +10,7 @@
 
 ```
 cron 03:30
-  → src.main --mode daily        抓取（限速遵守 robots.txt，串行，约 80 分钟）
+  → src.main --mode daily        抓取（限速按主机读 robots.txt，串行，约 2.5~3 小时）
   → pipeline.py                  提炼当天 → 全部候选 POST /admin/shizheng/candidates
   → POST /admin/shizheng/screen  服务端 AI 筛选（auto 自动发布到 hotspots）
   → 网站 /hotspots 页面展示；后台 /admin/shizheng 可人工复筛/发布
@@ -30,7 +30,7 @@ venv\Scripts\activate          # Windows；Linux: source venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env           # 填 LLM_API_KEY、GUANLAN_* 三项
 
-python -m src.main --mode daily            # 抓昨天（约 80 分钟）
+python -m src.main --mode daily            # 抓昨天（约 2.5~3 小时）
 python pipeline.py --no-push               # 只提炼+选条+存档 JSON，不推网站
 python pipeline.py                         # 完整流程（推送到观澜）
 python -m src.main --mode stats            # 库内状态
@@ -59,5 +59,12 @@ data/      SQLite 库 + 原文存档 + 每日 JSON 存档（top10_YYYY-MM-DD.jso
 
 ## 合规
 
-- 严格遵守 `www.people.com.cn/robots.txt` 的 `Crawl-delay: 120`，串行不并发
+- **限速按主机生效**（robots.txt 的 `Crawl-delay` 本就是 per-host 指令）：
+  抓取前懒加载该主机的 `robots.txt` 并缓存，**声明了就严格遵守**
+  （`www.people.com.cn` / `www.people.cn` 声明 120 秒，sitemap 请求照此等待）；
+  未声明（robots 404，或 culture/society 有 robots 但无该指令）则用保守默认
+  `DEFAULT_DELAY=12s`（可用 `CRAWL_DEFAULT_DELAY` 覆盖）。
+  实测 9 个文章子域均未声明 Crawl-delay，因此不再一刀切 120 秒。
+- 串行不并发；每主机请求间加 0~30% 抖动；403/429 加长退避
+- `LIMIT_PER_CHANNEL`（默认 60）控制每频道抓取上限，可用环境变量调整
 - 内容仅个人学习用途，保留来源标注

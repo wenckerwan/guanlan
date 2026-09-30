@@ -1,5 +1,22 @@
 # 更新记录
 
+## V0.1-dev.26 - 时政爬虫提速（仅 services/shizheng-crawler，无需重建 api/web 容器）- 2026-09-30
+
+### 变更
+
+- **限速改为按主机读 robots.txt**：`Crawl-delay` 本就是 per-host 指令，此前代码对所有 `*.people.com.cn` 一律等 120 秒属过度保守。现在抓取前懒加载并缓存该主机的 `robots.txt`：声明了就严格遵守（实测 `www.people.com.cn` / `www.people.cn` = 120 秒，sitemap 请求照此等待），未声明（7 个文章子域 robots 404；culture/society 有 robots 但无该指令）则用保守默认 `DEFAULT_DELAY=12s`（`CRAWL_DEFAULT_DELAY` 可覆盖）+ 0~30% 抖动。仍串行不并发。
+- **sitemap 频道去重**：`sitemap_index.xml` 把 legal 列了两次，旧逻辑会把整个频道白跑一遍（约 2 小时）。`list_sitemaps()` 现按 URL 去重，实测 9 个频道各一次。
+- **跨频道 URL 去重**：同一篇稿子出现在多个频道 sitemap 时只抓一次（进程内 `seen_urls`），叠加原有 `db.seen()` 落库去重。
+- **重试不再重走完整限速等待**：只在首次尝试时按主机限速，重试仅退避（`RETRY_BACKOFF`），一个失效 URL 不再最多烧掉 3×delay（旧口径 6 分钟）。
+- **`limit_per_channel` 可配置**：默认仍 60，改由 `LIMIT_PER_CHANNEL` 环境变量控制。
+- **可观测性**：每频道结束打印「新增 N 篇，耗时 X 分钟」，每主机首次限速判定时打印生效口径。
+- **预计效果**：整轮 daily 抓取从约 20 小时降到约 2.5~3 小时（人民日报 26 分钟 + sitemap 请求 20 分钟 + 文章抓取约 2 小时），不再与次日 03:30 的 cron 撞车。
+
+### 测试
+
+- 新增 `tests/test_fetcher_delay.py`（10 项离线单测）：Crawl-delay 解析（含行内注释、只对 `User-agent: *` 生效）、robots 每主机只读一次、声明值优先、`paper.people.com.cn` 固定 12s 且不查 robots、sitemap 去重与频道白名单过滤。
+- 服务器 `deploy/probe_delay.py` 只读探针实测：`www.people.cn -> 120s`、`finance/culture/theory/paper.people.com.cn -> 12s`、sitemap 去重后 9 个频道、pipeline 依赖（`src.core.db`、`src.config`）导入正常。
+
 ## V0.1-dev.25 - 上传错题自动加入错题本 - 2026-09-30
 
 ### 变更

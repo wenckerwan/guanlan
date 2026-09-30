@@ -4,10 +4,10 @@
 优势：只请求 1 次 sitemap，拿到当天全部新 URL，不必爬首页。
 注意：sitemap 不覆盖 paper.people.com.cn，因此 rmrb 轨道不可省。
 """
-import re, logging, xml.etree.ElementTree as ET
+import re, time, logging, xml.etree.ElementTree as ET
 from datetime import date
 from pathlib import Path
-from ..config import SITEMAP_INDEX, SITEMAP_KEEP, RAW_DIR
+from ..config import SITEMAP_INDEX, SITEMAP_KEEP, RAW_DIR, LIMIT_PER_CHANNEL
 from ..core import db, fetcher
 
 log = logging.getLogger("people")
@@ -27,16 +27,23 @@ def _clean(s: str) -> str:
 
 
 def list_sitemaps() -> list:
-    """返回 [(url, channel)]，按 SITEMAP_KEEP 过滤"""
+    """返回 [(url, channel)]，按 SITEMAP_KEEP 过滤并**去重**。
+
+    sitemap_index 实测会把同一频道列多次（如 legal 出现两次），
+    不去重就会把整个频道白跑一遍（旧限速口径下约 2 小时）。
+    """
     status, xml = fetcher.get(SITEMAP_INDEX)
     if status != 200:
         log.error("sitemap_index 获取失败")
         return []
-    out = []
+    out, seen = [], set()
     for m in re.finditer(r"<loc>(.*?)</loc>", xml):
         u = m.group(1).strip()
+        if u in seen:
+            continue
         for ch in SITEMAP_KEEP:
             if f"/cn/{ch}/" in u:
+                seen.add(u)
                 out.append((u, ch))
                 break
     return out
@@ -77,12 +84,24 @@ def _extract_body(html: str) -> str:
     return "\n".join(parts)
 
 
-def crawl(since: date, sess, limit_per_channel: int = 60) -> int:
+def crawl(since: date, sess, limit_per_channel: int = None) -> int:
+    """抓取 sitemap 中当天新增文章。
+
+    limit_per_channel 缺省读 config.LIMIT_PER_CHANNEL；
+    跨频道重复的 URL 只抓一次（seen_urls），避免同一篇稿子被多次请求。
+    """
+    limit = LIMIT_PER_CHANNEL if limit_per_channel is None else limit_per_channel
     added = 0
+    seen_urls = set()
     for sm_url, channel in list_sitemaps():
-        urls = urls_since(sm_url, since)[:limit_per_channel]
-        log.info("[%s] %d 条候选", channel, len(urls))
-        for u in urls:
+        t0 = time.time()
+        urls = urls_since(sm_url, since)[:limit]
+        # 去掉本轮已抓过的（跨频道转载/同稿多频道）
+        todo = [u for u in urls if u not in seen_urls]
+        seen_urls.update(todo)
+        log.info("[%s] %d 条候选（本轮待抓 %d）", channel, len(urls), len(todo))
+        ch_added = 0
+        for u in todo:
             if db.seen(u):
                 continue
             status, html = fetcher.get(u, sess)
@@ -99,5 +118,8 @@ def crawl(since: date, sess, limit_per_channel: int = 60) -> int:
                                publish_date=since.isoformat(), body=body,
                                raw_path=str(raw), channel=channel):
                 added += 1
+                ch_added += 1
                 log.info("  + [%s] %s", channel, title[:46])
+        log.info("[%s] 完成：新增 %d 篇，耗时 %.1f 分钟",
+                 channel, ch_added, (time.time() - t0) / 60)
     return added

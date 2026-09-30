@@ -26,10 +26,18 @@ def _load_dotenv(path: Path):
 
 _load_dotenv(ROOT / ".env")
 
-# ---------- 限速（关键：严格遵守 robots.txt）----------
-# www.people.com.cn/robots.txt 声明 Crawl-delay: 120
-DELAY_PEOPLE = 120.0      # people.com.cn 主域及子域
+# ---------- 限速（按主机读 robots.txt，声明了就严格遵守）----------
+# 实测（2026-09-30）：
+#   www.people.com.cn / www.people.cn  robots.txt 声明 Crawl-delay: 120  → 遵守
+#   culture/society.people.com.cn      有 robots.txt 但未声明 Crawl-delay → DEFAULT_DELAY
+#   finance/world/politics/legal/theory/opinion/env/paper.people.com.cn
+#                                      robots.txt 404                   → DEFAULT_DELAY / DELAY_RMRB
+# DELAY_PEOPLE 保留为参考值：一旦某主机真的声明 120，fetcher 会按 robots 值执行。
+DELAY_PEOPLE = 120.0      # www.people.com.cn 声明值（由 robots 解析自动生效）
 DELAY_RMRB    = 12.0      # paper.people.com.cn（无 robots.txt，主动克制）
+# robots 未声明 Crawl-delay 的主机使用的保守间隔；可用 CRAWL_DEFAULT_DELAY 覆盖
+DEFAULT_DELAY = float(os.getenv("CRAWL_DEFAULT_DELAY", "12"))
+ROBOTS_TIMEOUT = 10       # 读 robots.txt 的超时（每主机每进程只读一次）
 JITTER        = 0.3       # 随机抖动系数，避免完全固定的节奏
 
 # ---------- 请求头 ----------
@@ -74,6 +82,8 @@ SITEMAP_KEEP = [
     "politics", "world", "finance", "theory",
     "opinion", "legal", "culture", "society", "env",
 ]
+# 每频道抓取上限（pipeline 最终只选 top N，60 偏保守；可用 LIMIT_PER_CHANNEL 调整）
+LIMIT_PER_CHANNEL = int(os.getenv("LIMIT_PER_CHANNEL", "60"))
 
 # ---------- 关键词过滤（初筛，降低 LLM 成本）----------
 KEYWORDS = [
