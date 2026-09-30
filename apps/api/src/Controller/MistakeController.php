@@ -44,6 +44,34 @@ class MistakeController
         }
     }
 
+    private function wantsImport(): bool
+    {
+        $flag = $this->request->input('importToMistakes', false);
+
+        return in_array($flag, [true, 'true', '1', 1], true);
+    }
+
+    /**
+     * 上传错题自动入错题本：AI 结构化抽取优先，包未安装/抽取失败回退规则解析。
+     * 导入失败不阻塞分析主流程。
+     */
+    private function importUploadedMarkdown(?AIAnalysisService $aiService, MistakeStudent $student, string $markdown, array $config): array
+    {
+        $aiItems = [];
+        if ($aiService !== null) {
+            $extraction = $aiService->extractItems($markdown, $config);
+            if (isset($extraction['success'])) {
+                $aiItems = MistakeService::parseAiExtraction((string) $extraction['content']);
+            }
+        }
+
+        try {
+            return $this->service->importUploadedItems($student, $markdown, $aiItems);
+        } catch (\Throwable) {
+            return ['imported' => 0, 'updated' => 0, 'skipped' => 0];
+        }
+    }
+
     public function students(): ResponseInterface
     {
         $out = [];
@@ -396,6 +424,11 @@ class MistakeController
             return ApiResponse::message('错题内容过长（上限 20 万字符）', 422);
         }
 
+        $import = null;
+        if ($markdown !== '' && $this->wantsImport()) {
+            $import = $this->importUploadedMarkdown($aiService, $student, $markdown, $config);
+        }
+
         $result = $markdown !== ''
             ? $aiService->analyzeMarkdown($student, $markdown, $config)
             : $aiService->analyze($student, $config);
@@ -407,6 +440,7 @@ class MistakeController
         return ApiResponse::data([
             'content' => $result['content'],
             'usage' => $result['usage'] ?? [],
+            'import' => $import,
         ]);
     }
 
@@ -472,6 +506,12 @@ class MistakeController
         $onDelta = function (string $delta) use ($send): void {
             $send(['delta' => $delta]);
         };
+
+        // 上传错题自动入错题本：先发 importing 占位事件，抽取完成后发 import 结果，再进入分析流
+        if ($markdown !== '' && $this->wantsImport()) {
+            $send(['importing' => true]);
+            $send(['import' => $this->importUploadedMarkdown($aiService, $student, $markdown, $config)]);
+        }
 
         try {
             $result = $markdown !== ''

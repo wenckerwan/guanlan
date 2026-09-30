@@ -40,17 +40,58 @@ class AIAnalysisService
         });
     }
 
-    private function dispatch(array $config, \Closure $promptFactory): array
+    private function dispatch(array $config, \Closure $promptFactory, ?string $systemPrompt = null): array
     {
         $config = $this->normalizeProviderConfig($config);
         $provider = $config['provider'] ?? 'openai';
 
         return match ($provider) {
-            'openai' => $this->analyzeWithOpenAI($promptFactory, $config),
-            'claude' => $this->analyzeWithClaude($promptFactory, $config),
-            'custom' => $this->analyzeWithCustom($promptFactory, $config),
+            'openai' => $this->analyzeWithOpenAI($promptFactory, $config, $systemPrompt),
+            'claude' => $this->analyzeWithClaude($promptFactory, $config, $systemPrompt),
+            'custom' => $this->analyzeWithCustom($promptFactory, $config, $systemPrompt),
             default => throw new \InvalidArgumentException("不支持的 AI 提供商: {$provider}"),
         };
+    }
+
+    /**
+     * 上传 Markdown 的结构化抽取：让模型把自由格式的错题清单输出为 JSON，
+     * 供错题本自动导入（MistakeService::parseAiExtraction 解析结果）。
+     */
+    public function extractItems(string $markdown, array $config): array
+    {
+        return $this->dispatch($config, function () use ($markdown) {
+            return $this->buildExtractionPrompt($markdown);
+        }, $this->getExtractionSystemPrompt());
+    }
+
+    private function getExtractionSystemPrompt(): string
+    {
+        return <<<'PROMPT'
+你是数据抽取引擎。把用户提供的错题 Markdown 转成结构化 JSON，除此之外不得输出任何内容：
+不允许 markdown 代码块围栏、注释、解释文字，只输出一个以 { 开头、以 } 结尾的 JSON 对象。
+PROMPT;
+    }
+
+    private function buildExtractionPrompt(string $markdown): string
+    {
+        return <<<PROMPT
+从下面的错题 Markdown 中抽取每道错题，输出 JSON。
+
+要求格式（只输出这一个 JSON 对象，不要输出任何其他文字）：
+{"items":[{"module":"模块名","stem":"题干","options":[{"label":"A","text":"选项内容"}],"myAnswer":"考生所选答案字母","correctAnswer":"正确答案字母","kaodian":"考点"}]}
+
+规则：
+- module 无法判断时填「未分类」
+- 选项文本保留原文，label 只保留字母（A/B/C/D…）
+- 分析题、简答题等没有选项的题 options 给空数组
+- myAnswer 无法确定时给空字符串
+- correctAnswer 无法确定的题直接跳过，不要输出
+- 最多输出 100 题，按原文顺序
+
+# 错题 Markdown
+
+{$markdown}
+PROMPT;
     }
 
     /**
@@ -705,7 +746,7 @@ class AIAnalysisService
     /**
      * 使用 OpenAI API
      */
-    private function analyzeWithOpenAI(\Closure $promptFactory, array $config): array
+    private function analyzeWithOpenAI(\Closure $promptFactory, array $config, ?string $systemPrompt = null): array
     {
         $apiKey = $config['apiKey'] ?? '';
         $baseUrl = $config['baseUrl'] ?? 'https://api.openai.com/v1';
@@ -732,7 +773,7 @@ class AIAnalysisService
                     'messages' => [
                         [
                             'role' => 'system',
-                            'content' => $this->getSystemPrompt(),
+                            'content' => $systemPrompt ?? $this->getSystemPrompt(),
                         ],
                         [
                             'role' => 'user',
@@ -769,7 +810,7 @@ class AIAnalysisService
     /**
      * 使用 Claude API (Anthropic)
      */
-    private function analyzeWithClaude(\Closure $promptFactory, array $config): array
+    private function analyzeWithClaude(\Closure $promptFactory, array $config, ?string $systemPrompt = null): array
     {
         $apiKey = $config['apiKey'] ?? '';
         $baseUrl = $config['baseUrl'] ?? 'https://api.anthropic.com/v1';
@@ -795,7 +836,7 @@ class AIAnalysisService
                 'json' => [
                     'model' => $model,
                     'max_tokens' => 4000,
-                    'system' => $this->getSystemPrompt(),
+                    'system' => $systemPrompt ?? $this->getSystemPrompt(),
                     'messages' => [
                         [
                             'role' => 'user',
@@ -829,10 +870,11 @@ class AIAnalysisService
     /**
      * 使用自定义 API
      */
-    private function analyzeWithCustom(\Closure $promptFactory, array $config): array
+    private function analyzeWithCustom(\Closure $promptFactory, array $config, ?string $systemPrompt = null): array
     {
         $endpoint = $config['endpoint'] ?? '';
         $apiKey = $config['apiKey'] ?? '';
+        $system = $systemPrompt ?? $this->getSystemPrompt();
 
         if (empty($endpoint)) {
             return ['error' => '自定义 API 端点未配置'];
@@ -857,7 +899,7 @@ class AIAnalysisService
                 $payload = [
                     'model' => (string) ($config['model'] ?? '') ?: 'gpt-4o-mini',
                     'messages' => [
-                        ['role' => 'system', 'content' => $this->getSystemPrompt()],
+                        ['role' => 'system', 'content' => $system],
                         ['role' => 'user', 'content' => $prompt],
                     ],
                     'temperature' => 0.7,
@@ -865,7 +907,7 @@ class AIAnalysisService
                 ];
             } else {
                 $payload = [
-                    'system' => $this->getSystemPrompt(),
+                    'system' => $system,
                     'prompt' => $prompt,
                     'student_code' => '',
                 ];

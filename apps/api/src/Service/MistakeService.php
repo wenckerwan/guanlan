@@ -208,4 +208,218 @@ class MistakeService
 
         return mb_strlen($chosen) >= mb_strlen($correct) ? '纯错选' : '纯漏选';
     }
+
+    /**
+     * 上传 Markdown 自动入错题本：AI 结构化抽取结果（$aiItems）优先，
+     * 为空时回退规则解析（parseMarkdownItems）。按 item_key 幂等去重。
+     *
+     * @param array<int, array> $aiItems 模型输出的原始条目（extractItems 的 content 解析产物）
+     * @return array{imported:int, updated:int, skipped:int}
+     */
+    public function importUploadedItems(MistakeStudent $student, string $markdown, array $aiItems = []): array
+    {
+        $candidates = $aiItems !== [] ? $aiItems : self::parseMarkdownItems($markdown);
+        $candidates = array_slice($candidates, 0, 100);
+
+        $imported = 0;
+        $updated = 0;
+        $skipped = 0;
+        foreach ($candidates as $candidate) {
+            $fields = is_array($candidate) ? self::normalizeUploadedItem($candidate) : null;
+            if ($fields === null) {
+                ++$skipped;
+                continue;
+            }
+
+            $existing = MistakeItem::query()
+                ->where('student_id', (int) $student->id)
+                ->where('item_key', $fields['item_key'])
+                ->first();
+            if ($existing) {
+                $existing->fill($fields)->save();
+                ++$updated;
+            } else {
+                MistakeItem::create($fields + ['student_id' => (int) $student->id]);
+                ++$imported;
+            }
+        }
+
+        return ['imported' => $imported, 'updated' => $updated, 'skipped' => $skipped];
+    }
+
+    /**
+     * 模型抽取内容 → 错题条目字段；缺少题干或正确答案的条目视为不可导入，返回 null。
+     */
+    private static function normalizeUploadedItem(array $raw): ?array
+    {
+        $stem = trim((string) ($raw['stem'] ?? ''));
+        $correct = self::normalizeAnswerLetters((string) ($raw['correctAnswer'] ?? ''));
+        $chosen = self::normalizeAnswerLetters((string) ($raw['myAnswer'] ?? ''));
+        if ($stem === '' || $correct === '') {
+            return null;
+        }
+
+        $options = [];
+        foreach ((array) ($raw['options'] ?? []) as $option) {
+            if (! is_array($option)) {
+                continue;
+            }
+            $label = self::normalizeAnswerLetters((string) ($option['label'] ?? ''));
+            if ($label === '' || mb_strlen($label) !== 1) {
+                continue;
+            }
+            $mark = '';
+            if ($chosen !== '' && str_contains($chosen, $label)) {
+                $mark = str_contains($correct, $label) ? 'hit' : 'chosen';
+            } elseif (str_contains($correct, $label)) {
+                $mark = 'missed';
+            }
+            $options[] = ['label' => $label, 'text' => trim((string) ($option['text'] ?? '')), 'mark' => $mark];
+        }
+
+        $module = trim((string) ($raw['module'] ?? ''));
+        $kaodian = trim((string) ($raw['kaodian'] ?? ''));
+
+        return self::buildUploadFields($stem, $options, $chosen, $correct, $module, $kaodian);
+    }
+
+    /**
+     * 规则解析兜底：按「分析页格式示例」切分自由 Markdown。
+     * `## 模块 - 来源` 开头切块；题干/答案/考点用 **加粗标签** 或「标签：」行识别，选项按 A. 行识别。
+     *
+     * @return array<int, array{stem:string,options:array,myAnswer:string,correctAnswer:string,module:string,kaodian:string}>
+     */
+    public static function parseMarkdownItems(string $markdown): array
+    {
+        $text = str_replace("\r\n", "\n", $markdown);
+        $sections = preg_split('/^##\s+/m', $text) ?: [$text];
+        $out = [];
+        foreach ($sections as $section) {
+            $section = trim($section);
+            if ($section === '') {
+                continue;
+            }
+
+            $module = '未分类';
+            $firstLineEnd = (int) (strpos($section, "\n") ?: strlen($section));
+            $title = trim(substr($section, 0, $firstLineEnd));
+            if (preg_match('/^(.+?)\s*[-—–]\s*\S+$/u', $title, $m)) {
+                $module = trim($m[1]);
+            }
+
+            $stem = '';
+            if (preg_match('/\*\*题干\*\*\s*[:：]\s*(.+?)(?=\n\s*[A-DＡ-Ｄ][\.．、]|\n\s*\*\*|\n##|$)/s', $section, $m)) {
+                $stem = trim($m[1]);
+            } elseif (preg_match('/题干\s*[:：]\s*(.+?)(?=\n\s*[A-DＡ-Ｄ][\.．、]|\n\s*\*\*|\n##|$)/s', $section, $m)) {
+                $stem = trim($m[1]);
+            }
+
+            $options = [];
+            if (preg_match_all('/^([A-DＡ-Ｄ])[\.．、]\s*(.+)$/mu', $section, $m, PREG_SET_ORDER)) {
+                foreach ($m as $match) {
+                    $options[] = ['label' => self::normalizeAnswerLetters($match[1]), 'text' => trim($match[2]), 'mark' => ''];
+                }
+            }
+
+            $chosen = self::normalizeAnswerLetters(self::labeledValue($section, '我的答案'));
+            $correct = self::normalizeAnswerLetters(self::labeledValue($section, '正确答案'));
+            $kaodian = self::labeledValue($section, '考点');
+            if ($stem === '' || $correct === '') {
+                continue;
+            }
+
+            $out[] = ['stem' => $stem, 'options' => $options, 'myAnswer' => $chosen, 'correctAnswer' => $correct, 'module' => $module, 'kaodian' => $kaodian];
+        }
+
+        return $out;
+    }
+
+    /** 解析「**标签**: 值」或「标签：值」两种写法的值。 */
+    private static function labeledValue(string $section, string $label): string
+    {
+        $label = preg_quote($label, '/');
+        if (preg_match("/(?:\*\*{$label}\*\*|{$label})\s*[:：]\s*(.+)/", $section, $m)) {
+            return trim($m[1]);
+        }
+
+        return '';
+    }
+
+    private static function normalizeAnswerLetters(string $value): string
+    {
+        $value = strtr($value, ['Ａ' => 'A', 'Ｂ' => 'B', 'Ｃ' => 'C', 'Ｄ' => 'D']);
+        if (! preg_match_all('/[A-D]/', strtoupper($value), $m)) {
+            return '';
+        }
+
+        return implode('', array_values(array_unique($m[0])));
+    }
+
+    private static function buildUploadFields(string $stem, array $options, string $chosen, string $correct, string $module, string $kaodian): array
+    {
+        foreach ($options as &$option) {
+            $label = (string) $option['label'];
+            if ($chosen !== '' && str_contains($chosen, $label)) {
+                $option['mark'] = str_contains($correct, $label) ? 'hit' : 'chosen';
+            } elseif (str_contains($correct, $label)) {
+                $option['mark'] = 'missed';
+            }
+        }
+        unset($option);
+
+        $itemKey = 'upload-' . substr(hash('sha256', $stem . '|' . $correct), 0, 24);
+
+        return [
+            'module' => mb_substr($module !== '' ? $module : '未分类', 0, 32),
+            'chapter' => '',
+            'chapter_no' => 0,
+            'source_no' => '上传',
+            'kaodian' => mb_substr($kaodian, 0, 191),
+            'stem' => $stem,
+            'options' => $options,
+            'my_answer' => mb_substr($chosen, 0, 16),
+            'correct_answer' => mb_substr($correct, 0, 16),
+            'q_type' => mb_strlen($correct) > 1 ? '多选' : '单选',
+            'error_type' => self::errorType($chosen, $correct),
+            'origin' => 'upload',
+            'item_key' => $itemKey,
+            'content_hash' => substr(hash('sha256', (string) json_encode([
+                'stem' => $stem,
+                'options' => $options,
+                'correct' => $correct,
+            ], JSON_UNESCAPED_UNICODE)), 0, 16),
+            'sort_order' => 0,
+        ];
+    }
+
+    /**
+     * 模型抽取输出 → 原始条目数组：剥代码块围栏、截取首尾大括号之间再 json_decode。
+     *
+     * @return array<int, array>
+     */
+    public static function parseAiExtraction(string $content): array
+    {
+        $content = trim($content);
+        if (preg_match('/```(?:json)?\s*(.+?)```/s', $content, $m)) {
+            $content = trim($m[1]);
+        }
+        $start = strpos($content, '{');
+        $end = strrpos($content, '}');
+        if ($start === false || $end === false || $end <= $start) {
+            return [];
+        }
+        $decoded = json_decode(substr($content, $start, $end - $start + 1), true);
+        if (! is_array($decoded)) {
+            return [];
+        }
+        if (isset($decoded['items']) && is_array($decoded['items'])) {
+            return $decoded['items'];
+        }
+        // 模型偶尔直接输出条目数组
+        if (array_is_list($decoded) && isset($decoded[0]['stem'])) {
+            return $decoded;
+        }
+
+        return [];
+    }
 }

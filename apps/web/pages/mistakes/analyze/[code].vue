@@ -57,6 +57,8 @@ const analyzing = ref(false)
 const analysisResult = ref('')
 const analysisError = ref('')
 const showConfig = ref(false)
+const importToMistakes = ref(true)
+const importNote = ref('')
 
 // 连接测试与模型列表
 type TestResult = { ok: boolean; latencyMs: number; models: string[]; error?: string }
@@ -226,6 +228,17 @@ onMounted(() => {
 })
 
 // SSE 流式分析：增量文本实时追加到 analysisResult，服务端 done 事件以全量内容兜底
+type ImportStats = { imported: number; updated: number; skipped: number }
+
+function formatImportNote(stats: ImportStats): string {
+  if (stats.imported + stats.updated + stats.skipped === 0) {
+    return '未能识别出错题，没有加入错题本（不影响分析）'
+  }
+  const parts = [stats.imported ? `新导入 ${stats.imported} 道` : '', stats.updated ? `更新 ${stats.updated} 道` : ''].filter(Boolean)
+  const note = `已加入错题本：${parts.join('、')}`
+  return stats.skipped ? `${note}；跳过 ${stats.skipped} 道（无法识别）` : note
+}
+
 async function streamAnalysis(): Promise<void> {
   const apiBase = useRuntimeConfig().public.apiBase as string
   const response = await fetch(`${apiBase}/mistakes/students/${code}/ai-analysis-stream`, {
@@ -234,7 +247,11 @@ async function streamAnalysis(): Promise<void> {
       'Content-Type': 'application/json',
       ...(token.value ? { Authorization: `Bearer ${token.value}` } : {}),
     },
-    body: JSON.stringify({ ...aiConfig, markdown: markdown.value }),
+    body: JSON.stringify({
+      ...aiConfig,
+      markdown: markdown.value,
+      importToMistakes: importToMistakes.value && isLoggedIn.value,
+    }),
   })
 
   const contentType = response.headers.get('content-type') || ''
@@ -266,6 +283,8 @@ async function streamAnalysis(): Promise<void> {
       const dataLine = event.split('\n').find((line) => line.startsWith('data: '))
       if (!dataLine) continue
       const payload = JSON.parse(dataLine.slice(6))
+      if (payload.importing) importNote.value = '正在解析错题并加入错题本…'
+      if (payload.import) importNote.value = formatImportNote(payload.import)
       if (payload.delta) analysisResult.value += payload.delta
       if (payload.error) throw new Error(payload.error)
       if (payload.done) {
@@ -306,17 +325,26 @@ async function analyzeWithAI() {
   analyzing.value = true
   analysisError.value = ''
   analysisResult.value = ''
+  importNote.value = ''
 
   try {
     await streamAnalysis()
   } catch (error: any) {
     if (!analysisResult.value) {
       try {
-        const data = await request<{ content: string; usage: Record<string, unknown> }>(
+        const data = await request<{ content: string; usage: Record<string, unknown>; import?: ImportStats }>(
           `/mistakes/students/${code}/ai-analysis`,
-          { method: 'POST', body: { ...aiConfig, markdown: markdown.value } },
+          {
+            method: 'POST',
+            body: {
+              ...aiConfig,
+              markdown: markdown.value,
+              importToMistakes: importToMistakes.value && isLoggedIn.value,
+            },
+          },
         )
         analysisResult.value = data.content
+        if (data.import) importNote.value = formatImportNote(data.import)
       } catch (fallbackError: any) {
         analysisError.value = fallbackError?.data?.message || fallbackError?.message || 'AI 分析失败，请检查配置或使用「测试连接」排查'
       }
@@ -495,6 +523,11 @@ useHead(() => ({ title: `AI 错题分析 - ${student.value?.name || code} ｜观
             <span class="file-name">{{ uploadedFile.name }}</span>
             <span class="file-size">{{ (uploadedFile.size / 1024).toFixed(1) }} KB</span>
           </div>
+
+          <label v-if="uploadedFile" class="import-toggle">
+            <input v-model="importToMistakes" type="checkbox" />
+            同时把识别出的错题加入错题本（重复上传自动去重）
+          </label>
         </div>
       </section>
 
@@ -514,6 +547,7 @@ useHead(() => ({ title: `AI 错题分析 - ${student.value?.name || code} ｜观
           <Sparkles :size="20" />
           {{ analyzing ? '分析中...' : '开始 AI 分析' }}
         </button>
+        <p v-if="importNote" class="import-note">{{ importNote }}</p>
       </section>
 
       <!-- 分析结果 -->
@@ -681,6 +715,22 @@ D. 实践是人类的存在方式
 .analyze-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.import-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+}
+
+.import-note {
+  margin: 1rem 0 0;
+  font-size: 0.875rem;
+  color: var(--success, #16a34a);
 }
 
 .result-section {
