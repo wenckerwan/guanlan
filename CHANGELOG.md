@@ -8,7 +8,7 @@
 - **解析层双通道**：
   - AI 结构化抽取（主通道）：复用用户配置的 AI 供应商，让模型把自由格式错题 Markdown 输出为固定 JSON（module/stem/options/myAnswer/correctAnswer/kaodian），`AIAnalysisService::extractItems()`；缺少题干或正确答案的条目跳过。
   - 规则解析（兜底）：AI 未配置/未安装（hyperf/guzzle 缺失）/抽取失败时，按分析页格式示例（`## 模块 - 来源`、`**题干**`、`A.` 选项行、`**我的答案**`）正则切分，兼容全角冒号与全角字母。
-- **落库规则**（`MistakeService::importUploadedItems()`）：`origin='upload'`，`item_key='upload-{sha256(题干|正确答案)前24}'` 幂等去重（重复上传只更新），错因口径与真题归集一致（服务端按所选/正确答案重算），options 按 `{label,text,mark}` 重构，单次最多 100 题。
+- **落库规则**（`MistakeService::importUploadedItems()`）：`origin='upload'`，`item_key='upload-{sha256(考生id|题干|正确答案)前24}'` 幂等去重（重复上传只更新），错因口径与真题归集一致（服务端按所选/正确答案重算），options 按 `{label,text,mark}` 重构，单次最多 100 题，单条失败不影响整批。
 - **接口**：`POST /mistakes/students/{code}/ai-analysis` 与 `/ai-analysis-stream` 新增 `importToMistakes` 参数（默认关）。流式端点在分析开始前先发 `data: {"importing":true}` 占位与 `data: {"import":{imported,updated,skipped}}` 结果事件；非流式端点在响应体带 `import` 字段。无新迁移（item_key/origin/content_hash 列已存在）。
 - **前端**：分析页上传区新增「同时把识别出的错题加入错题本」开关（默认开，仅登录用户生效），分析按钮下方显示导入结果（新导入/更新/跳过数）。
 

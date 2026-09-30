@@ -225,22 +225,27 @@ class MistakeService
         $updated = 0;
         $skipped = 0;
         foreach ($candidates as $candidate) {
-            $fields = is_array($candidate) ? self::normalizeUploadedItem($candidate) : null;
+            $fields = is_array($candidate) ? self::normalizeUploadedItem($candidate, (int) $student->id) : null;
             if ($fields === null) {
                 ++$skipped;
                 continue;
             }
 
-            $existing = MistakeItem::query()
-                ->where('student_id', (int) $student->id)
-                ->where('item_key', $fields['item_key'])
-                ->first();
-            if ($existing) {
-                $existing->fill($fields)->save();
-                ++$updated;
-            } else {
-                MistakeItem::create($fields + ['student_id' => (int) $student->id]);
-                ++$imported;
+            try {
+                $existing = MistakeItem::query()
+                    ->where('student_id', (int) $student->id)
+                    ->where('item_key', $fields['item_key'])
+                    ->first();
+                if ($existing) {
+                    $existing->fill($fields)->save();
+                    ++$updated;
+                } else {
+                    MistakeItem::create($fields + ['student_id' => (int) $student->id]);
+                    ++$imported;
+                }
+            } catch (\Throwable) {
+                // 单条失败（如数据库异常）只影响该条，不吞掉整批结果
+                ++$skipped;
             }
         }
 
@@ -250,7 +255,7 @@ class MistakeService
     /**
      * 模型抽取内容 → 错题条目字段；缺少题干或正确答案的条目视为不可导入，返回 null。
      */
-    private static function normalizeUploadedItem(array $raw): ?array
+    private static function normalizeUploadedItem(array $raw, int $studentId): ?array
     {
         $stem = trim((string) ($raw['stem'] ?? ''));
         $correct = self::normalizeAnswerLetters((string) ($raw['correctAnswer'] ?? ''));
@@ -280,7 +285,7 @@ class MistakeService
         $module = trim((string) ($raw['module'] ?? ''));
         $kaodian = trim((string) ($raw['kaodian'] ?? ''));
 
-        return self::buildUploadFields($stem, $options, $chosen, $correct, $module, $kaodian);
+        return self::buildUploadFields($studentId, $stem, $options, $chosen, $correct, $module, $kaodian);
     }
 
     /**
@@ -308,9 +313,9 @@ class MistakeService
             }
 
             $stem = '';
-            if (preg_match('/\*\*题干\*\*\s*[:：]\s*(.+?)(?=\n\s*[A-DＡ-Ｄ][\.．、]|\n\s*\*\*|\n##|$)/s', $section, $m)) {
+            if (preg_match('/\*\*题干\*\*\s*[:：]\s*(.+?)(?=\n\s*[A-DＡ-Ｄ][\.．、]|\n\s*\*\*|\n##|$)/su', $section, $m)) {
                 $stem = trim($m[1]);
-            } elseif (preg_match('/题干\s*[:：]\s*(.+?)(?=\n\s*[A-DＡ-Ｄ][\.．、]|\n\s*\*\*|\n##|$)/s', $section, $m)) {
+            } elseif (preg_match('/题干\s*[:：]\s*(.+?)(?=\n\s*[A-DＡ-Ｄ][\.．、]|\n\s*\*\*|\n##|$)/su', $section, $m)) {
                 $stem = trim($m[1]);
             }
 
@@ -338,7 +343,7 @@ class MistakeService
     private static function labeledValue(string $section, string $label): string
     {
         $label = preg_quote($label, '/');
-        if (preg_match("/(?:\*\*{$label}\*\*|{$label})\s*[:：]\s*(.+)/", $section, $m)) {
+        if (preg_match("/(?:\*\*{$label}\*\*|{$label})\s*[:：]\s*(.+)/u", $section, $m)) {
             return trim($m[1]);
         }
 
@@ -355,7 +360,7 @@ class MistakeService
         return implode('', array_values(array_unique($m[0])));
     }
 
-    private static function buildUploadFields(string $stem, array $options, string $chosen, string $correct, string $module, string $kaodian): array
+    private static function buildUploadFields(int $studentId, string $stem, array $options, string $chosen, string $correct, string $module, string $kaodian): array
     {
         foreach ($options as &$option) {
             $label = (string) $option['label'];
@@ -367,7 +372,8 @@ class MistakeService
         }
         unset($option);
 
-        $itemKey = 'upload-' . substr(hash('sha256', $stem . '|' . $correct), 0, 24);
+        // item_key 全局唯一：掺入 student_id，避免不同用户上传同一题时互相撞唯一索引
+        $itemKey = 'upload-' . substr(hash('sha256', $studentId . '|' . $stem . '|' . $correct), 0, 24);
 
         return [
             'module' => mb_substr($module !== '' ? $module : '未分类', 0, 32),
