@@ -20,6 +20,30 @@ class AuthController
     ) {
     }
 
+    public function sendCode(): ResponseInterface
+    {
+        $validator = new Validator($this->request->all());
+        $validator->required('email', '邮箱')->email('email', '邮箱');
+        if ($validator->fails()) {
+            return ApiResponse::message('请求校验失败', 422, $validator->errors());
+        }
+
+        $serverParams = $this->request->getServerParams();
+        $ip = (string) ($this->request->getHeaderLine('X-Real-IP') ?: $this->request->getHeaderLine('X-Forwarded-For'));
+        if ($ip === '') {
+            $ip = (string) ($serverParams['remote_addr'] ?? '');
+        } elseif (str_contains($ip, ',')) {
+            $ip = trim(explode(',', $ip)[0]);
+        }
+
+        $result = $this->service->sendRegisterCode($validator->string('email'), $ip);
+        if (isset($result['error'])) {
+            return ApiResponse::message($result['error'], 429);
+        }
+
+        return ApiResponse::data(['ok' => true]);
+    }
+
     public function register(): ResponseInterface
     {
         $validator = new Validator($this->request->all());
@@ -33,10 +57,12 @@ class AuthController
             return ApiResponse::message('请求校验失败', 422, $validator->errors());
         }
 
+        $code = $this->request->input('code');
         $result = $this->service->register(
             $validator->string('email'),
             (string) $this->request->input('password', ''),
-            $validator->string('displayName')
+            $validator->string('displayName'),
+            $code !== null ? (string) $code : null
         );
 
         if (isset($result['error'])) {

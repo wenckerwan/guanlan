@@ -274,6 +274,10 @@ h1 { margin:11px 0 11px; font-size:42px; font-weight:500; line-height:1.25; }
 .auth-form input { height:40px; padding:0 12px; border:1px solid var(--line); border-radius:3px; outline:0; background:#fff; font-size:13px; font-family:inherit; }
 .auth-form input:focus { border-color:var(--jade); }
 .auth-error { margin:0; padding:9px 11px; border-radius:3px; background:var(--red-soft); color:var(--red); font-size:12px; }
+.auth-notice { margin:0; padding:9px 11px; border-radius:3px; background:rgba(16,135,110,.08); color:var(--jade); font-size:12px; }
+.code-row { display:flex; gap:8px; align-items:center; }
+.code-row input { flex:1; min-width:0; }
+.code-row .ghost-button { flex:none; height:40px; white-space:nowrap; }
 .auth-foot { margin:18px 0 0; padding-top:16px; border-top:1px solid var(--line); color:var(--muted); font-size:12px; text-align:center; }
 .me-links { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:12px; margin-bottom:32px; }
 .me-links a { display:grid; gap:4px; padding:17px 19px; border:1px solid var(--line); border-radius:4px; background:#fff; font-size:14px; font-weight:600; }

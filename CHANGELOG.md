@@ -1,5 +1,16 @@
 # 更新记录
 
+## V0.1-dev.23 - 注册邮箱验证码（腾讯企业邮 SMTP 发信）- 2026-09-30
+
+### 变更
+
+- **注册流程增加邮箱验证**：注册时必须先获取 6 位验证码并填入，验证通过才创建账号。
+- **发信通道**：`App\Support\Mailer`（PHP 原生 stream SMTP，无新增 composer 依赖），支持 465 SSL / 587 STARTTLS；配置走 `MAIL_*` 环境变量，`MAIL_ENABLED=false` 时自动降级为原注册流程（不要求验证码）。发件邮箱：腾讯企业邮 `guanlan@wencker.top`。
+- **新表**（迁移 `2026_09_30_000007`）：`email_verifications`（email / purpose / code_hash / attempts / expires_at / used_at / ip）。
+- **接口**：新增 `POST /auth/email/code`（公开）。限流：同邮箱 60s 一次、每小时 5 封、同 IP 每小时 60 封；验证码 10 分钟有效、5 次错误作废；哈希存储；已注册邮箱不发信但返回同样提示（防枚举）。
+- **注册接口** `/auth/register`：`MAIL_ENABLED` 时必填 `code`。
+- **前端**：注册页新增验证码输入 + 「获取验证码」按钮（60 秒倒计时、发送成功提示）。
+
 ## V0.1-dev.22 - 文章评论区（登录可见可评、楼层/回复/用户组、后台管理）- 2026-09-30
 
 ### 变更

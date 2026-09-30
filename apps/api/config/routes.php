@@ -85,6 +85,7 @@ Router::post('/api/v1/comments', [CommentController::class, 'store'], ['middlewa
 Router::delete('/api/v1/comments/{id:\d+}', [CommentController::class, 'destroy'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
 
 // 认证
+Router::post('/api/v1/auth/email/code', [AuthController::class, 'sendCode']);
 Router::post('/api/v1/auth/register', [AuthController::class, 'register']);
 Router::post('/api/v1/auth/login', [AuthController::class, 'login']);
 Router::get('/api/v1/auth/me', [AuthController::class, 'me'], ['middleware' => [AuthMiddleware::class]]);

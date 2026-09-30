@@ -107,11 +107,11 @@ export function useAuth() {
     return payload.data.user
   }
 
-  async function register(email: string, password: string, displayName: string) {
+  async function register(email: string, password: string, displayName: string, code?: string) {
     const payload = await $fetch<{ data: AuthPayload }>('/auth/register', {
       baseURL: config.public.apiBase as string,
       method: 'POST',
-      body: { email, password, displayName },
+      body: { email, password, displayName, code },
     })
     persist(payload.data.token, payload.data.user)
     return payload.data.user

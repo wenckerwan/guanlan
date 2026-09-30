@@ -1,28 +1,73 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { LogIn, UserPlus } from 'lucide-vue-next'
 
 useHead({ title: '登录｜观澜考研政治知识库' })
 
 const route = useRoute()
 const router = useRouter()
+const config = useRuntimeConfig()
 const { login, register, restore } = useAuth()
 
 const mode = ref<'login' | 'register'>(route.query.mode === 'register' ? 'register' : 'login')
 const email = ref('')
 const password = ref('')
 const displayName = ref('')
+const code = ref('')
 const error = ref('')
+const notice = ref('')
 const pending = ref(false)
+const sending = ref(false)
+const countdown = ref(0)
+let timer: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => restore())
+
+onUnmounted(() => {
+  if (timer) clearInterval(timer)
+})
+
+const codeDisabled = computed(() => countdown.value > 0 || sending.value || !/^\S+@\S+\.\S+$/.test(email.value))
+
+function startCountdown() {
+  countdown.value = 60
+  if (timer) clearInterval(timer)
+  timer = setInterval(() => {
+    countdown.value -= 1
+    if (countdown.value <= 0 && timer) {
+      clearInterval(timer)
+      timer = null
+    }
+  }, 1000)
+}
+
+async function sendCode() {
+  if (codeDisabled.value) return
+  error.value = ''
+  notice.value = ''
+  sending.value = true
+  try {
+    await $fetch('/auth/email/code', {
+      baseURL: config.public.apiBase as string,
+      method: 'POST',
+      body: { email: email.value.trim() },
+    })
+    notice.value = '验证码已发送，请查收邮件（注意垃圾邮件箱）'
+    startCountdown()
+  } catch (exception) {
+    const data = (exception as { data?: { message?: string } })?.data
+    error.value = data?.message || '验证码发送失败，请稍后重试'
+  } finally {
+    sending.value = false
+  }
+}
 
 async function submit() {
   error.value = ''
   pending.value = true
   try {
     if (mode.value === 'register') {
-      await register(email.value.trim(), password.value, displayName.value.trim())
+      await register(email.value.trim(), password.value, displayName.value.trim(), code.value.trim())
     } else {
       await login(email.value.trim(), password.value)
     }
@@ -59,11 +104,21 @@ async function submit() {
             <span>邮箱</span>
             <input v-model="email" type="email" required autocomplete="email" placeholder="you@example.com" />
           </label>
+          <label v-if="mode === 'register'">
+            <span>邮箱验证码</span>
+            <span class="code-row">
+              <input v-model="code" type="text" required inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6 位数字" />
+              <button type="button" class="ghost-button small" :disabled="codeDisabled" @click="sendCode">
+                {{ sending ? '发送中…' : (countdown > 0 ? `${countdown}s` : '获取验证码') }}
+              </button>
+            </span>
+          </label>
           <label>
             <span>密码</span>
             <input v-model="password" type="password" required :autocomplete="mode === 'login' ? 'current-password' : 'new-password'" :minlength="mode === 'register' ? 6 : undefined" placeholder="至少 6 位" />
           </label>
 
+          <p v-if="notice" class="auth-notice">{{ notice }}</p>
           <p v-if="error" class="auth-error">{{ error }}</p>
 
           <button class="primary-button wide" type="submit" :disabled="pending">
