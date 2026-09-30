@@ -68,7 +68,9 @@ class MistakeController
 
         try {
             return $this->service->importUploadedItems($student, $markdown, $aiItems);
-        } catch (\Throwable) {
+        } catch (\Throwable $exception) {
+            error_log('[Import] uploaded items import failed: ' . $exception->getMessage());
+
             return ['imported' => 0, 'updated' => 0, 'skipped' => 0];
         }
     }
