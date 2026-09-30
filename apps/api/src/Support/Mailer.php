@@ -198,9 +198,9 @@ class Mailer
             $body = base64_encode($html);
             $body = chunk_split($body);
             $payload = implode("\r\n", $headers) . "\r\n\r\n" . $body;
-            // 点透明：正文行首的点补一个点（先填充，再追加 SMTP 终止符 \r\n.\r\n）
+            // 点透明：正文行首的点补一个点；终止符必须紧跟上一行 CRLF（QQ 服务器对终止符前的空行会挂起不响应）
             $payload = preg_replace('/^\./m', '..', $payload) ?? $payload;
-            $write($payload . "\r\n.\r\n");
+            $write($payload . ".\r\n");
             $step = 'data-end';
             $expect($read(), '250');
 
