@@ -75,6 +75,14 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL:?ADMIN_EMAIL is required}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}
       ADMIN_DISPLAY_NAME: ${ADMIN_DISPLAY_NAME:?ADMIN_DISPLAY_NAME is required}
+      MAIL_ENABLED: ${MAIL_ENABLED:-false}
+      MAIL_HOST: ${MAIL_HOST:-smtp.exmail.qq.com}
+      MAIL_PORT: ${MAIL_PORT:-465}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-观澜}
+      MAIL_ACCOUNTS: ${MAIL_ACCOUNTS:-}
     volumes:
       - ./storage:/opt/guanlan/storage:ro
     depends_on:
