@@ -43,7 +43,11 @@ type Candidate = {
  * 分位阈值是某天数据上量出来的，跨天不可比（同一条素材在不同算法口径下能差 1.15 倍）；
  * 而「在本日池里排前列」这个含义天天成立。绝对分数照常显示，供跨天比较。
  */
-const simSorted = computed(() => items.value.map((i) => i.examSim || 0).sort((a, b) => a - b))
+/** 分数一律按 3 位小数取整后再分档：列里显示 0.076 却一个中相关一个弱相关，
+ *  是因为 exam_sim 有 4 位小数（0.0762 / 0.0759）而分位阈值正好卡在中间。 */
+const r3 = (v: number) => Math.round((v || 0) * 1000) / 1000
+
+const simSorted = computed(() => items.value.map((i) => r3(i.examSim)).sort((a, b) => a - b))
 
 function quantile(p: number) {
   const arr = simSorted.value
@@ -58,7 +62,7 @@ const TIERS = [
 ]
 
 function simTier(v: number) {
-  const x = v || 0
+  const x = r3(v)
   if (x >= quantile(0.75)) return TIERS[0]
   if (x >= quantile(0.25)) return TIERS[1]
   return TIERS[2]
@@ -81,12 +85,13 @@ function clipExcerpt(text: string, max = 26) {
   return cut > 0 ? window.slice(0, cut + 1) : window + '…'
 }
 
-/** 命中真题：每条一行，空题干的命中直接丢掉 */
+/** 命中真题：每条一行，空题干的丢掉；题池里有同干异题（实测 1999 欧盟那条出现两次），按摘要去重 */
 function hitLines(item: Candidate) {
-  return (item.examMatches || [])
+  const lines = (item.examMatches || [])
     .map((m) => ({ text: clipExcerpt(m.stem_excerpt), year: m.year, score: m.score }))
     .filter((h) => h.text !== '')
-    .slice(0, 3)
+  const uniq = lines.filter((h, i, arr) => arr.findIndex((x) => x.text === h.text) === i)
+  return uniq.slice(0, 3)
 }
 
 const { request, restore } = useAuth()
