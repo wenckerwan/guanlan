@@ -64,10 +64,29 @@ function simTier(v: number) {
   return TIERS[2]
 }
 
-function simText(item: Candidate) {
-  const hits = (item.examMatches || []).slice(0, 2)
-    .map((m) => `${m.year}·${m.stem_excerpt.slice(0, 16)}`)
-  return `${(item.examSim || 0).toFixed(3)}` + (hits.length ? ` ｜ 命中 ${hits.join('、')}` : '')
+/**
+ * 题干摘要按句读边界截，不硬切。
+ * 直接 slice(0,16) 会切出「中国人民解放军战区成立大会于20」这种半截词，
+ * 后台看着像坏行；退到最近的一个标点处收尾更好读。
+ */
+function clipExcerpt(text: string, max = 26) {
+  const t = (text || '').replace(/\s+/g, '').trim()
+  if (t.length <= max) return t
+  const window = t.slice(0, max)
+  let cut = -1
+  for (const p of ['。', '；', '，', '、', '：']) {
+    const i = window.lastIndexOf(p)
+    if (i > 10 && i > cut) cut = i
+  }
+  return cut > 0 ? window.slice(0, cut + 1) : window + '…'
+}
+
+/** 命中真题：每条一行，空题干的命中直接丢掉 */
+function hitLines(item: Candidate) {
+  return (item.examMatches || [])
+    .map((m) => ({ text: clipExcerpt(m.stem_excerpt), year: m.year, score: m.score }))
+    .filter((h) => h.text !== '')
+    .slice(0, 3)
 }
 
 const { request, restore } = useAuth()
@@ -76,7 +95,7 @@ const testing = ref(false)
 const screening = ref(false)
 
 const config = reactive<AiConfig>({ provider: 'openai', apiKey: '', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini', subjectId: 6, topN: 10, hasKey: false })
-const query = reactive({ date: new Date(Date.now() - 86400000).toISOString().slice(0, 10), top: 10 })
+const query = reactive({ date: new Date(Date.now() - 86400000).toISOString().slice(0, 10), top: 10, sort: 'id' })
 const items = ref<Candidate[]>([])
 const lastResult = ref('')
 
@@ -130,7 +149,7 @@ async function testConfig() {
 }
 
 async function loadCandidates() {
-  items.value = await request<Candidate[]>(`/admin/shizheng/candidates?date=${query.date}`)
+  items.value = await request<Candidate[]>(`/admin/shizheng/candidates?date=${query.date}&sort=${query.sort}`)
 }
 
 /** 降级原因要写明，否则又变成「看不出区别的静默兜底」 */
@@ -222,6 +241,13 @@ onMounted(async () => {
     <form class="admin-form" @submit.prevent="loadCandidates">
       <label><span>日期</span><input v-model="query.date" type="date" /></label>
       <label><span>入选条数</span><input v-model.number="query.top" type="number" min="1" max="30" /></label>
+      <label>
+        <span>列表排序</span>
+        <select v-model="query.sort" @change="loadCandidates">
+          <option value="id">默认（入库顺序）</option>
+          <option value="sim">按真题相关度</option>
+        </select>
+      </label>
       <button class="ghost-button" type="submit"><Rss :size="15" />查看候选</button>
       <button class="primary-button" type="button" :disabled="screening" @click="screen(false)">
         <Sparkles :size="15" />{{ screening ? '筛选中…' : 'AI 筛选' }}
@@ -240,9 +266,12 @@ onMounted(async () => {
         <span class="admin-meta">{{ item.source }} {{ item.channel }} · {{ item.module }}</span>
         <span class="admin-meta">
           真题相关度 <span :class="simTier(item.examSim).cls">{{ simTier(item.examSim).label }}</span>
-          {{ ' ' }}{{ simText(item) }}
+          {{ ' ' }}{{ (item.examSim || 0).toFixed(3) }}
         </span>
         <span class="admin-meta">{{ item.status === 'published' ? '已发布' : item.status === 'selected' ? '已选中' : '待筛选' }}{{ item.aiReason ? ` · ${item.aiReason}` : '' }}</span>
+        <span v-if="hitLines(item).length" class="admin-meta exam-hits">
+          相近真题：<i v-for="(h, i) in hitLines(item)" :key="i">{{ h.year }}·{{ h.text }}（{{ h.score.toFixed(3) }}）</i>
+        </span>
       </li>
     </ul>
     <p v-if="!items.length" class="admin-meta">该日期暂无候选（爬虫每日凌晨自动推送）。</p>
@@ -256,4 +285,9 @@ onMounted(async () => {
 .sim-strong { background:var(--red-soft); color:var(--red); }
 .sim-mid { background:var(--gold-soft); color:var(--gold); }
 .sim-weak { background:var(--line); color:var(--muted); }
+/* .record-list li 是不换行的 flex：长文本会被塞进同一个 flex 项里自己折行，
+   断成「｜ 命 / 于20」那种坏行。相近真题改成独占一行。 */
+.record-list li { flex-wrap: wrap; }
+.exam-hits { flex: 1 0 100%; font-size: 11px; }
+.exam-hits i { font-style: normal; margin-right: 10px; }
 </style>

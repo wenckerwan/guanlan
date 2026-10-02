@@ -186,13 +186,21 @@ class ShizhengScreeningService
         return ['created' => $created, 'updated' => $updated];
     }
 
-    public function candidates(string $date): array
+    /**
+     * 某天候选列表。
+     *
+     * sort=id（默认）保持入库顺序，与筛选时 selected[].index 用的下标口径一致；
+     * sort=sim 按真题相关度降序，只为后台人工扫选时能一眼看出高低。
+     */
+    public function candidates(string $date, string $sort = 'id'): array
     {
-        return ShizhengCandidate::query()
-            ->where('publish_date', $date)
-            ->orderBy('id')
-            ->get()
-            ->all();
+        $query = ShizhengCandidate::query()->where('publish_date', $date);
+        if ($sort === 'sim') {
+            $query->orderByDesc('exam_sim')->orderBy('id');
+        } else {
+            $query->orderBy('id');
+        }
+        return $query->get()->all();
     }
 
     // ---------- AI 筛选 ----------
