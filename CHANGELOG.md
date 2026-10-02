@@ -39,16 +39,26 @@
 
 ### 验收回放（2026-09-30 的 51 条候选，`deploy/check_exam_replay.py`，全程 auto=false 不发布）
 
-- 相似度落列：#413 党建思想研讨会 **0.2174**、#427 文化赋能 0.1701、#410 中日四个政治文件 0.1470、#415 高水平安全护航 0.1368；#404 增值税留抵退税 0.0835、#403 央行货币政策工具 0.1238。四条应选的分数全部高于两条不该发的。
-- 当日池 max 分布：min 0.051 / p25 0.076 / 中位 0.105 / max 0.217。
-- `sim_only` 与 `hybrid` 兜底：4 条应进全部进 top10，2 条应出全部跌出 ✓（方案 §3.1 达成）。
-- `ai` 策略：`fallback=false`，AI 路径带真题证据出结果。
-- 回归：`publish()` 标题去重跳过、`upsertCandidates()` 不回写 `published` 行、`ai_*`/`hotspot_id` 均不受重推影响 —— 逻辑未改动。
+**以下为 dev.27 部署到 root-189 之后的真实结果**（`shizheng:rescore 2026-09-30` 回填 51 条耗时 1.1 秒）：
+
+- 相似度落列：#413 党建思想研讨会 **0.2174** / #427 文化赋能 0.1701 / #410 中日四个政治文件 0.1470 / #415 高水平安全护航 0.1368；#403 央行货币政策工具 0.1238、#404 增值税留抵退税 0.0835。四条应选全部高于两条不该发的。
+- `sim_only`、`hybrid`、`ai` 三种策略各跑一遍：**6/6 判定全通过**（四条应进全部进 top10、两条应出全部跌出），`ai` 策略 `fallback=false`。方案 §3.1 达成。
+- 当天池 max 分布：min 0.051 / p25 0.076 / 中位 0.105 / max 0.217。
+- **P0 实测（§3.3）**：把 baseUrl 临时改成不可达域名后干跑筛选，返回 `fallback=true, fallbackReason=ai_request_failed`；容器日志出现 `shizheng.WARNING: 时政 AI 筛选降级为规则兜底 {"date":"2026-09-30","fallback_reason":"ai_request_failed","error":"AI 请求失败: Failed to connecting to ... DNS Lookup resolve failed","provider":"deepseek","model":"deepseek-chat"}`；审计写入 `{"top":10,"auto":false,"strategy":"ai","fallbackReason":"ai_request_failed","selected":10}`。跑完原样还原 baseUrl 并复测 `config/test` 返回 `{"ok":true,"reply":"正常"}`。对照记录：还原后的正常筛选审计为 `fallbackReason: null`。
+- **推送路径自查（`deploy/check_push_path_scores.py`）**：挑一条候选把 `exam_sim/exam_affinity/exam_matches` 清零后用原 payload 单条重推 → 返回 201 `{created:0,updated:1}`，三列重新算出 `sim=0.0811 / affinity=0.0590 / matches 481 字节`。证明相似度由 `upsertCandidates()` 就地计算，不依赖 rescore。
+- 全量回填：`shizheng:rescore`（无参数）重算 401 条候选，12.0 秒；2026-09-29 / 09-30 / 10-01 三个日期的 scored 均等于条数。
+- 回归：`publish()` 标题去重跳过、`upsertCandidates()` 不回写 `published` 行、`ai_*`/`hotspot_id` 不受重推影响 —— 逻辑未改动；站点首页与 `/admin/shizheng` 均 200，公开接口正常。
+
 
 ### 测试
 
 - 新增 `apps/api/tests/ShizhengSimilarityTest.php`（纯算法，不依赖容器与数据库，`php tests/ShizhengSimilarityTest.php`）：bigram 数量与切分边界（标点不参与、全角/大小写归一、单字不成组）、候选文本字段权重、IDF 单调性（全池常见 gram < 罕见 gram）、主题命中排序、同文本余弦=1、空向量安全。**容器内 PHP 8.3 跑通 PASS**。
 - 绝对阈值分层不做单测（依赖真实题池），改由 `check_exam_replay.py` 拿历史数据回放断言。
+
+### 部署踩坑（本次实测，代价是站点短暂 502）
+
+- `ShizhengRescoreCandidatesCommand::configure()` 里 `addArgument('date', 0, ...)` 传了字面量 `0`，Symfony Console 只接受 `InputArgument::OPTIONAL`（=2），于是抛 `Argument mode "0" is not valid`。**关键在于 Hyperf 的 `ApplicationFactory` 会在启动阶段实例化所有注册命令**——命令参数写错不是「这条命令不能用」，而是 **整个 api 容器起不来**：容器 CMD 里的 `until php bin/hyperf.php migrate` 永远失败 → healthcheck 不过 → web 依赖 api 不被拉起 → 站点 502。已改为常量并在代码里留了注释说明这条因果。
+- 由此得到的部署纪律：**新增/改动控制台命令后，先 `docker exec guanlan-api-1 php bin/hyperf.php list` 看能否列出该命令且无 Fatal，再判定镜像可交付**；`up -d --build` 失败时 `docker compose up -d web` 可单独恢复前台。
 
 
 ## V0.1-dev.26 - 时政爬虫提速（仅 services/shizheng-crawler，无需重建 api/web 容器）- 2026-09-30
