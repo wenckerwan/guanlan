@@ -82,7 +82,7 @@ function clipExcerpt(text: string, max = 26) {
     const i = window.lastIndexOf(p)
     if (i > 10 && i > cut) cut = i
   }
-  return cut > 0 ? window.slice(0, cut + 1) : window + '…'
+  return cut > 0 ? window.slice(0, cut + 1).replace(/[、，：；]+$/, '…') : window + '…'
 }
 
 /** 命中真题：每条一行，空题干的丢掉；题池里有同干异题（实测 1999 欧盟那条出现两次），按摘要去重 */
