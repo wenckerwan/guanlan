@@ -81,11 +81,14 @@ class AdminShizhengController
             'aiPriority' => $c->ai_priority,
             'aiModule' => $c->ai_module,
             'aiReason' => $c->ai_reason,
+            'examSim' => round((float) $c->exam_sim, 4),
+            'examAffinity' => round((float) $c->exam_affinity, 4),
+            'examMatches' => (array) ($c->exam_matches ?? []),
             'hotspotId' => $c->hotspot_id,
         ], $rows));
     }
 
-    /** AI 筛选：{date, top?, auto?} auto=true 时筛完直接发布 */
+    /** 筛选：{date, top?, auto?, strategy?} auto=true 时筛完直接发布 */
     public function screen(): ResponseInterface
     {
         $date = trim((string) $this->request->input('date', ''));
@@ -97,9 +100,17 @@ class AdminShizhengController
             $top = $this->service->getConfig()['topN'];
         }
         $auto = filter_var($this->request->input('auto', false), FILTER_VALIDATE_BOOLEAN);
-        $result = $this->service->screen($date, $top, $auto);
+        $strategy = trim((string) $this->request->input('strategy', 'ai')) ?: 'ai';
+        $result = $this->service->screen($date, $top, $auto, $strategy);
         if (! isset($result['error'])) {
-            $this->audit->log(Auth::user(), 'shizheng.screen', 'shizheng_candidates', $date, ['top' => $top, 'auto' => $auto]);
+            // fallback_reason 进审计：降级不能只在响应里一闪而过，否则又没人知道
+            $this->audit->log(Auth::user(), 'shizheng.screen', 'shizheng_candidates', $date, [
+                'top' => $top,
+                'auto' => $auto,
+                'strategy' => $result['strategy'] ?? $strategy,
+                'fallbackReason' => $result['fallbackReason'] ?? null,
+                'selected' => count($result['selected'] ?? []),
+            ]);
         }
         return isset($result['error'])
             ? ApiResponse::message($result['error'], 422)

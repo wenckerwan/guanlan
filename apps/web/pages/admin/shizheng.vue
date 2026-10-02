@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { Sparkles, Rss, Send, RefreshCw, KeyRound } from 'lucide-vue-next'
 
 type AiConfig = {
@@ -10,6 +10,14 @@ type AiConfig = {
   subjectId: number
   topN: number
   hasKey: boolean
+}
+
+type ExamMatch = {
+  question_id: number
+  year: number
+  super_name: string
+  score: number
+  stem_excerpt: string
 }
 
 type Candidate = {
@@ -24,7 +32,42 @@ type Candidate = {
   aiPriority: string
   aiModule: string
   aiReason: string
+  examSim: number
+  examAffinity: number
+  examMatches: ExamMatch[]
   hotspotId: number | null
+}
+
+/**
+ * 真题相关度分层按「本日候选池的分位」判，不写死绝对阈值：
+ * 分位阈值是某天数据上量出来的，跨天不可比（同一条素材在不同算法口径下能差 1.15 倍）；
+ * 而「在本日池里排前列」这个含义天天成立。绝对分数照常显示，供跨天比较。
+ */
+const simSorted = computed(() => items.value.map((i) => i.examSim || 0).sort((a, b) => a - b))
+
+function quantile(p: number) {
+  const arr = simSorted.value
+  if (arr.length === 0) return 0
+  return arr[Math.min(arr.length - 1, Math.floor(arr.length * p))]
+}
+
+const TIERS = [
+  { label: '强相关', cls: 'sim-strong' },
+  { label: '中相关', cls: 'sim-mid' },
+  { label: '弱相关', cls: 'sim-weak' },
+]
+
+function simTier(v: number) {
+  const x = v || 0
+  if (x >= quantile(0.75)) return TIERS[0]
+  if (x >= quantile(0.25)) return TIERS[1]
+  return TIERS[2]
+}
+
+function simText(item: Candidate) {
+  const hits = (item.examMatches || []).slice(0, 2)
+    .map((m) => `${m.year}·${m.stem_excerpt.slice(0, 16)}`)
+  return `${(item.examSim || 0).toFixed(3)}` + (hits.length ? ` ｜ 命中 ${hits.join('、')}` : '')
 }
 
 const { request, restore } = useAuth()
@@ -90,16 +133,33 @@ async function loadCandidates() {
   items.value = await request<Candidate[]>(`/admin/shizheng/candidates?date=${query.date}`)
 }
 
+/** 降级原因要写明，否则又变成「看不出区别的静默兜底」 */
+const FALLBACK_LABELS: Record<string, string> = {
+  no_key: '未配置 API Key',
+  ai_request_failed: 'AI 请求失败',
+  ai_unparseable: 'AI 返回无法解析',
+}
+
 async function screen(auto: boolean) {
   screening.value = true
   message.value = ''
   try {
-    const data = await request<{ total: number; selected: unknown[]; fallback: boolean; published: { created: number; skipped: number } | null }>(
+    const data = await request<{
+      total: number
+      selected: unknown[]
+      fallback: boolean
+      fallbackReason: string | null
+      strategy: string
+      published: { created: number; skipped: number } | null
+    }>(
       '/admin/shizheng/screen',
       { method: 'POST', body: { date: query.date, top: query.top, auto } },
     )
+    const how = data.fallback
+      ? `（规则兜底：${FALLBACK_LABELS[data.fallbackReason || ''] || data.fallbackReason || 'AI 不可用'}）`
+      : data.strategy === 'ai' ? '（AI 筛选）' : `（${data.strategy} 策略）`
     lastResult.value = `候选 ${data.total} 条，入选 ${data.selected.length} 条`
-      + (data.fallback ? '（规则兜底，AI 不可用）' : '（AI 筛选）')
+      + how
       + (data.published ? `；已发布 ${data.published.created} 条，跳过 ${data.published.skipped} 条` : '')
     await loadCandidates()
   } catch (e) {
@@ -178,6 +238,10 @@ onMounted(async () => {
         <span class="record-type">{{ item.aiPriority || item.priority || '—' }}</span>
         <span class="record-title">{{ item.title }}</span>
         <span class="admin-meta">{{ item.source }} {{ item.channel }} · {{ item.module }}</span>
+        <span class="admin-meta">
+          真题相关度 <span :class="simTier(item.examSim).cls">{{ simTier(item.examSim).label }}</span>
+          {{ ' ' }}{{ simText(item) }}
+        </span>
         <span class="admin-meta">{{ item.status === 'published' ? '已发布' : item.status === 'selected' ? '已选中' : '待筛选' }}{{ item.aiReason ? ` · ${item.aiReason}` : '' }}</span>
       </li>
     </ul>
@@ -188,4 +252,8 @@ onMounted(async () => {
 <style scoped>
 .is-selected .record-title { font-weight: 600; }
 .is-published { opacity: 0.6; }
+.sim-strong, .sim-mid, .sim-weak { padding:1px 6px; border-radius:3px; font-size:11px; }
+.sim-strong { background:var(--red-soft); color:var(--red); }
+.sim-mid { background:var(--gold-soft); color:var(--gold); }
+.sim-weak { background:var(--line); color:var(--muted); }
 </style>

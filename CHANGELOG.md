@@ -1,5 +1,56 @@
 # 更新记录
 
+## V0.1-dev.27 - 时政筛选引入「真题相关度」+ AI 降级不再静默 - 2026-10-02
+
+依据《观澜·每日时政筛选 云端调整方案（v1）》。抓取与发布链路本身没问题，问题在筛选质量。
+
+### P0 · AI 静默降级暴露
+
+- **实测结论**：`POST /admin/shizheng/config/test` 直连 DeepSeek 正常（`{"ok":true,"reply":"正常"}`），且 2026-09-30 干跑 `screen` 得到 `fallback=false` —— 说明 **AI 路径本身可用，09-30 那次是偶发失败被 `screen()` 吞掉了**（原因至今无法追溯，因为没有留痕）。这正是必须修的部分。
+- `screen()` 现返回 `fallbackReason`：`no_key` / `ai_request_failed` / `ai_unparseable` / null；`isUnparseable()` 区分「AI 没答上来」与「答了但解析不出」，前者查网络与出网，后者查提示词与格式。
+- 每次降级写 `logger('shizheng')->warning(...)`（带 date/provider/model/error 前 300 字）；控制器同时把 `fallbackReason` 写进 `shizheng.screen` 审计明细。
+- 后台筛选结果行把兜底原因写明（「规则兜底：AI 请求失败」而不是笼统的「AI 不可用」）。
+
+### P1 · 真题相似度打分器
+
+- 新增 `App\Service\ShizhengSimilarityService`：**中文字符 bigram TF-IDF + 余弦相似度**，纯本地、零外部依赖、不出网、无 embedding。
+  - 语料 = `questions` 表时政题池（`super_name ∈ {习思想与形策, 形势与政策以及当代世界经济与政治}`，实测 208+108=**316 题**，与方案口径一致）；每题文本 = `stem + material + options + kaodian + trap + analysis`。
+  - 候选文本 = `title×2 + facts×1 + fixed_phrases×2 + exam_points×2 + traps×1 + _keywords×3`（权重沿用离线脚本）。
+  - tf 取 sublinear `1+log(tf)`，idf 取 `log(1+N/df)`，两侧 L2 归一化；题池未出现的 gram 直接丢弃以保持稀疏。
+  - 打分走**倒排 posting 累加**而非 316 次全向量比较。
+  - 索引按题池指纹（`COUNT(*) + MAX(updated_at)`）做**进程内静态缓存**（本站无 Redis；题不常变，跨请求命中）。
+- 迁移 `2026_10_02_000001_add_exam_similarity_to_shizheng_candidates`：`exam_sim`/`exam_affinity`（均 `decimal(5,4)` 默认 0）+ `exam_matches`(json) + `(publish_date, exam_sim)` 索引；down() 先删索引再删列，完整可回滚。存量行有默认值，不阻断。
+- `upsertCandidates()` 内逐条算好落列——**爬虫侧一行代码没动**，题库与相似度都留在服务端。
+- 实测代价（api 容器内、真实 316 题）：索引构建 + 51 条打分 **0.25 秒**，常驻内存增量 **42 MB**，峰值 52 MB。
+- 新增命令 `php bin/hyperf.php shizheng:rescore [date]` 回填/刷新历史候选的三列（在 `config/autoload/commands.php` 显式注册，沿用本仓库既有的注册方式）。
+
+### P2 · AI brief 补证据
+
+- brief 每条增 `exam_points`/`traps`/`keywords`/`exam_sim`/`exam_top_questions`（后 3 个字段此前完全缺失，AI 只能凭通识排序）。
+- system prompt 增第 4 条标准：与历年时政真题考点重合度高者显著加权，纯地方/行业/数据型软新闻即便原始 priority 高也应靠后；并要求 `reason` 末尾注明「真题相关 x / 年份·模块」便于人工复核。
+- `selected[]` 回填本地算出的 `sim`（不信 AI 自报的分数）。temperature 维持 0.2。
+
+### P3 · 兜底混合排序 + 可观测 + 后台列
+
+- `screenByRule()` 主键改为 **`exam_sim` 降序**，同分再看爬虫 `payload.priority`；新增 `sim_only`（只看相似度）。此前只按 priority 排，而爬虫规则模式下**所有条目 priority 都是「中」**，等于随机——这就是 09-30 漏选/误发的直接原因。
+- `screen` 增 `strategy` 参数（`ai|hybrid|sim_only`，默认 `ai`）；显式指定后两种视为「操作者选择」，`fallback=false`，不记降级。
+- `candidates()` 返回 `examSim`/`examAffinity`/`examMatches`；后台 `/admin/shizheng` 候选行新增「真题相关度」列（绝对分数 + 命中年份与题干摘要）。
+- **分层标签改用当日候选池分位**（前 25% 强 / 后 25% 弱），不写死 0.12/0.08：方案里的阈值是在离线脚本口径上量的，本实现同一条素材分数系统性偏高约 1.15 倍（#403 本实现 0.124 vs 离线 0.076），照抄固定阈值会把「不该发」的条目显示成「强相关」。绝对分数照常展示供跨天比较，排序与兜底仍以绝对值为准。
+
+### 验收回放（2026-09-30 的 51 条候选，`deploy/check_exam_replay.py`，全程 auto=false 不发布）
+
+- 相似度落列：#413 党建思想研讨会 **0.2174**、#427 文化赋能 0.1701、#410 中日四个政治文件 0.1470、#415 高水平安全护航 0.1368；#404 增值税留抵退税 0.0835、#403 央行货币政策工具 0.1238。四条应选的分数全部高于两条不该发的。
+- 当日池 max 分布：min 0.051 / p25 0.076 / 中位 0.105 / max 0.217。
+- `sim_only` 与 `hybrid` 兜底：4 条应进全部进 top10，2 条应出全部跌出 ✓（方案 §3.1 达成）。
+- `ai` 策略：`fallback=false`，AI 路径带真题证据出结果。
+- 回归：`publish()` 标题去重跳过、`upsertCandidates()` 不回写 `published` 行、`ai_*`/`hotspot_id` 均不受重推影响 —— 逻辑未改动。
+
+### 测试
+
+- 新增 `apps/api/tests/ShizhengSimilarityTest.php`（纯算法，不依赖容器与数据库，`php tests/ShizhengSimilarityTest.php`）：bigram 数量与切分边界（标点不参与、全角/大小写归一、单字不成组）、候选文本字段权重、IDF 单调性（全池常见 gram < 罕见 gram）、主题命中排序、同文本余弦=1、空向量安全。**容器内 PHP 8.3 跑通 PASS**。
+- 绝对阈值分层不做单测（依赖真实题池），改由 `check_exam_replay.py` 拿历史数据回放断言。
+
+
 ## V0.1-dev.26 - 时政爬虫提速（仅 services/shizheng-crawler，无需重建 api/web 容器）- 2026-09-30
 
 ### 变更

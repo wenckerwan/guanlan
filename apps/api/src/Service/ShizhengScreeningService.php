@@ -10,15 +10,24 @@ use App\Model\ShizhengCandidate;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use Hyperf\Guzzle\ClientFactory;
+use Hyperf\Logger\LoggerFactory;
+use Psr\Log\LoggerInterface;
 
 /**
  * 每日时政 AI 筛选：候选池管理、AI 配置（后台可填）、筛选分析、发布到 hotspots。
  *
  * AI key 只存服务端（admin_settings 表），前台永不返回明文。
+ *
+ * 筛选有两条路径，且**降级必须可见**：2026-09-30 那次 AI 请求失败被 `screen()` 吞掉，
+ * 静默走了规则兜底，后台与日志里都看不出区别，结果是漏选高相关、误发纯经济新闻。
+ * 现在每次降级都带 `fallback_reason` 并写日志 + 审计。
  */
 class ShizhengScreeningService
 {
     private const CONFIG_KEY = 'shizheng.ai';
+
+    /** 筛选策略：ai=AI 优先失败降级；hybrid=不请求 AI，按「相似度+原始优先级」混合；sim_only=纯相似度 */
+    private const STRATEGIES = ['ai', 'hybrid', 'sim_only'];
 
     private const PRIORITY_LEVEL = [
         '绝高' => 'S', '极高' => 'A', '很高' => 'A',
@@ -37,9 +46,18 @@ class ShizhengScreeningService
 
     private Client $httpClient;
 
-    public function __construct(ClientFactory $clientFactory)
-    {
+    private ShizhengSimilarityService $similarity;
+
+    private LoggerInterface $logger;
+
+    public function __construct(
+        ClientFactory $clientFactory,
+        ShizhengSimilarityService $similarity,
+        LoggerFactory $loggerFactory
+    ) {
         $this->httpClient = $clientFactory->create();
+        $this->similarity = $similarity;
+        $this->logger = $loggerFactory->get('shizheng');
     }
 
     // ---------- AI 配置 ----------
@@ -124,7 +142,7 @@ class ShizhengScreeningService
 
     // ---------- 候选池 ----------
 
-    /** 爬虫推送当天候选：按 (publish_date, title) 幂等 upsert */
+    /** 爬虫推送当天候选：按 (publish_date, title) 幂等 upsert，并就地算真题相关度 */
     public function upsertCandidates(string $date, array $items): array
     {
         $created = 0;
@@ -137,6 +155,8 @@ class ShizhengScreeningService
             if ($title === '') {
                 continue;
             }
+            // 相似度在推送时算好落列：题库在本库内，爬虫侧不该复制一份题池或算法
+            $sim = $this->similarity->scorePayload($item);
             $row = ShizhengCandidate::query()->firstOrNew([
                 'publish_date' => $date,
                 'title' => $title,
@@ -146,6 +166,9 @@ class ShizhengScreeningService
                 'channel' => mb_substr((string) ($item['channel'] ?? ''), 0, 64),
                 'url' => mb_substr((string) ($item['url'] ?? ''), 0, 512),
                 'payload' => $item,
+                'exam_sim' => $sim['exam_sim'],
+                'exam_affinity' => $sim['exam_affinity'],
+                'exam_matches' => $sim['exam_matches'],
             ]);
             if (! $row->exists) {
                 $row->status = 'pending';
@@ -175,11 +198,21 @@ class ShizhengScreeningService
     // ---------- AI 筛选 ----------
 
     /**
-     * 筛选某天候选：AI 可用走 AI，否则按原始优先级规则兜底。
+     * 筛选某天候选。
+     *
+     * strategy：
+     *   ai（默认）AI 优先，失败降级到「相似度 + 原始优先级」混合规则；
+     *   hybrid     不请求 AI，直接用混合规则（灰度/回放对比用）；
+     *   sim_only   纯真题相似度排序。
      * auto=true 时筛完直接发布到 hotspots。
+     *
+     * @param string $strategy ai|hybrid|sim_only
      */
-    public function screen(string $date, int $top, bool $auto): array
+    public function screen(string $date, int $top, bool $auto, string $strategy = 'ai'): array
     {
+        if (! in_array($strategy, self::STRATEGIES, true)) {
+            return ['error' => "strategy 仅支持 " . implode('|', self::STRATEGIES)];
+        }
         $candidates = $this->candidates($date);
         if ($candidates === []) {
             return ['error' => "{$date} 无候选，请先由爬虫推送"];
@@ -187,13 +220,29 @@ class ShizhengScreeningService
         $top = min(max(1, $top), count($candidates));
         $config = $this->getConfig();
 
-        $selection = $config['apiKey'] !== ''
-            ? $this->screenWithAI($candidates, $top, $config)
-            : ['error' => '未配置 API Key'];
-
-        if (isset($selection['error'])) {
-            $selection = $this->screenByRule($candidates, $top);
-            $selection['fallback'] = $selection['fallback'] ?? true;
+        $fallbackReason = null;
+        if ($strategy === 'hybrid' || $strategy === 'sim_only') {
+            // 操作者显式指定不用 AI，这是「选择」不是「降级」，不记 fallback
+            $selection = $this->screenByRule($candidates, $top, $strategy);
+        } elseif ($config['apiKey'] === '') {
+            $fallbackReason = 'no_key';
+            $selection = $this->screenByRule($candidates, $top, 'hybrid');
+        } else {
+            $selection = $this->screenWithAI($candidates, $top, $config);
+            if (isset($selection['error'])) {
+                // 降级原因绝不能只留在返回值里：09-30 就是被吞掉后才没人发现
+                $fallbackReason = $this->isUnparseable((string) $selection['error'])
+                    ? 'ai_unparseable'
+                    : 'ai_request_failed';
+                $this->logger->warning('时政 AI 筛选降级为规则兜底', [
+                    'date' => $date,
+                    'fallback_reason' => $fallbackReason,
+                    'error' => mb_substr((string) $selection['error'], 0, 300),
+                    'provider' => $config['provider'],
+                    'model' => $config['model'],
+                ]);
+                $selection = $this->screenByRule($candidates, $top, 'hybrid');
+            }
         }
 
         // 先复位再标记，保证重复筛选幂等
@@ -204,7 +253,7 @@ class ShizhengScreeningService
 
         $selectedIds = [];
         foreach ($selection['selected'] as $entry) {
-            $candidate = $candidates[$entry['index']] ?? null;
+            $candidate = $candidates[(int) $entry['index']] ?? null;
             if (! $candidate) {
                 continue;
             }
@@ -221,14 +270,22 @@ class ShizhengScreeningService
         $result = [
             'date' => $date,
             'total' => count($candidates),
+            'strategy' => $strategy,
             'selected' => $selection['selected'],
-            'fallback' => (bool) ($selection['fallback'] ?? false),
+            'fallback' => $fallbackReason !== null,
+            'fallbackReason' => $fallbackReason,
             'published' => null,
         ];
         if ($auto) {
             $result['published'] = $this->publish($selectedIds);
         }
         return $result;
+    }
+
+    /** AI 有回话但内容解不出来（与「请求都没成功」区分开，便于定位是提示词还是网络问题） */
+    private function isUnparseable(string $error): bool
+    {
+        return str_contains($error, '无法解析') || str_contains($error, 'Base URL 无效');
     }
 
     private function screenWithAI(array $candidates, int $top, array $config): array
@@ -244,6 +301,12 @@ class ShizhengScreeningService
                 'priority' => (string) ($payload['priority'] ?? ''),
                 'facts' => array_slice((array) ($payload['facts'] ?? []), 0, 2),
                 'phrase' => (string) (((array) ($payload['fixed_phrases'] ?? []))[0] ?? ''),
+                // 以下三项是让 AI 能对齐「这套真题究竟考过什么」的证据，而非凭通识排序
+                'exam_points' => array_slice((array) ($payload['exam_points'] ?? []), 0, 3),
+                'traps' => array_slice((array) ($payload['traps'] ?? []), 0, 2),
+                'keywords' => array_slice((array) ($payload['_keywords'] ?? []), 0, 8),
+                'exam_sim' => round((float) $c->exam_sim, 3),
+                'exam_top_questions' => $this->similarity->matchHints($payload, 3),
             ];
         }
 
@@ -253,9 +316,10 @@ class ShizhengScreeningService
 1. 与考纲模块（马原/习思想/史纲/思法/当代/时政）的关联度
 2. 命题概率：元首外交、中央会议、法律文件、纪念活动、重大部署优先；一般性行程报道、文化活动靠后
 3. 固定表述的考试价值（需要逐字背诵的提法优先）
+4. 给定素材附带【历年相近真题】exam_top_questions 与【真题相关度】exam_sim（0-1，按历年时政真题文本算出）。与真题考点重合度高者显著加权；纯地方/行业/数据型软新闻即便原始 priority 高也应靠后。exam_sim 是证据不是唯一标准：命中题的年份越近、考点越贴合，权重越高。
 
 严格输出 JSON，不要任何其他文字：
-{"selected":[{"index":候选序号,"priority":"绝高|极高|很高|高|中高|中","module":"主考模块","reason":"一句话入选理由"}]}
+{"selected":[{"index":候选序号,"priority":"绝高|极高|很高|高|中高|中","module":"主考模块","reason":"一句话入选理由，需在末尾注明真题相关度与命中年份，如「…（真题相关0.18/2024·形策）」"}]}
 正好 {$top} 条；候选不足 {$top} 条则全选。
 PROMPT;
 
@@ -271,25 +335,47 @@ PROMPT;
         if ($selected === []) {
             return ['error' => 'AI 返回无法解析'];
         }
-        return ['selected' => array_slice($selected, 0, $top), 'fallback' => false];
+        $selected = array_slice($selected, 0, $top);
+        // 回填相关度，便于后台展示与人工复核（AI 自己报的分数不可信，以本地计算为准）
+        foreach ($selected as &$entry) {
+            $entry['sim'] = round((float) $candidates[(int) $entry['index']]->exam_sim, 3);
+        }
+        unset($entry);
+        return ['selected' => $selected, 'fallback' => false];
     }
 
-    /** 规则兜底：按爬虫提炼时的原始优先级排序取前 N */
-    private function screenByRule(array $candidates, int $top): array
+    /**
+     * 规则兜底排序。
+     *
+     * 旧版只按爬虫自标的 `payload.priority` 排，而爬虫规则模式下所有条目都是「中」，
+     * 等于随机 —— 2026-09-30 的漏选/误发就出在这里。现在主键换成真题相似度：
+     *   hybrid（默认兜底）exam_sim 降序，同分时按原始优先级；
+     *   sim_only          只看 exam_sim。
+     */
+    private function screenByRule(array $candidates, int $top, string $mode = 'hybrid'): array
     {
-        $indexed = array_values($candidates);
-        usort($indexed, function ($a, $b) {
+        $indexed = $candidates;
+        uasort($indexed, function ($a, $b) use ($mode) {
+            $diff = ((float) $b->exam_sim) <=> ((float) $a->exam_sim);
+            if ($diff !== 0 || $mode === 'sim_only') {
+                return $diff;
+            }
             $pa = array_search((string) ($a->payload['priority'] ?? '中'), self::PRIORITY_RANK, true);
             $pb = array_search((string) ($b->payload['priority'] ?? '中'), self::PRIORITY_RANK, true);
             return ($pa === false ? 99 : $pa) <=> ($pb === false ? 99 : $pb);
         });
         $selected = [];
-        foreach (array_slice($indexed, 0, $top) as $c) {
+        foreach (array_slice(array_keys($indexed), 0, $top) as $i) {
+            $c = $indexed[$i];
+            $reason = $mode === 'sim_only'
+                ? sprintf('纯真题相似度（%.3f）', (float) $c->exam_sim)
+                : sprintf('规则兜底：按真题相似度排序（%.3f）', (float) $c->exam_sim);
             $selected[] = [
-                'index' => array_search($c, $candidates, true),
+                'index' => $i,
                 'priority' => (string) ($c->payload['priority'] ?? '中'),
                 'module' => (string) ($c->payload['module'] ?? ''),
-                'reason' => '规则兜底（AI 不可用，按原始优先级）',
+                'reason' => $reason,
+                'sim' => round((float) $c->exam_sim, 3),
             ];
         }
         return ['selected' => $selected, 'fallback' => true];
