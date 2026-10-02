@@ -7,6 +7,7 @@ namespace App\Command;
 use App\Model\ShizhengCandidate;
 use App\Service\ShizhengSimilarityService;
 use Hyperf\Command\Command as HyperfCommand;
+use Symfony\Component\Console\Input\InputArgument;
 
 /**
  * 给已入库的时政候选重算真题相关度。
@@ -30,7 +31,11 @@ class ShizhengRescoreCandidatesCommand extends HyperfCommand
     {
         parent::configure();
         $this->setDescription('重算时政候选的真题相关度（exam_sim/exam_affinity/exam_matches）');
-        $this->addArgument('date', 0, '只处理某一天 YYYY-MM-DD；省略则处理全部');
+        // 注意：mode 必须用 InputArgument::OPTIONAL 常量。传 0 会让 Symfony Console 抛
+        // 「Argument mode "0" is not valid」，而 Hyperf 在 ApplicationFactory 阶段就实例化所有
+        // 注册过的命令——命令配置写错不是「这条命令不能用」，而是整个 api 起不来。
+        $this->addArgument('date', InputArgument::OPTIONAL,
+            '只处理某一天 YYYY-MM-DD；省略则处理全部');
     }
 
     public function handle(): int
