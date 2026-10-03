@@ -1,5 +1,10 @@
 # 更新记录
 
+## 部署同步 - 2026-10-03
+
+- 服务器 `/www/wwwroot/guanlan` 的 `dev` 分支与 GitHub `origin/dev` 同步（`0dff862` → `b10dab1`）：仅新增 `services/shizheng-crawler/deploy/export_shizheng_candidates.sh`（云端候选池 TSV 导出脚本），不改运行代码，`--ff-only` 合并，生产容器未重启，健康检查 `/api/v1/health` 与 `/` 均 200。
+- 为服务器 `root-189` 在 `wenckerwan/guanlan` 仓库配置了只读 deploy key（SSH 拉取），解决其无法从 GitHub 拉取的问题。
+
 ## V0.1-dev.27 - 时政筛选引入「真题相关度」+ AI 降级不再静默 - 2026-10-02
 
 依据《观澜·每日时政筛选 云端调整方案（v1）》。抓取与发布链路本身没问题，问题在筛选质量。

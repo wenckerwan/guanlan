@@ -8,6 +8,7 @@ use App\Controller\ArticleController;
 use App\Controller\AuthController;
 use App\Controller\CommentController;
 use App\Controller\HealthController;
+use App\Controller\HistoryController;
 use App\Controller\HomeController;
 use App\Controller\MistakeController;
 use App\Controller\MockController;
@@ -50,6 +51,9 @@ Router::addGroup('/api/v1', function () {
     Router::get('/predictions', [ArticleController::class, 'predictionIndex']);
     Router::get('/predictions/{slug}', [ArticleController::class, 'predictionShow']);
 }, ['middleware' => [AuthMiddleware::class]]);
+
+// 史纲（近现代史时间实验室）：只读数据集，公开（AuthMiddleware 仅解析身份，不强制登录）
+Router::get('/api/v1/history/events', [HistoryController::class, 'events'], ['middleware' => [AuthMiddleware::class]]);
 
 // 模拟押题
 Router::get('/api/v1/mocks', [MockController::class, 'index']);
@@ -95,9 +99,11 @@ Router::post('/api/v1/auth/logout', [AuthController::class, 'logout'], ['middlew
 Router::addGroup('/api/v1/study', function () {
     Router::get('/favorites', [StudyController::class, 'favorites']);
     Router::post('/favorites', [StudyController::class, 'toggleFavorite']);
+    Router::put('/favorites', [StudyController::class, 'setFavorite']);
     Router::delete('/favorites/{id:\d+}', [StudyController::class, 'removeFavorite']);
     Router::get('/notes', [StudyController::class, 'notes']);
     Router::post('/notes', [StudyController::class, 'createNote']);
+    Router::patch('/notes/{id:\d+}', [StudyController::class, 'updateNote']);
     Router::delete('/notes/{id:\d+}', [StudyController::class, 'removeNote']);
     Router::post('/attempts', [StudyController::class, 'createAttempt']);
     Router::post('/attempts/batch', [StudyController::class, 'recordPaperSession']);

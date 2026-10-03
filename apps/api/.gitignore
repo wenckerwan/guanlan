@@ -1,4 +1,6 @@
 /vendor/
 /runtime/*
-/storage/
 !/runtime/.gitignore
+# 忽略 storage 下一切，但放行史纲数据集目录（部署所需版本化内容，seed 导入 history_datasets）。
+/storage/*
+!/storage/history/
