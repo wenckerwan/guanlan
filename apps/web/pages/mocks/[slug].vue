@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { ArrowLeft, Check, RotateCcw, TimerReset, X } from 'lucide-vue-next'
 import type { MockDetail, MockQuestion } from '~/types/api'
@@ -123,5 +123,6 @@ const answeredCount = computed(() => Object.values(answers).filter(Boolean).leng
 
       <NuxtLink class="back-link" to="/mocks"><ArrowLeft :size="15" />返回模拟卷列表</NuxtLink>
     </main>
+    <SiteFooter />
   </div>
 </template>

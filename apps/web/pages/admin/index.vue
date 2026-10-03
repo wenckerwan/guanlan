@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { onMounted } from 'vue'
 import { BarChart3, FileText, Newspaper, Users, ScrollText, Target, Lightbulb, ClipboardList, Rss, History, ArrowLeft, MessageSquare } from 'lucide-vue-next'
 
@@ -48,6 +48,7 @@ const nav = [
         <NuxtPage />
       </template>
     </main>
+    <SiteFooter />
   </div>
 </template>
 

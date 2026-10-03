@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, ref } from 'vue'
 import { ArrowRight, BookOpen, CalendarDays, ChevronRight, ClipboardList, FileText, Globe2, History, Newspaper, Search, Sparkles, TrendingUp } from 'lucide-vue-next'
 import type { HomePayload, LeaderboardEntry } from '~/types/api'
@@ -169,5 +169,6 @@ function submitSearch() {
         <div><BookOpen :size="18" /><span><strong>{{ stats?.questions ?? 0 }} 道真题</strong> 覆盖 1994—2026</span></div>
       </section>
     </main>
+    <SiteFooter />
   </div>
 </template>

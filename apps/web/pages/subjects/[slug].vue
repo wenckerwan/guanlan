@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ArrowLeft, BookOpen, ChevronRight, FileText } from 'lucide-vue-next'
 import type { Subject } from '~/types/api'
 import { getSubjectBySlug } from '~/utils/subjects.mjs'
@@ -35,5 +35,6 @@ useHead(() => ({ title: subject.value ? `${subject.value.short}｜${subject.valu
         <span class="subject-icon"><BookOpen :size="20" /></span><h1>还没有这个学科</h1><p>请从资料库选择一个有效的学科入口。</p><NuxtLink class="primary-link" to="/subjects">前往资料库<ChevronRight :size="15" /></NuxtLink>
       </section>
     </main>
+    <SiteFooter />
   </div>
 </template>

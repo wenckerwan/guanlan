@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed } from 'vue'
 import { BookOpen, ChevronRight } from 'lucide-vue-next'
 import type { Subject } from '~/types/api'
@@ -41,5 +41,6 @@ if (import.meta.server) {
       </section>
       <NuxtLink class="back-link" to="/"><ChevronRight :size="15" class="back-icon" />返回首页</NuxtLink>
     </main>
+    <SiteFooter />
   </div>
 </template>

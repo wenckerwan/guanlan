@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { ArrowLeft, Calendar, CheckCircle, Clock, RotateCcw, TrendingUp, BookOpen } from 'lucide-vue-next'
 
@@ -156,6 +156,7 @@ useHead(() => ({ title: `复习概览 - 考生 ${code}｜观澜` }))
         <ArrowLeft :size="15" />返回错题本
       </NuxtLink>
     </main>
+    <SiteFooter />
   </div>
 </template>
 

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { marked } from 'marked'
 import { ArrowLeft, Upload, Sparkles, Settings, FileText, Download } from 'lucide-vue-next'
@@ -608,6 +608,7 @@ D. 实践是人类的存在方式
         </div>
       </section>
     </main>
+    <SiteFooter />
   </div>
 </template>
 

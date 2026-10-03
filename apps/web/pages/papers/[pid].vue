@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { ArrowLeft, Check, RotateCcw, X } from 'lucide-vue-next'
 import type { PaperDetail, Question } from '~/types/api'
@@ -135,6 +135,7 @@ function stateOf(question: Question) {
       <div v-if="!questions.length" class="empty-state">本卷暂无题目数据。</div>
       <NuxtLink class="back-link" to="/papers"><ArrowLeft :size="15" />返回真题列表</NuxtLink>
     </main>
+    <SiteFooter />
   </div>
 </template>
 

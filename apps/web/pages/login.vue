@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { LogIn, UserPlus } from 'lucide-vue-next'
 
@@ -139,5 +139,6 @@ async function submit() {
         </p>
       </section>
     </main>
+    <SiteFooter />
   </div>
 </template>

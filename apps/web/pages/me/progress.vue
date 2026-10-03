@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import type { ProgressRecord } from '~/types/api'
 
@@ -39,5 +39,6 @@ onMounted(async () => {
       <div v-if="!loading && !items.length" class="empty-state">还没有做题记录，去真题页练一套吧。</div>
       <NuxtLink class="back-link" to="/me">返回个人中心</NuxtLink>
     </main>
+    <SiteFooter />
   </div>
 </template>

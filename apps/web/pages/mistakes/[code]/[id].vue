@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed } from 'vue'
 import { ArrowLeft, BookOpen } from 'lucide-vue-next'
 import type { Handbook } from '~/types/api'
@@ -47,5 +47,6 @@ useHead(() => ({ title: handbook.value ? `${handbook.value.title}｜观澜提分
         <NuxtLink class="primary-link" :to="`/mistakes/${code}`">返回错题册</NuxtLink>
       </section>
     </main>
+    <SiteFooter />
   </div>
 </template>

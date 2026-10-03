@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed } from 'vue'
 import type { ArticleDetail } from '~/types/api'
 
@@ -29,5 +29,6 @@ if ((error.value as { statusCode?: number } | null)?.statusCode === 403) {
         <NuxtLink class="primary-link" to="/analysis">前往列表</NuxtLink>
       </section>
     </main>
+    <SiteFooter />
   </div>
 </template>

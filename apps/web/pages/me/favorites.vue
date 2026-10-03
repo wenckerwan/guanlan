@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { Trash2 } from 'lucide-vue-next'
 import type { Favorite } from '~/types/api'
@@ -48,5 +48,6 @@ const grouped = computed(() => items.value)
       <div v-if="!loading && !grouped.length" class="empty-state">还没有收藏，去真题或时政页点收藏试试。</div>
       <NuxtLink class="back-link" to="/me">返回个人中心</NuxtLink>
     </main>
+    <SiteFooter />
   </div>
 </template>

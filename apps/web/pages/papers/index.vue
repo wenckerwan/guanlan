@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, ref } from 'vue'
 import { ChevronRight, FileText, Search } from 'lucide-vue-next'
 import type { ModuleSummary, Paper } from '~/types/api'
@@ -90,5 +90,6 @@ const totalQuestions = computed(() => (papers.value ?? []).reduce((sum, paper) =
       <div v-if="!grouped.length" class="empty-state"><FileText :size="18" />没有匹配的试卷，换个筛选条件试试。</div>
       <NuxtLink class="back-link" to="/"><ChevronRight :size="15" class="back-icon" />返回首页</NuxtLink>
     </main>
+    <SiteFooter />
   </div>
 </template>

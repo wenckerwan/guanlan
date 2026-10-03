@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { Bookmark, NotebookPen, Target, UserRound } from 'lucide-vue-next'
 import type { StudyStats } from '~/types/api'
@@ -76,5 +76,6 @@ const cards = computed(() => [
 
       <NuxtLink v-if="!isLoggedIn" class="primary-link" to="/login">前往登录</NuxtLink>
     </main>
+    <SiteFooter />
   </div>
 </template>

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { TrendingUp } from 'lucide-vue-next'
 import type { ArticleSummary } from '~/types/api'
 
@@ -34,5 +34,6 @@ onMounted(() => {
       <NuxtLink class="back-link" to="/">返回首页</NuxtLink>
       <LoginGateModal :open="gateOpen" @close="gateOpen = false" />
     </main>
+    <SiteFooter />
   </div>
 </template>

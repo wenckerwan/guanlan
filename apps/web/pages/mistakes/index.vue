@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ClipboardList, Info, ShieldCheck } from 'lucide-vue-next'
 import type { MistakeStudent } from '~/types/api'
 
@@ -86,5 +86,6 @@ onMounted(() => {
         @close="gateOpen = false"
       />
     </main>
+    <SiteFooter />
   </div>
 </template>

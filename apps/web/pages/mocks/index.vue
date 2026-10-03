@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ClipboardList } from 'lucide-vue-next'
 import type { Mock } from '~/types/api'
 
@@ -30,5 +30,6 @@ const items = computed(() => data.value ?? [])
       <div v-if="!items.length" class="empty-state">暂无模拟卷。</div>
       <NuxtLink class="back-link" to="/">返回首页</NuxtLink>
     </main>
+    <SiteFooter />
   </div>
 </template>

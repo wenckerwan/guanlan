@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, reactive, ref, watch, onMounted } from 'vue'
 import { marked } from 'marked'
 import { ArrowLeft, BookOpen, Check, FileText, RotateCcw, Send, Sparkles, Star, Trash2 } from 'lucide-vue-next'
@@ -367,6 +367,7 @@ async function submitRedo(item: MistakeItem) {
       <PaginationControls :page="data?.page ?? page" :total="total" :per-page="data?.perPage ?? perPage" @change="page = $event" />
       <NuxtLink class="back-link" to="/mistakes"><ArrowLeft :size="15" />返回考生列表</NuxtLink>
     </main>
+    <SiteFooter />
   </div>
 </template>
 

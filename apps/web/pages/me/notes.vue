@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { Pencil, Trash2 } from 'lucide-vue-next'
 import type { Note } from '~/types/api'
@@ -83,6 +83,7 @@ async function saveEdit(id: number) {
       <div v-if="!loading && !items.length" class="empty-state">还没有笔记。</div>
       <NuxtLink class="back-link" to="/me">返回个人中心</NuxtLink>
     </main>
+    <SiteFooter />
   </div>
 </template>
 

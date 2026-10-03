@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { Search, SearchX } from 'lucide-vue-next'
 import type { SearchResult } from '~/types/api'
@@ -113,5 +113,6 @@ watch(() => route.query.q, (next) => {
       <div v-else class="empty-state">输入关键词开始搜索。</div>
       <NuxtLink class="back-link" to="/">返回首页</NuxtLink>
     </main>
+    <SiteFooter />
   </div>
 </template>
