@@ -27,6 +27,8 @@ RUN composer install --no-dev --prefer-dist --no-interaction --no-progress
 COPY apps/api/. .
 COPY storage/dataset ./storage/dataset
 COPY storage/dataset-manifest.json ./storage/dataset-manifest.json
+# 史纲数据集（近现代史时间实验室）：HistoryDatasetSeeder 在 db:seed 时读取此目录导入 history_datasets。
+COPY apps/api/storage/history ./storage/history
 COPY VERSION ./
 RUN mkdir -p runtime
 
