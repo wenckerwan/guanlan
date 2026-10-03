@@ -27,8 +27,7 @@ RUN composer install --no-dev --prefer-dist --no-interaction --no-progress
 COPY apps/api/. .
 COPY storage/dataset ./storage/dataset
 COPY storage/dataset-manifest.json ./storage/dataset-manifest.json
-# 史纲数据集（近现代史时间实验室）：HistoryDatasetSeeder 在 db:seed 时读取此目录导入 history_datasets。
-COPY apps/api/storage/history ./storage/history
+# 注：/opt/guanlan/storage 在生产被 compose 卷 ./storage 覆盖（:ro）。史纲数据集 history.v1.json 由部署方放入仓库根 storage/history/（随卷进入容器），故此处不 COPY。
 COPY VERSION ./
 RUN mkdir -p runtime
 
