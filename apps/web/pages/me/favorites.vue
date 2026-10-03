@@ -37,8 +37,9 @@ const grouped = computed(() => items.value)
 
       <ul class="record-list">
         <li v-for="item in grouped" :key="item.id">
-          <span class="record-type">{{ item.targetType }}</span>
-          <NuxtLink v-if="item.url" :to="item.url" class="record-title">{{ item.title || item.targetId }}</NuxtLink>
+          <span class="record-type">{{ targetTypeLabel(item.targetType) }}</span>
+          <a v-if="item.url && isSubAppUrl(item.url)" :href="item.url" class="record-title">{{ item.title || item.targetId }}</a>
+          <NuxtLink v-else-if="item.url" :to="item.url" class="record-title">{{ item.title || item.targetId }}</NuxtLink>
           <span v-else class="record-title">{{ item.title || item.targetId }}</span>
           <time>{{ item.createdAt.slice(0, 10) }}</time>
           <button type="button" class="icon-button" aria-label="取消收藏" @click="remove(item.id)"><Trash2 :size="14" /></button>

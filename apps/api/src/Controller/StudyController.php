@@ -60,6 +60,34 @@ class StudyController
             : ApiResponse::message('收藏不存在', 404);
     }
 
+    /**
+     * 幂等设置收藏目标状态（重试安全）。
+     */
+    public function setFavorite(): ResponseInterface
+    {
+        $validator = new Validator($this->request->all());
+        $validator->required('targetType', '收藏类型')
+            ->required('targetId', '收藏对象')
+            ->in('targetType', StudyService::TARGET_TYPES, '收藏类型');
+
+        if ($validator->fails()) {
+            return ApiResponse::message('请求校验失败', 422, $validator->errors());
+        }
+
+        $favorited = filter_var($this->request->input('favorited', false), FILTER_VALIDATE_BOOLEAN);
+
+        $result = $this->service->setFavorite(
+            Auth::user(),
+            $validator->string('targetType'),
+            $validator->string('targetId'),
+            $favorited,
+            $validator->string('title'),
+            $validator->string('url')
+        );
+
+        return ApiResponse::data($result);
+    }
+
     public function notes(): ResponseInterface
     {
         $items = $this->service->notes(
@@ -100,6 +128,25 @@ class StudyController
         $removed = $this->service->removeNote(Auth::user(), $id);
         return $removed
             ? ApiResponse::data(['ok' => true])
+            : ApiResponse::message('笔记不存在', 404);
+    }
+
+    /**
+     * 编辑笔记内容（仅限本人，只更新 content）。
+     */
+    public function updateNote(int $id): ResponseInterface
+    {
+        $validator = new Validator($this->request->all());
+        $validator->required('content', '笔记内容')
+            ->max('content', 20000, '笔记内容');
+
+        if ($validator->fails()) {
+            return ApiResponse::message('请求校验失败', 422, $validator->errors());
+        }
+
+        $note = $this->service->updateNote(Auth::user(), $id, (string) $this->request->input('content', ''));
+        return $note
+            ? ApiResponse::data(NoteResource::make($note))
             : ApiResponse::message('笔记不存在', 404);
     }
 

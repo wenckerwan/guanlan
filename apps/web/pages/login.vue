@@ -29,6 +29,13 @@ onUnmounted(() => {
 
 const codeDisabled = computed(() => countdown.value > 0 || sending.value || !/^\S+@\S+\.\S+$/.test(email.value))
 
+// 仅允许站内相对路径，防开放跳转（含 /mayuan/、/history/ 子应用路径）。
+function sanitizeRedirect(target: string): string {
+  if (!target || !target.startsWith('/') || target.startsWith('//')) return '/me'
+  if (/[\r\n]/.test(target) || target.includes('\\')) return '/me'
+  return target
+}
+
 function startCountdown() {
   countdown.value = 60
   if (timer) clearInterval(timer)
@@ -71,7 +78,7 @@ async function submit() {
     } else {
       await login(email.value.trim(), password.value)
     }
-    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/me'
+    const redirect = sanitizeRedirect(typeof route.query.redirect === 'string' ? route.query.redirect : '')
     await router.push(redirect)
   } catch (exception) {
     const data = (exception as { data?: { message?: string } })?.data

@@ -18,7 +18,13 @@ use Hyperf\Database\Model\Builder;
  */
 class StudyService
 {
-    public const TARGET_TYPES = ['question', 'paper', 'analysis', 'hotspot', 'prediction', 'mistake', 'mistake_item', 'handbook', 'mock'];
+    public const TARGET_TYPES = [
+        'question', 'paper', 'analysis', 'hotspot', 'prediction', 'mistake', 'mistake_item', 'handbook', 'mock',
+        // 马原知识宇宙
+        'mayuan_concept', 'mayuan_relation', 'mayuan_comparison', 'mayuan_experiment',
+        // 近现代史时间实验室
+        'history_event', 'history_comparison',
+    ];
 
     public function __construct(
         private MistakeAccountService $mistakeAccounts,
@@ -66,6 +72,46 @@ class StudyService
         return (bool) Favorite::query()->where('user_id', $user->id)->where('id', $id)->delete();
     }
 
+    /**
+     * 幂等设置收藏目标状态：重试安全（重复调用不意外取消/重复）。
+     */
+    public function setFavorite(User $user, string $targetType, string $targetId, bool $favorited, string $title = '', string $url = ''): array
+    {
+        $existing = Favorite::query()
+            ->where('user_id', $user->id)
+            ->where('target_type', $targetType)
+            ->where('target_id', $targetId)
+            ->first();
+
+        if (! $favorited) {
+            if ($existing) {
+                $existing->delete();
+            }
+            return ['favorited' => false];
+        }
+
+        if ($existing) {
+            if ($title !== '') {
+                $existing->title = mb_substr($title, 0, 191);
+            }
+            if ($url !== '') {
+                $existing->url = mb_substr($url, 0, 512);
+            }
+            $existing->save();
+            return ['favorited' => true, 'id' => (int) $existing->id];
+        }
+
+        $favorite = Favorite::create([
+            'user_id' => $user->id,
+            'target_type' => $targetType,
+            'target_id' => $targetId,
+            'title' => mb_substr($title, 0, 191),
+            'url' => mb_substr($url, 0, 512),
+        ]);
+
+        return ['favorited' => true, 'id' => (int) $favorite->id];
+    }
+
     /** @return array<int, Note> */
     public function notes(User $user, string $targetType = '', string $targetId = ''): array
     {
@@ -92,6 +138,20 @@ class StudyService
     public function removeNote(User $user, int $id): bool
     {
         return (bool) Note::query()->where('user_id', $user->id)->where('id', $id)->delete();
+    }
+
+    /**
+     * 编辑笔记内容（仅限本人，且只更新 content，不变更归属）。
+     */
+    public function updateNote(User $user, int $id, string $content): ?Note
+    {
+        $note = Note::query()->where('user_id', $user->id)->where('id', $id)->first();
+        if (! $note) {
+            return null;
+        }
+        $note->content = $content;
+        $note->save();
+        return $note;
     }
 
     /**

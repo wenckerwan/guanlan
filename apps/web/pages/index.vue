@@ -1,10 +1,19 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { ArrowRight, BookOpen, CalendarDays, ChevronRight, ClipboardList, FileText, Newspaper, Search, Sparkles, TrendingUp } from 'lucide-vue-next'
+import { ArrowRight, BookOpen, CalendarDays, ChevronRight, ClipboardList, FileText, Globe2, History, Newspaper, Search, Sparkles, TrendingUp } from 'lucide-vue-next'
 import type { HomePayload, LeaderboardEntry } from '~/types/api'
 import { sortHotspots } from '~/utils/home.mjs'
 
 useHead({ title: '观澜｜考研政治知识库', meta: [{ name: 'description', content: '观澜考研政治知识库：真题、时政、错题分析与模拟押题一站式复习。' }] })
+
+const config = useRuntimeConfig()
+const mayuanBase = computed(() => (config.public.mayuanBase as string) || '/mayuan/')
+const historyBase = computed(() => (config.public.historyBase as string) || '/history/')
+
+const universeSections = computed(() => [
+  { href: mayuanBase.value, label: '马原知识宇宙', copy: '概念星球 · 关系网络 · 主动回忆', icon: Globe2, tone: 'blue' },
+  { href: historyBase.value, label: '近现代史时间实验室', copy: '时间轴探索 · 来源对照 · 排序回忆', icon: History, tone: 'gold' },
+])
 
 const { data: home } = await useApiFetch<HomePayload>('/home', { hotspots: [], documents: [], subjects: [], stats: undefined })
 
@@ -79,6 +88,17 @@ function submitSearch() {
             <span><strong>{{ section.label }}</strong><small>{{ section.copy }}</small></span>
             <ChevronRight :size="16" class="section-arrow" />
           </NuxtLink>
+        </div>
+      </section>
+
+      <section class="subject-section">
+        <div class="section-heading"><div><span class="section-kicker">学习宇宙</span><h2>交互式探索</h2></div></div>
+        <div class="section-grid">
+          <a v-for="section in universeSections" :key="section.href" :href="section.href" class="section-card" :class="section.tone">
+            <span class="subject-icon"><component :is="section.icon" :size="17" /></span>
+            <span><strong>{{ section.label }}</strong><small>{{ section.copy }}</small></span>
+            <ChevronRight :size="16" class="section-arrow" />
+          </a>
         </div>
       </section>
 
