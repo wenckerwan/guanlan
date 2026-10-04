@@ -11,17 +11,19 @@ import {
 const LazyUniverseScene = defineAsyncComponent(
   () => import("../app/components/UniverseScene.vue"),
 );
+const LazyExploreNetwork = defineAsyncComponent(() => import('./components/ExploreNetwork.vue'));
+const networkMode = ref('3d');
 const views = [
-  ["home", "学习工作台"],
-  ["map", "知识地图"],
+  ["map", "探索知识"],
   ["stars", "知识星空"],
+  ["home", "学习工作台"],
   ["compare", "概念辨析"],
   ["labs", "原理实验"],
   ["recall", "主动回忆"],
   ["quiz", "原创练习"],
   ["notebook", "复习记录"],
 ];
-const view = ref("home"),
+const view = ref("map"),
   chapter = ref("all"),
   query = ref(""),
   selected = ref<any>(null),
@@ -32,6 +34,7 @@ const view = ref("home"),
   busy = ref(false),
   error = ref(""),
   notice = ref("");
+const isExploring = computed(() => ["map", "stars"].includes(view.value));
 const webglFailed = ref(false); // 3D 星空 WebGL 失败 → 回退 SVG star 视图
 const pendingAttempt = ref<any>(null);
 // ---- 纯本地免登录:学习状态只存浏览器 localStorage ----
@@ -138,11 +141,7 @@ const focused = computed(() =>
     : filtered.value,
 );
 const visible = computed(() =>
-  chapter.value === "all" && !selected.value && !query.value
-    ? content.value.modules.flatMap((m: any) =>
-        nodes.value.filter((n: any) => n.module === m.id).slice(0, 5),
-      )
-    : focused.value,
+  focused.value,
 );
 const positions = computed(() =>
   visible.value.map((n: any, i: number) => ({
@@ -208,10 +207,7 @@ async function load() {
     const c = await api("/content");
     content.value = c;
     state.value = readLocalState();
-    if (state.value?.resume?.view)
-      view.value =
-        ({ overview: "home", lab: "labs" } as any)[state.value.resume.view] ||
-        state.value.resume.view;
+    view.value = "map";
   } catch (e: any) {
     // 题库未加载且无缓存时提示;state 仍可先用本地数据。
     error.value = e.message || "内容载入失败";
@@ -484,7 +480,7 @@ function trapDialog(e: KeyboardEvent) {
     e.preventDefault();
     return;
   }
-  if (e.key === "Tab") {
+  if (e.key === "Tab" && !(isExploring.value && !relation.value)) {
     const controls = Array.from(
       dialog.querySelectorAll<HTMLElement>(
         'button:not(:disabled),input,textarea,select,[tabindex="0"]',
@@ -506,9 +502,9 @@ onUnmounted(() => document.removeEventListener("keydown", trapDialog));
 </script>
 
 <template>
-  <div class="shell">
+  <div class="shell" :class="{ 'exploring': ['map', 'stars'].includes(view), 'has-detail': !!selected }">
     <aside class="sidebar">
-      <a class="brand" href="#main" @click.prevent="navigate('home')"
+      <a class="brand" href="#main" @click.prevent="navigate('map')"
         ><span class="brand-icon">✳</span
         ><span>马原知识宇宙<small>KNOWLEDGE, CONNECTED.</small></span></a
       >
@@ -649,24 +645,32 @@ onUnmounted(() => document.removeEventListener("keydown", trapDialog));
               道练习均为原创，非历年真题。
             </p>
           </section>
-          <section v-if="['map', 'stars'].includes(view)">
-            <div class="section-title">
+          <section v-if="['map', 'stars'].includes(view)" class="explore-page">
+            <div class="explore-heading">
               <div>
-                <p class="eyebrow">CONNECTED KNOWLEDGE</p>
-                <h1>{{ view === "stars" ? "知识星空" : "知识地图" }}</h1>
-                <p>点击概念阅读，点击联系查看条件与易错点。</p>
+                <p class="eyebrow">KNOWLEDGE EXPLORER</p>
+                <h1>{{ view === "stars" ? "知识星空" : "探索马原知识宇宙" }}</h1>
+                <p>从一个概念开始，沿着关系找到定义、方法、条件与易错点。</p>
               </div>
-              <button @click="view = view === 'map' ? 'stars' : 'map'">
-                {{ view === "map" ? "切换星空" : "切换地图" }}
-              </button>
+              <div class="explore-actions">
+                <span class="explore-count">{{ nodes.length }} 个概念 · {{ content.relations.length }} 条联系</span>
+                <button @click="view = view === 'map' ? 'stars' : 'map'">
+                  {{ view === "map" ? "进入星空" : "返回关系图" }}
+                </button>
+              </div>
             </div>
-            <div class="toolbar">
-              <input
-                v-model="query"
-                @input="selected = null"
-                aria-label="搜索概念"
-                placeholder="搜索概念、原理或易错点…"
-              /><select
+            <div class="explore-toolbar">
+              <label class="explore-search">
+                <span aria-hidden="true">⌕</span>
+                <input
+                  v-model="query"
+                  @input="selected = null"
+                  aria-label="搜索马原概念"
+                  placeholder="搜索概念、原理、易错点或例子…"
+                />
+                <button v-if="query" type="button" class="search-clear" aria-label="清空搜索" @click="query = ''; selected = null">×</button>
+              </label>
+              <select
                 v-model="chapter"
                 aria-label="选择章节"
                 @change="selected = null"
@@ -674,15 +678,48 @@ onUnmounted(() => document.removeEventListener("keydown", trapDialog));
                 <option value="all">全部章节</option>
                 <option v-for="m in content.modules" :value="m.id">
                   {{ m.title }}
-                </option></select
-              ><button v-if="selected" @click="selected = null">
-                退出概念聚焦
-              </button>
+                </option>
+              </select>
+              <button v-if="selected" class="quiet-button" @click="selected = null">清除聚焦</button>
             </div>
-            <p class="fineprint">
-              {{ filtered.length }} 个匹配概念 · 全局概览 7
-              个章节，选择章节查看概念；聚焦概念可查看跨章节联系。
+            <div class="explore-chapters" aria-label="章节筛选">
+              <button :class="{active:chapter==='all'}" @click="chooseChapter('all')">全部</button>
+              <button v-for="m in content.modules" :key="m.id" :class="{active:chapter===m.id}" @click="chooseChapter(m.id)"><span :style="{background:m.color}"></span>{{ m.title }}</button>
+            </div>
+            <div v-if="query" class="explore-results" aria-live="polite">
+              <div class="result-heading"><span>搜索结果</span><small>{{ filtered.length }} 个概念</small></div>
+              <button v-for="n in filtered.slice(0, 8)" :key="n.id" class="result-item" :class="{ active: selected?.id === n.id }" @click="openNode(n)">
+                <span class="result-dot" :style="{ background: content.modules.find((m: any) => m.id === n.module)?.color || '#2e9175' }"></span>
+                <span><strong>{{ n.title }}</strong><small>{{ content.modules.find((m: any) => m.id === n.module)?.title }} · {{ n.summary }}</small></span>
+                <span class="result-arrow">→</span>
+              </button>
+              <p v-if="!filtered.length" class="empty-search">没有匹配概念，试试“实践”“矛盾”或“认识”。</p>
+            </div>
+            <div v-if="view === 'map'" class="network-switcher" role="tablist" aria-label="探索视图">
+              <button :class="{active:networkMode==='3d'}" @click="networkMode='3d'">3D 宇宙</button>
+              <button :class="{active:networkMode==='2d'}" @click="networkMode='2d'">2D 图谱</button>
+              <span>{{ filtered.length }} 个匹配概念</span>
+            </div>
+            <p v-if="view === 'map' && networkMode === '2d'" class="fineprint explore-status">
+              点击节点阅读详情，点击连线查看关系条件；拖动画布平移，Ctrl＋滚轮缩放。
             </p>
+            <template v-if="view === 'map' && networkMode === '3d'">
+              <ClientOnly>
+                <LazyExploreNetwork
+                  :nodes="content.nodes"
+                  :relations="content.relations"
+                  :modules="content.modules"
+                  :selected-id="selected?.id"
+                  :chapter="chapter"
+                  :match-ids="filtered.map((n: any) => n.id)"
+                  :searching="!!query"
+                  @open="openNode"
+                  @relation="relation = $event"
+                  @webgl-fail="networkMode = '2d'"
+                />
+                <template #fallback><p class="fineprint" role="status">正在加载三维知识宇宙…</p></template>
+              </ClientOnly>
+            </template>
             <template v-if="view === 'stars'">
               <p v-if="webglFailed" class="fineprint" role="status">
                 当前环境不支持 3D 渲染，已切换为简化星空视图。
@@ -712,7 +749,7 @@ onUnmounted(() => document.removeEventListener("keydown", trapDialog));
                 :all-nodes="content.nodes"
                 :modules="content.modules"
                 :all-relations="content.relations"
-                :overview="chapter === 'all' && !query && !selected"
+                :overview="false"
                 @chapter="chooseChapter"
                 :selected-id="selected?.id"
                 :mastery="state?.nodes || {}"
@@ -722,13 +759,13 @@ onUnmounted(() => document.removeEventListener("keydown", trapDialog));
               />
             </template>
             <KnowledgeGraph
-              v-else
+              v-if="view === 'map' && networkMode === '2d'"
               :nodes="positions"
               :relations="edges"
               :all-nodes="content.nodes"
               :modules="content.modules"
               :all-relations="content.relations"
-              :overview="chapter === 'all' && !query && !selected"
+              :overview="false"
               @chapter="chooseChapter"
               :selected-id="selected?.id"
               :mastery="state?.nodes || {}"
@@ -1059,7 +1096,7 @@ onUnmounted(() => document.removeEventListener("keydown", trapDialog));
       <aside
         class="drawer"
         role="dialog"
-        aria-modal="true"
+        :aria-modal="!isExploring"
         :aria-label="selected.title"
         @keydown.esc="selected = null"
       >
@@ -1104,6 +1141,10 @@ onUnmounted(() => document.removeEventListener("keydown", trapDialog));
         >
           {{ title(r.from) }} · {{ r.label }} · {{ title(r.to) }}
         </button>
+        <h3>继续探索</h3>
+        <div class="neighbor-list">
+          <button v-for="n in nodes.filter((n: any) => n.id !== selected.id && content.relations.some((r: any) => (r.from === selected.id && r.to === n.id) || (r.to === selected.id && r.from === n.id)))" :key="n.id" @click="openNode(n)">{{ n.title }} <span>→</span></button>
+        </div>
         <h3>来源与核验说明</h3>
         <p class="fineprint" v-for="s in selected.sources">
           {{ s.label }}<br />{{ s.locator }}
@@ -2031,6 +2072,58 @@ footer {
     font-size: 12px;
   }
 }
+.exploring { --bg:#f7f9fb; --paper:#ffffff; --ink:#27343e; --muted:#72808d; --line:#e2e8ee; --soft:#edf4f4; }
+.exploring .sidebar { background:#fff; }
+.exploring .workspace > header { height:56px; padding:0 28px; }
+.exploring main { max-width:none; padding:24px 28px 28px; }
+.exploring footer { display:none; }
+.explore-heading { display:flex; justify-content:space-between; align-items:center; gap:24px; margin-bottom:22px; }
+.explore-heading h1 { font-size:24px; letter-spacing:0; margin:0 0 8px; }
+.explore-heading .eyebrow { letter-spacing:0; margin-bottom:6px; color:#788895; }
+.explore-heading p:not(.eyebrow) { font-size:12px; color:var(--muted); margin:0; }
+.explore-actions { display:flex; gap:12px; align-items:center; flex-shrink:0; }
+.explore-count { font-size:11px; color:var(--muted); }
+.explore-actions button { font-size:12px; border-radius:8px; }
+.explore-toolbar { display:flex; gap:12px; align-items:center; }
+.explore-search { display:flex; align-items:center; gap:8px; flex:1; min-width:0; border:1px solid var(--line); background:#fff; border-radius:8px; padding:0 12px; }
+.explore-search > span { font-size:24px; color:#657b88; }
+.explore-search input { border:0; background:none; width:100%; min-width:0; outline:none; padding:11px 3px; }
+.explore-search:focus-within { outline:2px solid #71afa5; outline-offset:2px; }
+.search-clear { padding:0; min-height:30px; width:30px; border:0; background:none; font-size:20px; }
+.explore-toolbar select { max-width:220px; font-size:12px; }
+.network-switcher{display:flex;align-items:center;gap:4px;margin:12px 0;}
+.network-switcher button{font-size:11px;padding:4px 10px;min-height:30px;border:0;border-radius:4px;background:none;color:var(--muted);}
+.network-switcher button.active{background:#e7efed;color:#176c5b;font-weight:600;}
+.network-switcher span{font-size:10px;margin-left:auto;color:var(--muted);}
+.explore-status { margin:12px 0 0; }
+.explore-chapters { display:flex; flex-wrap:wrap; gap:4px; margin-top:14px; }
+.explore-chapters button { display:flex; align-items:center; gap:6px; min-height:32px; border:0; background:none; border-radius:4px; padding:5px 10px; font-size:11px; color:var(--muted); }
+.explore-chapters button.active { background:#e7f1ee; color:#176c5b; }
+.explore-chapters button > span { width:7px; height:7px; border-radius:50%; }
+.exploring .canvas-hint { display:none; }
+.explore-results { margin:14px 0; border:1px solid var(--line); border-radius:8px; background:#fff; overflow:hidden; max-height:290px; overflow-y:auto; }
+.result-heading { display:flex; justify-content:space-between; padding:9px 14px; font-size:11px; color:var(--muted); border-bottom:1px solid var(--line); }
+.result-item { display:flex; align-items:center; gap:12px; width:100%; text-align:left; border:0; border-radius:0; padding:10px 14px; }
+.result-item > span:nth-child(2) { flex:1; min-width:0; }
+.result-item strong { display:block; font-size:13px; }
+.result-item small { display:block; font-size:11px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.result-dot { width:8px; height:8px; flex-shrink:0; border-radius:50%; }
+.result-item.active { background:#eaf4f2; }
+.result-arrow { color:#8b9ba6; }
+.empty-search { padding:12px 14px; font-size:12px; color:var(--muted); }
+.exploring .knowledge-canvas { border-radius:8px; background:#fff; }
+.exploring .knowledge-canvas svg { height:max(520px,calc(100dvh - 260px)); }
+.exploring .universe-wrap { border-radius:8px; }
+.exploring .universe-canvas { height:max(520px,calc(100dvh - 260px)); }
+.exploring .drawer-backdrop { inset:56px 0 0 auto; width:380px; background:none; pointer-events:none; }
+.exploring .drawer { width:380px; pointer-events:auto; padding:32px 26px; border-left:1px solid var(--line); box-shadow:-8px 0 24px #2038480a; }
+.exploring .drawer h2 { font-size:24px; }
+.exploring .drawer .summary { font-size:14px; }
+.neighbor-list { display:grid; gap:5px; }
+.neighbor-list button { display:flex; justify-content:space-between; text-align:left; font-size:12px; border-radius:8px; }
+@media (min-width:1101px) { .exploring.has-detail .workspace { padding-right:380px; } .exploring.has-detail .explore-heading { align-items:flex-start; } .exploring.has-detail .explore-actions { flex-direction:column; align-items:flex-end; } }
+@media (max-width:1100px) { .explore-heading { align-items:flex-start; } .explore-count { display:none; } .exploring .drawer-backdrop { width:340px; } .exploring .drawer { width:340px; } }
+@media (max-width:700px) { .exploring main { padding:20px 14px; } .exploring .workspace > header { height:44px; padding:0 14px; } .explore-heading { gap:12px; } .explore-heading h1 { font-size:20px; } .explore-heading p:not(.eyebrow) { display:none; } .explore-actions button { padding:6px 9px; min-height:38px; } .explore-toolbar { flex-wrap:wrap; } .explore-search { flex-basis:100%; } .explore-toolbar select { flex:1; max-width:none; } .exploring .drawer-backdrop { inset:0 0 0 auto; width:min(380px,100%); } .exploring .drawer { width:100%; } .exploring .knowledge-canvas svg,.exploring .universe-canvas { height:520px; } }
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;

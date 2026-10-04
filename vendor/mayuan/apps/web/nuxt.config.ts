@@ -8,7 +8,7 @@ export default defineNuxtConfig({
     // 挂载在观澜 /mayuan/ 前缀下：SPA 资源与路由均以此为基，避免 /_nuxt 404。
     baseURL: "/mayuan/",
     head: {
-      title: "马原知识宇宙 · 学习工作台",
+      title: "马原知识宇宙 · 知识探索",
       htmlAttrs: { lang: "zh-CN" },
       meta: [
         { name: "viewport", content: "width=device-width, initial-scale=1" },

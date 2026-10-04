@@ -4,7 +4,9 @@ type Node = {id:string;title:string;module:string;x?:number;y?:number};
 type Relation = {id:string;from:string;to:string;label:string;kind?:string};
 const props=withDefaults(defineProps<{nodes:Node[];allNodes?:Node[];relations:Relation[];allRelations?:Relation[];modules?:any[];selectedId?:string;mastery:Record<string,any>;star:boolean;overview?:boolean}>(),{overview:false});
 const emit=defineEmits<{open:[node:Node];relation:[relation:Relation];chapter:[id:string]}>();
-const list=ref(false),selectedLinks=ref<any>(null),relationKind=ref('all');
+const list=ref(false),selectedLinks=ref<any>(null),relationKind=ref('all'),hovered=ref<string|null>(null);
+const neighbors=computed(()=>new Set(props.relations.filter(r=>r.from===hovered.value||r.to===hovered.value).flatMap(r=>[r.from,r.to])));
+
 const catalog=computed(()=>props.allNodes||props.nodes);
 const planets=computed(()=> (props.modules||[]).map((m,i)=>({...m,x:180+(i%4)*280,y:130+Math.floor(i/4)*310,count:catalog.value.filter(n=>n.module===m.id).length})));
 const concepts=computed(()=>props.selectedId?focusLayout(props.nodes,props.selectedId):conceptLayout(props.nodes,catalog.value,props.star));
@@ -29,6 +31,10 @@ function move(e:PointerEvent){if(!drag)return;frame.value={...drag.frame,x:drag.
 function end(){drag=null;}
 function wheel(e:WheelEvent){if(e.ctrlKey){e.preventDefault();zoom(e.deltaY>0?1.12:.89);}}
 function color(n:any){return (props.modules||[]).find(m=>m.id===(n.module||n.id))?.color||'#8fbdaf';}
+function nodeOpacity(n:any){return hovered.value && n.id!==hovered.value && !neighbors.value.has(n.id) ? .22 : 1;}
+function edgeOpacity(r:any){return hovered.value && r.from!==hovered.value && r.to!==hovered.value ? .1 : 1;}
+function hoverNode(n:any){hovered.value=n.id;}
+function clearHover(){hovered.value=null;}
 function openEdge(r:any){if(props.overview)selectedLinks.value=r;else emit('relation',r);}
 const dots=Array.from({length:70},(_,i)=>({x:(i*137)%1150,y:(i*83)%610,r:i%5===0?1.8:.8}));
 </script>
@@ -40,14 +46,15 @@ const dots=Array.from({length:70},(_,i)=>({x:(i*137)%1150,y:(i*83)%610,r:i%5===0
   <svg :viewBox="`${frame.x} ${frame.y} ${frame.w} ${frame.h}`" role="group" :aria-label="overview?'七章节知识总览':'概念关系网络'" @pointerdown="down" @pointermove="move" @pointerup="end" @pointercancel="end" @wheel="wheel">
    <defs><marker id="mayuan-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#91ab9b"/></marker></defs>
    <g v-if="star" class="dust" aria-hidden="true"><circle v-for="(d,i) in dots" :key="i" :cx="d.x" :cy="d.y" :r="d.r"/></g>
-   <g v-for="r in edges" :key="r.id" class="canvas-edge" tabindex="0" role="button" :aria-label="overview?`${planets.find(n=>n.id===r.from)?.title}到${planets.find(n=>n.id===r.to)?.title}的${r.count}条跨章联系`:`${concepts.find(n=>n.id===r.from)?.title} ${r.label} ${concepts.find(n=>n.id===r.to)?.title}`" @click="openEdge(r)" @keydown.enter="openEdge(r)" @keydown.space.prevent="openEdge(r)">
+   <g v-for="r in edges" :key="r.id" class="canvas-edge" :style="{opacity:edgeOpacity(r)}" tabindex="0" role="button" :aria-label="overview?`${planets.find(n=>n.id===r.from)?.title}到${planets.find(n=>n.id===r.to)?.title}的${r.count}条跨章联系`:`${concepts.find(n=>n.id===r.from)?.title} ${r.label} ${concepts.find(n=>n.id===r.to)?.title}`" @click="openEdge(r)" @keydown.enter="openEdge(r)" @keydown.space.prevent="openEdge(r)">
     <path :d="r.geometry.path" class="hit-path"/><path :d="r.geometry.path" class="visible-path" marker-end="url(#mayuan-arrow)"/>
     <text v-if="!overview" :x="r.geometry.label.x" :y="r.geometry.label.y-5">{{r.label}}</text>
    </g>
-   <g v-for="n in positions" :key="n.id" tabindex="0" role="button" :aria-label="overview?'进入'+n.title:n.title" class="canvas-node" :class="{selected:selectedId===n.id,mastered:mastery[n.id]?.mastery==='mastered'}" @click="overview?emit('chapter',n.id):emit('open',n)" @keydown.enter="overview?emit('chapter',n.id):emit('open',n)" @keydown.space.prevent="overview?emit('chapter',n.id):emit('open',n)">
+   <g v-for="n in positions" :key="n.id" tabindex="0" role="button" :aria-label="overview?'进入'+n.title:n.title" class="canvas-node" :style="{opacity:nodeOpacity(n)}" @pointerenter="hoverNode(n)" @pointerleave="clearHover" @focus="hoverNode(n)" @blur="clearHover" :class="{selected:selectedId===n.id,mastered:mastery[n.id]?.mastery==='mastered'}" @click="overview?emit('chapter',n.id):emit('open',n)" @keydown.enter="overview?emit('chapter',n.id):emit('open',n)" @keydown.space.prevent="overview?emit('chapter',n.id):emit('open',n)">
     <template v-if="star"><circle v-if="overview" class="orbit" :cx="n.x" :cy="n.y" r="88"/><circle :cx="n.x" :cy="n.y" :r="overview?65:23" :style="{fill:color(n)}"/><circle class="core" :cx="n.x" :cy="n.y" :r="overview?43:12"/></template>
     <rect v-else :x="n.x-(overview?92:72)" :y="n.y-(overview?44:25)" :width="overview?184:144" :height="overview?88:50" :rx="overview?18:12"/>
-    <text :x="n.x" :y="n.y+(star?(overview?4:43):5)" :class="{planet:overview}">{{n.title}}</text>
+    <circle v-if="!star && !overview" :cx="n.x-61" :cy="n.y" r="4" :style="{fill:color(n)}"/>
+     <text :x="n.x" :y="n.y+(star?(overview?4:43):5)" :style="!star&&!overview ? {fontSize: Math.min(12,116/Math.max(1,n.title.length))+'px'} : {}" :class="{planet:overview}">{{n.title}}</text>
     <text v-if="overview" :x="n.x" :y="n.y+(star?104:28)" class="node-meta">{{n.count}} 个概念 · 点击探索</text>
     <text v-else-if="mastery[n.id]?.mastery==='mastered'" :x="n.x+(star?24:58)" :y="n.y-14" class="mastery-check">✓</text>
    </g>
