@@ -1,3 +1,3 @@
 {
- "name":"mayuan/knowledge-api","type":"project","require":{"php":">=8.3","hyperf/framework":"^3.1","hyperf/http-server":"^3.1","hyperf/session":"^3.1","hyperf/config":"^3.1","hyperf/engine":"^2.0"},"autoload":{"psr-4":{"Mayuan\\":"src/"}},"config":{"sort-packages":true}
+ "name":"mayuan/knowledge-api","type":"project","require":{"php":">=8.3","hyperf/framework":"^3.1","hyperf/di":"^3.1","hyperf/http-server":"^3.1","hyperf/session":"^3.1","hyperf/config":"^3.1","hyperf/engine":"^2.0"},"autoload":{"psr-4":{"Mayuan\\":"src/"}},"config":{"sort-packages":true}
 }

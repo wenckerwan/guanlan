@@ -4,7 +4,7 @@ WORKDIR /opt/mayuan
 RUN composer config -g repos.packagist composer https://mirrors.aliyun.com/composer/
 COPY composer.json ./
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress \
-    && test -f vendor/hyperf/di/src/ClassLoader.php \
+    && php -r "require 'vendor/autoload.php'; exit(class_exists('Hyperf\\Di\\ClassLoader') ? 0 : 1);" \
     && php -m | grep -q pdo_mysql
 COPY . .
 ENV MAYUAN_MODE=guanlan
