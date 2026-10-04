@@ -1,0 +1,2 @@
+<?php
+require __DIR__.'/../../apps/api/bootstrap.php';$a=new Mayuan\Application(new PDO('sqlite::memory:'),'development');$u=['id'=>'dev:learner','role'=>'learner'];foreach(['first','second'] as $id)$s=$a->dispatch('POST','/events',['id'=>$id,'type'=>'recall','payload'=>['nodeId'=>'marxism','rating'=>'good','mode'=>'clue']],$u);if(count($s['recalls'])!==2)throw new RuntimeException('distinct recall history lost');echo "PASS distinct recall history retained\n";

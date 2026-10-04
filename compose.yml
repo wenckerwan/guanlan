@@ -1,0 +1,51 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: deploy/web.Dockerfile
+    environment:
+      NUXT_API_BASE: http://api:9501
+      NUXT_PUBLIC_API_BASE: /api/v2
+    ports:
+      - "127.0.0.1:4180:3000"
+    depends_on:
+      - api
+    restart: unless-stopped
+  api:
+    build:
+      context: apps/api
+      dockerfile: Dockerfile
+    environment:
+      MAYUAN_MODE: guanlan
+      MAYUAN_DB_DSN: "mysql:host=mysql;dbname=mayuan;charset=utf8mb4"
+      MAYUAN_DB_USER: mayuan
+      MAYUAN_DB_PASSWORD: ${MAYUAN_DB_PASSWORD:?Set MAYUAN_DB_PASSWORD}
+      MAYUAN_ORIGINS: ${MAYUAN_ORIGINS:?Set exact HTTPS browser origin}
+      GUANLAN_BASE_URL: ${GUANLAN_BASE_URL:-}
+      GUANLAN_SUMMARY_PROTOCOL: ${GUANLAN_SUMMARY_PROTOCOL:-}
+      GUANLAN_SUMMARY_URL: ${GUANLAN_SUMMARY_URL:-}
+      GUANLAN_SERVICE_TOKEN: ${GUANLAN_SERVICE_TOKEN:-}
+    volumes:
+      - api-runtime:/opt/mayuan/runtime
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: mayuan
+      MYSQL_USER: mayuan
+      MYSQL_PASSWORD: ${MAYUAN_DB_PASSWORD:?Set MAYUAN_DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+volumes:
+  mysql-data:
+  api-runtime:

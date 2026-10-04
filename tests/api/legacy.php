@@ -1,0 +1,2 @@
+<?php
+require __DIR__.'/../../apps/api/bootstrap.php';$a=new Mayuan\Application(new PDO('sqlite::memory:'),'development');$p=['version'=>1,'updatedAt'=>1,'nodes'=>['marxism'=>['visited'=>true,'mastery'=>'mastered','updatedAt'=>1,'answers'=>[],'attempts'=>0,'correct'=>0,'lastAnswered'=>null,'lastReason'=>null]]];$s=$a->dispatch('POST','/import',['progress'=>$p,'confirm'=>true],['id'=>'dev:second','role'=>'learner']);if($s['nodes']['marxism']['mastery']!=='mastered')throw new RuntimeException('legacy self assessment lost');echo "PASS legacy self assessment preserved\n";

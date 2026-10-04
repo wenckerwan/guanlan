@@ -1,0 +1,8 @@
+node_modules/
+.nuxt/
+.output/
+storage/
+.env
+*.log
+coverage/
+test-artifacts/
