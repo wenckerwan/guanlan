@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { LogIn, UserPlus } from 'lucide-vue-next'
 
@@ -79,6 +79,12 @@ async function submit() {
       await login(email.value.trim(), password.value)
     }
     const redirect = sanitizeRedirect(typeof route.query.redirect === 'string' ? route.query.redirect : '')
+    // 独立子应用（/mayuan、/history）由 nginx 分流、非观澜 Nuxt 路由：须整页跳转，
+    // 否则客户端 router.push 找不到该路由会渲染观澜 404。
+    if (/^\/(mayuan|history)(\/|$)/.test(redirect)) {
+      window.location.href = redirect
+      return
+    }
     await router.push(redirect)
   } catch (exception) {
     const data = (exception as { data?: { message?: string } })?.data
