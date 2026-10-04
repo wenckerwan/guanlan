@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "updatedAt": 1,
+  "nodes": {
+    "truth": {
+      "visited": true,
+      "mastery": "fuzzy",
+      "masteryUpdatedAt": 1,
+      "updatedAt": 1,
+      "answers": {},
+      "attempts": 0,
+      "correct": 0,
+      "lastAnswered": null,
+      "lastReason": null
+    }
+  }
+}
