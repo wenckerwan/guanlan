@@ -7,10 +7,10 @@
       "sha256": "47e9536c206beb61089000de3b6d109835c5f0c4640170bc2aa639f6294cbc93"
     },
     "hotspots.json": {
-      "bytes": 195577,
+      "bytes": 208984,
       "groups": {},
-      "items": 4,
-      "sha256": "9e51d21478dfaeab3b75b421ab6257567376a73abe551a5c7d6c4cbc9dc395ec"
+      "items": 5,
+      "sha256": "9dde419e07ed0401f0092980aa72a122b3e6eadf6e8b395be0495b288d6de17a"
     },
     "mistakes.json": {
       "bytes": 253077,
@@ -73,8 +73,8 @@
     "sha256": "0a790455b203627c61eb7ac89d49fb66eb11d02f31c06596cc998cde3c964e3c"
   },
   "totals": {
-    "bytes": 4533626,
+    "bytes": 4547033,
     "files": 8,
-    "items": 1825
+    "items": 1826
   }
 }

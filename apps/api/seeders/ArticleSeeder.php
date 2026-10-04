@@ -24,6 +24,7 @@ class ArticleSeeder extends Seeder
         '2026年7-8月' => ['slug' => 'xi-jinping-thought', 'level' => 'S', 'type' => '理论与政策', 'tag' => '七一与上合'],
         '2026年9月' => ['slug' => 'xi-jinping-thought', 'level' => 'S', 'type' => '理论与政策', 'tag' => '最新月份'],
         '2026年9月下_0927更新' => ['slug' => 'xi-jinping-thought', 'level' => 'S', 'type' => '理论与政策', 'tag' => '9月增补'],
+        '2026年10月' => ['slug' => 'xi-jinping-thought', 'level' => 'S', 'type' => '理论与政策', 'tag' => '10月补更'],
     ];
 
     public function run(): void
