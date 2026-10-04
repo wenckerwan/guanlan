@@ -311,20 +311,6 @@ export type StudyStats = {
   notes: number
 }
 
-// 马原知识宇宙学习摘要（GET /study/mayuan/summary；自评与练习正确率分开展示）。
-export type MayuanSummary = {
-  revision: number
-  contentVersion: string
-  visitedConceptCount: number
-  selfAssessedMasteredCount: number
-  practiceAttemptCount: number
-  practiceCorrectCount: number
-  dueReviewCount: number
-  lastActivityAt: string | null
-  resumeTarget: { view?: string; nodeId?: string } | null
-  updatedAt: string | null
-}
-
 export type ProgressRecord = {
   id: number
   scope: string

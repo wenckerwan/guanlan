@@ -3,10 +3,6 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   runtimeConfig: {
     apiBase: process.env.NUXT_API_BASE || "http://127.0.0.1:8086",
-    public: {
-      // 观澜站点基址（用于「使用观澜账号登录」跳转），生产注入 NUXT_PUBLIC_GUANLAN_BASE。
-      guanlanBase: process.env.NUXT_PUBLIC_GUANLAN_BASE || "/",
-    },
   },
   app: {
     // 挂载在观澜 /mayuan/ 前缀下：SPA 资源与路由均以此为基，避免 /_nuxt 404。

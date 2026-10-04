@@ -9,7 +9,6 @@ use App\Controller\AuthController;
 use App\Controller\CommentController;
 use App\Controller\HealthController;
 use App\Controller\HistoryController;
-use App\Controller\MayuanController;
 use App\Controller\HomeController;
 use App\Controller\MistakeController;
 use App\Controller\MockController;
@@ -55,9 +54,6 @@ Router::addGroup('/api/v1', function () {
 
 // 史纲（近现代史时间实验室）：只读数据集，公开（AuthMiddleware 仅解析身份，不强制登录）
 Router::get('/api/v1/history/events', [HistoryController::class, 'events'], ['middleware' => [AuthMiddleware::class]]);
-
-// 马原知识宇宙：学习摘要推送（人态，归属由登录身份决定，请求体不得带 userId）
-Router::put('/api/v1/integrations/mayuan/summary', [MayuanController::class, 'putSummary'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
 
 // 模拟押题
 Router::get('/api/v1/mocks', [MockController::class, 'index']);
@@ -114,8 +110,6 @@ Router::addGroup('/api/v1/study', function () {
     Router::get('/stats', [StudyController::class, 'stats']);
     Router::get('/progress', [StudyController::class, 'progress']);
     Router::post('/progress', [StudyController::class, 'saveProgress']);
-    // 马原学习摘要（读自己，供个人中心卡片）
-    Router::get('/mayuan/summary', [MayuanController::class, 'getSummary']);
 }, ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
 
 // 后台

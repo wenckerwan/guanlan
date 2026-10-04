@@ -2,7 +2,6 @@
 import core from "../lib/core.mjs";
 import {
   recallSet,
-  safeQueue,
   maskConcept,
   previewImport,
   latestDue,
@@ -20,7 +19,7 @@ const views = [
   ["labs", "原理实验"],
   ["recall", "主动回忆"],
   ["quiz", "原创练习"],
-  ["notebook", "复习笔记"],
+  ["notebook", "复习记录"],
 ];
 const view = ref("home"),
   chapter = ref("all"),
@@ -29,98 +28,74 @@ const view = ref("home"),
   relation = ref<any>(null),
   content = ref<any>(null),
   state = ref<any>(null),
-  session = ref<any>(null),
   loading = ref(true),
   busy = ref(false),
   error = ref(""),
-  notice = ref(""),
-  conflict = ref<any>(null),
-  queue = ref<any[]>([]),
-  note = ref("");
-const activeNoteId = ref("");
+  notice = ref("");
 const webglFailed = ref(false); // 3D 星空 WebGL 失败 → 回退 SVG star 视图
-let sessionGeneration = 0;
 const pendingAttempt = ref<any>(null);
-// ---- 观澜集成(任务1 登录 / 任务3 收藏·笔记) ----
-const guanlanBase = useRuntimeConfig().public.guanlanBase as string;
-/** 读同域观澜人态 Cookie guanlan.token;token 不进 URL/日志/页面消息。 */
-function guanlanToken(): string {
-  if (typeof document === "undefined") return "";
-  for (const part of document.cookie.split(";")) {
-    const i = part.indexOf("=");
-    if (i < 0) continue;
-    if (part.slice(0, i).trim() === "guanlan.token")
-      return decodeURIComponent(part.slice(i + 1).trim());
-  }
-  return "";
-}
-const hasGuanlanToken = ref(false);
-/** 节点类型 → 观澜 study targetType。当前主要用 concept。 */
-function targetTypeOf(node: any): string {
-  const t = node?.type || node?.kind || "concept";
-  return (
-    ({
-      concept: "mayuan_concept",
-      relation: "mayuan_relation",
-      comparison: "mayuan_comparison",
-      experiment: "mayuan_experiment",
-    }) as any
-  )[t] || "mayuan_concept";
-}
-/** 调观澜 study API(同域 /api/v1,经观澜网关),带 Bearer 人态 token。 */
-async function guanlanApi(path: string, method = "GET", body?: any) {
-  const token = guanlanToken();
-  if (!token)
-    throw Object.assign(Error("未登录观澜"), { status: 401, guanlan: true });
-  const headers: Record<string, string> = {
-    Authorization: "Bearer " + token,
-    Accept: "application/json",
+// ---- 纯本地免登录:学习状态只存浏览器 localStorage ----
+const LOCAL_KEY = "mayuan-v2-local-state";
+/** 与后端 Application::blank() 同构;favorites/notes 保留为空占位(UI 已删除)。 */
+function blankState() {
+  return {
+    revision: 0,
+    nodes: {} as Record<string, any>,
+    attempts: [] as any[],
+    recalls: [] as any[],
+    historicalAnswers: [] as any[],
+    favorites: [] as string[],
+    notes: [] as any[],
+    resume: { view: "map", nodeId: null as string | null },
+    sync: { status: "local", pending: 0 },
+    summary: { visited: 0, mastered: 0, attempts: 0, correct: 0, due: 0 },
   };
-  if (body) headers["Content-Type"] = "application/json";
-  const r = await fetch("/api/v1/study" + path, {
-    method,
-    credentials: "same-origin",
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  if (r.status === 204) return null;
-  const json = r.ok ? await r.json().catch(() => null) : await r.json().catch(() => null);
-  if (!r.ok) {
-    if (r.status === 401) {
-      // 观澜侧 token 失效:清马原会话,引导重新登录,保留未同步操作。
-      clearAccount();
-      notice.value = "观澜登录已失效，请重新登录后继续。";
-    }
-    throw Object.assign(
-      Error(json?.error?.message || json?.message || "观澜请求失败"),
-      { status: r.status, guanlan: true },
-    );
+}
+function blankNode() {
+  return { visited: false, mastery: "unlearned", masteryUpdatedAt: 0, updatedAt: 0 };
+}
+/** 每次写入后重算 summary(与原后端 /state 输出一致)。 */
+function recomputeSummary(s: any) {
+  const nodes = Object.values(s.nodes || {}) as any[];
+  const latest = new Map<string, any>();
+  for (const r of s.recalls || [])
+    if (!latest.has(r.nodeId) || r.at >= latest.get(r.nodeId).at)
+      latest.set(r.nodeId, r);
+  const now = Date.now();
+  s.summary = {
+    visited: nodes.filter((n) => n.visited).length,
+    mastered: nodes.filter((n) => n.mastery === "mastered").length,
+    attempts: (s.attempts || []).length,
+    correct: (s.attempts || []).filter((a: any) => a.correct).length,
+    due: [...latest.values()].filter((r) => r.dueAt <= now).length,
+  };
+  return s;
+}
+function readLocalState() {
+  try {
+    const raw = localStorage.getItem(LOCAL_KEY);
+    if (!raw) return blankState();
+    return recomputeSummary({ ...blankState(), ...JSON.parse(raw) });
+  } catch {
+    return blankState();
   }
-  return json?.data ?? json;
 }
-function applyState(result: any) {
-  if (!state.value || result.revision >= state.value.revision)
-    state.value = result;
-}
-function clearAccount() {
-  sessionGeneration++;
-  session.value = { ...session.value, user: null };
-  pendingAttempt.value = null;
-  state.value = null;
-  selected.value = null;
-  relation.value = null;
-  note.value = "";
-  activeNoteId.value = "";
-  conflict.value = null;
-  answer.value = null;
-  reason.value = "";
-  choice.value = -1;
-  admin.value = null;
-  draft.value = "";
-  importRaw.value = null;
-  importPreview.value = null;
-  notice.value = "";
-  view.value = "home";
+let persistTimer: ReturnType<typeof setTimeout> | undefined;
+/** 防抖写 localStorage;revision 递增以沿用原结构。 */
+function persistState(immediate = false) {
+  if (!state.value) return;
+  state.value.revision = (state.value.revision || 0) + 1;
+  state.value.updatedAt = Date.now();
+  recomputeSummary(state.value);
+  const write = () =>
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(state.value));
+  if (immediate) {
+    clearTimeout(persistTimer);
+    write();
+    return;
+  }
+  clearTimeout(persistTimer);
+  persistTimer = setTimeout(write, 300);
 }
 const ci = ref(0),
   judgment = ref(""),
@@ -134,13 +109,7 @@ const ci = ref(0),
   recallReveal = ref(false),
   recallText = ref(""),
   importRaw = ref<any>(null),
-  importPreview = ref<any>(null),
-  admin = ref<any>(null),
-  draft = ref(""),
-  editorType = ref("nodes"),
-  editorId = ref(""),
-  editorField = ref("summary"),
-  editorValue = ref("");
+  importPreview = ref<any>(null);
 const nodes = computed(() => content.value?.nodes || []),
   comparisons = computed(() => content.value?.comparisons || []),
   exercises = computed(() => content.value?.exercises || []);
@@ -211,291 +180,117 @@ const comparison = computed(() => comparisons.value[ci.value]),
       ],
   );
 const due = computed(() =>
-    nodes.value.filter(
-      (n: any) => state.value?.nodes[n.id]?.mastery !== "mastered",
-    ),
+  nodes.value.filter(
+    (n: any) => state.value?.nodes[n.id]?.mastery !== "mastered",
   ),
-  notebook = computed(() =>
-    nodes.value.filter(
-      (n: any) =>
-        state.value?.favorites.includes(n.id) ||
-        state.value?.notes.some((x: any) => x.nodeId === n.id),
-    ),
-  );
+);
 const scheduledDue = computed(() =>
   latestDue(state.value?.recalls || [], Date.now()),
 );
-const editorItems = computed(() => {
-  try {
-    return JSON.parse(draft.value)[editorType.value] || [];
-  } catch {
-    return [];
-  }
-});
-const editorJsonError = computed(() => {
-  if (!draft.value) return "";
-  try {
-    JSON.parse(draft.value);
-    return "";
-  } catch {
-    return "JSON 暂时无效，继续编辑后再保存。";
-  }
-});
-watch(editorType, () => {
-  editorId.value = "";
-  editorField.value =
-    editorType.value === "nodes"
-      ? "summary"
-      : editorType.value === "relations"
-        ? "explanation"
-        : "prompt";
-  editorValue.value = "";
-});
-watch([editorId, editorField, editorType], () => {
-  editorValue.value = String(
-    editorItems.value.find((x: any) => x.id === editorId.value)?.[
-      editorField.value
-    ] || "",
-  );
-});
 function title(id: string) {
   return nodes.value.find((n: any) => n.id === id)?.title || id;
 }
-async function api(
-  path: string,
-  method = "GET",
-  body?: any,
-  expectedUserId?: string,
-) {
-  const expected = expectedUserId || session.value?.user?.id;
-  const headers: Record<string, string> = body
-    ? { "Content-Type": "application/json" }
-    : {};
-  if (expected && !["/session", "/content", "/dev-login"].includes(path))
-    headers["X-Mayuan-User"] = expected;
-  const r = await fetch("/api/v2" + path, {
-    method,
-    credentials: "same-origin",
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const json = await r.json();
-  if (
-    !r.ok &&
-    ["session_changed", "account_changed"].includes(json.error?.code)
-  ) {
-    clearAccount();
-    notice.value =
-      "账户已在另一窗口切换，请核对当前账户后继续。原账户暂存记录仍保留。";
-    void load();
-  }
-  // 任务1:观澜会话失效 → 清会话,引导重新登录,保留未同步操作(queue 不清)。
-  if (
-    r.status === 401 &&
-    ["session_expired", "invalid_identity", "identity_validation_failed", "unauthenticated"].includes(
-      json.error?.code,
-    ) &&
-    session.value?.mode !== "development"
-  ) {
-    const hadUser = !!session.value?.user;
-    clearAccount();
-    if (hadUser) {
-      notice.value = "观澜登录已失效，请重新登录。未同步的本地操作已保留。";
-      void load();
-    }
-  }
+/** 唯一的后端调用:GET /api/v2/content 拉只读题库。 */
+async function api(path: string) {
+  const r = await fetch("/api/v2" + path, { credentials: "same-origin" });
+  const json = await r.json().catch(() => null);
   if (!r.ok)
-    throw Object.assign(Error(json.error?.message || "请求失败"), {
+    throw Object.assign(Error(json?.error?.message || "请求失败"), {
       status: r.status,
     });
-  return json.data;
+  return json?.data;
 }
+/** 题库来自 /content;学习状态全部来自 localStorage(无则 blank)。 */
 async function load() {
-  let generation = sessionGeneration;
   loading.value = true;
   error.value = "";
   try {
-    // 任务1:有观澜 token 且当前无会话 → 先走后端 /guanlan/validate 建马原会话。
-    const token = guanlanToken();
-    hasGuanlanToken.value = !!token;
-    if (token && !session.value?.user && session.value?.mode !== "development") {
-      try {
-        await api("/guanlan/validate", "POST", { token });
-      } catch (e: any) {
-        // token 无效/观澜不可用:不阻断,按未登录处理,引导重新登录。
-        if (generation === sessionGeneration && e?.status !== 401)
-          error.value = e.message;
-      }
-      if (generation !== sessionGeneration) return;
-    }
-    const s = await api("/session");
-    if (generation !== sessionGeneration) return;
-    if (session.value?.user?.id && session.value.user.id !== s.user?.id) {
-      clearAccount();
-      generation = sessionGeneration;
-      notice.value = "账户已切换，已清空先前账户的临时编辑内容。";
-    }
     const c = await api("/content");
-    const progress = s.user
-      ? await api("/state", "GET", undefined, s.user.id)
-      : null;
-    if (generation !== sessionGeneration) return;
-    session.value = s;
     content.value = c;
-    state.value = progress;
-    queue.value = JSON.parse(localStorage.getItem("mayuan-v2-queue") || "[]");
+    state.value = readLocalState();
     if (state.value?.resume?.view)
       view.value =
         ({ overview: "home", lab: "labs" } as any)[state.value.resume.view] ||
         state.value.resume.view;
-    // 任务3:加载时从观澜拉收藏/笔记,填充展示缓存(离线只读)。
-    await refreshStudyCache();
   } catch (e: any) {
-    if (generation === sessionGeneration) error.value = e.message;
+    // 题库未加载且无缓存时提示;state 仍可先用本地数据。
+    error.value = e.message || "内容载入失败";
+    if (!state.value) state.value = readLocalState();
   } finally {
-    if (generation === sessionGeneration) loading.value = false;
+    loading.value = false;
   }
-}
-/** 从观澜 study 接口拉收藏/笔记填充 state 展示缓存(state.favorites/state.notes 仅作展示)。 */
-async function refreshStudyCache() {
-  if (!session.value?.user || session.value?.mode === "development") return;
-  if (!guanlanToken() || !state.value) return;
-  try {
-    const [favs, notes] = await Promise.all([
-      guanlanApi("/favorites?targetType=mayuan_concept"),
-      guanlanApi("/notes?targetType=mayuan_concept"),
-    ]);
-    if (Array.isArray(favs))
-      // 观澜 favorite: {id,targetType,targetId,title,url,createdAt}
-      state.value.favorites = favs
-        .map((f: any) => f.targetId ?? f.target_id)
-        .filter(Boolean);
-    if (Array.isArray(notes))
-      // 观澜 note: {id,targetType,targetId,title,content,createdAt}(无 updatedAt)
-      state.value.notes = notes
-        .map((n: any) => ({
-          id: String(n.id ?? ""),
-          nodeId: n.targetId ?? n.target_id,
-          content: n.content ?? "",
-        }))
-        .filter((n: any) => n.nodeId);
-  } catch {
-    /* 离线/未登录:保留现有缓存,只读 */
-  }
-}
-async function login(account: string) {
-  clearAccount();
-  await run(async () => {
-    await api("/dev-login", "POST", { account });
-    await load();
-  });
-}
-/** 任务1:跳转观澜登录,登录后回跳当前马原路径。guanlanBase 已注入。 */
-function guanlanLogin() {
-  const base = (guanlanBase || "/").replace(/\/$/, "");
-  const redirect = "/mayuan" + (window.location.pathname.replace(/^\/mayuan/, "") || "/");
-  window.location.href =
-    base + "/login?redirect=" + encodeURIComponent(redirect);
-}
-async function logout() {
-  const expectedUserId = session.value?.user?.id;
-  clearAccount();
-  await run(async () => {
-    await api("/logout", "POST", {}, expectedUserId);
-    await load();
-  });
 }
 async function run(fn: () => Promise<any>) {
-  const generation = sessionGeneration;
   busy.value = true;
   error.value = "";
   try {
     await fn();
   } catch (e: any) {
-    if (generation === sessionGeneration) error.value = e.message;
+    error.value = e.message;
   } finally {
     busy.value = false;
   }
 }
-function saveQueue() {
-  localStorage.setItem("mayuan-v2-queue", JSON.stringify(queue.value));
-}
-async function event(type: string, payload: any) {
-  if (!session.value?.user || !state.value) {
-    notice.value = "请先登录，保存学习记录。";
-    return;
-  }
-  const userId = session.value.user.id,
-    generation = sessionGeneration;
-  const e = {
-    id: crypto.randomUUID(),
-    type,
-    payload,
-    ...(type === "mastery" ? { baseRevision: state.value.revision } : {}),
-  };
-  try {
-    const result = await api("/events", "POST", e, userId);
-    if (generation !== sessionGeneration) return;
-    applyState(result);
-    notice.value = "已保存到当前账户";
-  } catch (err: any) {
-    if (!err.status) {
-      queue.value.push({ ...e, userId });
-      saveQueue();
-      if (generation === sessionGeneration)
-        notice.value = "网络不可用，事件已暂存；恢复网络后可手动同步。";
+/** 学习事件纯本地应用,语义同原后端 Application::apply();不发网络请求。 */
+function event(type: string, payload: any) {
+  if (!state.value || !content.value) return;
+  const s = state.value;
+  const now = Date.now();
+  const nodeId = payload?.nodeId ?? null;
+  if (type !== "resume" || nodeId !== null) {
+    if (
+      !nodeId ||
+      !content.value.nodes.some((n: any) => n.id === nodeId)
+    )
       return;
-    }
-    if (generation !== sessionGeneration) return;
-    if (err.status === 409) {
-      conflict.value = e;
-      const result = await api("/state");
-      if (generation !== sessionGeneration) return;
-      applyState(result);
-      error.value =
-        "记录已在其他窗口更新。请核对当前状态，再决定是否重新提交。";
-    } else error.value = err.message;
   }
-}
-async function sync() {
-  const userId = session.value.user.id,
-    generation = sessionGeneration;
-  await run(async () => {
-    for (const e of safeQueue(queue.value, userId)) {
-      if (generation !== sessionGeneration) return;
-      const { userId: owner, ...body } = e;
-      try {
-        const result = await api("/events", "POST", body, userId);
-        queue.value = queue.value.filter((x) => x.id !== e.id);
-        saveQueue();
-        if (generation !== sessionGeneration) return;
-        applyState(result);
-      } catch (err: any) {
-        if (generation !== sessionGeneration) return;
-        if (err.status === 409) {
-          conflict.value = body;
-          const result = await api("/state");
-          if (generation !== sessionGeneration) return;
-          applyState(result);
-          throw Error("暂存的自评与云端冲突，请核对并处理。");
-        }
-        throw err;
-      }
+  const entry = nodeId ? s.nodes[nodeId] || blankNode() : null;
+  switch (type) {
+    case "visit":
+      entry.visited = true;
+      entry.updatedAt = now;
+      s.nodes[nodeId] = entry;
+      break;
+    case "mastery": {
+      if (!["unlearned", "fuzzy", "mastered"].includes(payload.mastery)) return;
+      entry.mastery = payload.mastery;
+      entry.masteryUpdatedAt = now;
+      entry.updatedAt = now;
+      s.nodes[nodeId] = entry;
+      break;
     }
-    if (generation !== sessionGeneration) return;
-    const refreshed = await api("/state", "GET", undefined, userId);
-    if (generation !== sessionGeneration) return;
-    applyState(refreshed);
-    notice.value = "当前账户暂存记录已同步";
-  });
-}
-async function resolveConflict(retry: boolean) {
-  const e = conflict.value;
-  queue.value = queue.value.filter((x) => x.id !== e.id);
-  saveQueue();
-  conflict.value = null;
-  error.value = "";
-  if (retry) await event(e.type, e.payload);
+    case "recall": {
+      if (!["again", "hard", "good"].includes(payload.rating)) return;
+      const intervals: Record<string, number> = {
+        again: 600000,
+        hard: 86400000,
+        good: 259200000,
+      };
+      s.recalls.push({
+        id: crypto.randomUUID(),
+        nodeId,
+        rating: payload.rating,
+        mode: String(payload.mode || "concept"),
+        at: now,
+        dueAt: now + intervals[payload.rating],
+      });
+      break;
+    }
+    case "resume": {
+      const mapped = payload.view;
+      if (
+        !["map", "stars", "compare", "lab", "recall", "quiz", "notebook", "overview"].includes(
+          mapped,
+        )
+      )
+        return;
+      s.resume = { view: mapped, nodeId };
+      break;
+    }
+    default:
+      return;
+  }
+  persistState();
 }
 function navigate(v: string) {
   v = ({ overview: "home", lab: "labs" } as any)[v] || v;
@@ -512,116 +307,14 @@ function chooseChapter(id: string) {
   query.value = "";
 }
 function openNode(n: any) {
+  if (!n) return;
   selected.value = n;
-  activeNoteId.value =
-    state.value?.notes.find((x: any) => x.nodeId === n.id)?.id ||
-    safeQueue(queue.value, session.value?.user?.id).findLast(
-      (e: any) => e.type === "note" && e.payload.nodeId === n.id,
-    )?.payload.id ||
-    crypto.randomUUID();
-  note.value =
-    state.value?.notes.find((x: any) => x.nodeId === n.id)?.content || "";
   event("visit", { nodeId: n.id });
 }
-/** 任务3:收藏写观澜 PUT /favorites 幂等;失败回滚展示缓存。 */
-async function toggleFavorite() {
-  const n = selected.value;
-  if (!n) return;
-  if (!session.value?.user || !guanlanToken()) {
-    notice.value = "请使用观澜账号登录后收藏。";
-    return;
-  }
-  const id = n.id,
-    favorited = !(state.value?.favorites || []).includes(id),
-    prev = [...(state.value?.favorites || [])];
-  state.value.favorites = favorited
-    ? [...prev, id]
-    : prev.filter((x: any) => x !== id);
-  try {
-    await guanlanApi("/favorites", "PUT", {
-      targetType: targetTypeOf(n),
-      targetId: id,
-      title: title(id),
-      url: "/mayuan/concept/" + id,
-      favorited,
-    });
-    notice.value = favorited ? "已收藏" : "已取消收藏";
-  } catch (e: any) {
-    state.value.favorites = prev;
-    if (e?.status !== 401) error.value = e.message;
-  }
-}
-async function saveNote() {
-  const n = selected.value;
-  if (!n) return;
-  if (!session.value?.user || !guanlanToken()) {
-    notice.value = "请使用观澜账号登录后保存笔记。";
-    return;
-  }
-  const nodeId = n.id,
-    contentText = note.value,
-    tt = targetTypeOf(n);
-  const prev = JSON.parse(JSON.stringify(state.value?.notes || []));
-  try {
-    // 观澜 notes 不唯一:先查该 (targetType,targetId) 最新一条(id 倒序,第一条=最新)定位,不依赖缓存。
-    const list = await guanlanApi(
-      "/notes?targetType=" +
-        encodeURIComponent(tt) +
-        "&targetId=" +
-        encodeURIComponent(nodeId),
-    );
-    const existing = Array.isArray(list) && list.length ? list[0] : null;
-    const existingId = existing ? String(existing.id ?? "") : "";
-    if (!contentText.trim()) {
-      // 空内容:删除观澜该节点最新一条笔记
-      if (existingId)
-        await guanlanApi("/notes/" + encodeURIComponent(existingId), "DELETE");
-      state.value.notes = (state.value.notes || []).filter(
-        (x: any) => x.nodeId !== nodeId,
-      );
-      notice.value = "笔记已删除";
-      return;
-    }
-    if (existingId) {
-      await guanlanApi("/notes/" + encodeURIComponent(existingId), "PATCH", {
-        content: contentText,
-      });
-      const cached = (state.value.notes || []).find(
-        (x: any) => x.nodeId === nodeId,
-      );
-      if (cached) {
-        cached.id = existingId;
-        cached.content = contentText;
-      } else
-        state.value.notes = [
-          ...(state.value.notes || []),
-          { id: existingId, nodeId, content: contentText },
-        ];
-    } else {
-      const created = await guanlanApi("/notes", "POST", {
-        targetType: tt,
-        targetId: nodeId,
-        title: title(nodeId),
-        url: "/mayuan/concept/" + nodeId,
-        content: contentText,
-      });
-      const newId = String(created?.id ?? activeNoteId.value);
-      state.value.notes = [
-        ...(state.value.notes || []).filter((x: any) => x.nodeId !== nodeId),
-        { id: newId, nodeId, content: contentText },
-      ];
-      activeNoteId.value = newId;
-    }
-    notice.value = "笔记已保存";
-  } catch (e: any) {
-    state.value.notes = prev;
-    if (e?.status !== 401) error.value = e.message;
-  }
-}
+/** 练习提交:本地判分并记录 attempt,语义同原后端 /attempts;不发网络请求。 */
 async function submit() {
-  if (choice.value < 0) return;
-  const generation = sessionGeneration;
-  pendingAttempt.value = attemptIntent(
+  if (choice.value < 0 || !exercise.value || !state.value) return;
+  const intent = attemptIntent(
     pendingAttempt.value,
     {
       exerciseId: exercise.value.id,
@@ -631,10 +324,34 @@ async function submit() {
     crypto.randomUUID(),
   );
   await run(async () => {
-    const result = await api("/attempts", "POST", pendingAttempt.value);
-    if (generation !== sessionGeneration) return;
-    answer.value = result;
-    applyState(result.state);
+    const q = exercise.value;
+    const correct = intent.chosen === q.answer;
+    const now = Date.now();
+    const s = state.value;
+    // 同一 intent 重复提交(重试按钮)幂等:已记录同 id 则直接复用结果。
+    if (!s.attempts.some((a: any) => a.id === intent.eventId)) {
+      s.attempts.push({
+        id: intent.eventId,
+        exerciseId: q.id,
+        chosen: intent.chosen,
+        reason: intent.reason,
+        correct,
+        answer: q.answer,
+        explanation: q.explanation,
+        contentVersion: content.value?.contentVersion,
+        nodes: q.nodes,
+        at: now,
+        verified: true,
+      });
+      for (const n of q.nodes || []) {
+        const entry = s.nodes[n] || blankNode();
+        entry.visited = true;
+        entry.updatedAt = now;
+        s.nodes[n] = entry;
+      }
+      persistState(true);
+    }
+    answer.value = { correct, answer: q.answer, explanation: q.explanation };
     pendingAttempt.value = null;
   });
 }
@@ -658,115 +375,87 @@ function nextRecall() {
   recallReveal.value = false;
   recallText.value = "";
 }
-async function rate(rating: string) {
-  const generation = sessionGeneration,
-    mode = recallMode.value;
+function rate(rating: string) {
+  const mode = recallMode.value;
   const ids =
-    recallMode.value === "relationship"
-      ? [recallRelation.value.from, recallRelation.value.to]
-      : recallMode.value === "case"
-        ? [recallNodes.value[0].id]
+    mode === "relationship"
+      ? [recallRelation.value?.from, recallRelation.value?.to].filter(Boolean)
+      : mode === "case"
+        ? [recallNodes.value[0]?.id].filter(Boolean)
         : recallNodes.value.map((n: any) => n.id);
-  for (const nodeId of ids) {
-    if (generation !== sessionGeneration) return;
-    await event("recall", { nodeId, rating, mode });
-  }
-  if (generation !== sessionGeneration) return;
+  for (const nodeId of ids) event("recall", { nodeId, rating, mode });
   nextRecall();
 }
-async function exportData() {
-  const generation = sessionGeneration;
-  await run(async () => {
-    const data = await api("/export");
-    if (generation !== sessionGeneration) return;
-    const url = URL.createObjectURL(
-      new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }),
-    );
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "马原学习备份.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  });
+/** 导出 localStorage 中的学习记录为 JSON 备份(纯前端,不调 /export)。 */
+function exportData() {
+  if (!state.value) return;
+  const data = {
+    version: 2,
+    exportedAt: Date.now(),
+    contentVersion: content.value?.contentVersion,
+    state: state.value,
+  };
+  const url = URL.createObjectURL(
+    new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }),
+  );
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "马原学习备份.json";
+  a.click();
+  URL.revokeObjectURL(url);
 }
 async function readImport(e: Event) {
-  const generation = sessionGeneration;
   await run(async () => {
     const f = (e.target as HTMLInputElement).files?.[0];
     if (!f) return;
     if (f.size > 5000000) throw Error("文件不能超过 5 MB");
     const raw = JSON.parse(await f.text());
     const preview = previewImport(raw);
-    if (generation !== sessionGeneration) return;
     importRaw.value = raw;
     importPreview.value = preview;
   });
 }
+/** 合并备份到本地 state(语义同原后端 /import:节点取并集,记录去重,答题仅入历史未验证)。 */
 async function confirmImport() {
-  const generation = sessionGeneration;
   await run(async () => {
-    const result = await api("/import", "POST", {
-      progress: importRaw.value,
-      confirm: true,
-    });
-    if (generation !== sessionGeneration) return;
-    applyState(result);
+    const s = state.value;
+    if (!s || !importRaw.value) return;
+    const p = importRaw.value.progress || importRaw.value.state || importRaw.value;
+    const now = Date.now();
+    const known = new Set((content.value?.nodes || []).map((n: any) => n.id));
+    if (p.nodes && typeof p.nodes === "object" && !Array.isArray(p.nodes)) {
+      for (const [id, node] of Object.entries<any>(p.nodes)) {
+        if (!known.has(id)) continue;
+        const existing = s.nodes[id] || blankNode();
+        existing.visited = existing.visited || !!node.visited;
+        const mu = node.masteryUpdatedAt || 0;
+        if (
+          mu > existing.masteryUpdatedAt ||
+          (mu === existing.masteryUpdatedAt &&
+            existing.mastery === "unlearned" &&
+            node.mastery &&
+            node.mastery !== "unlearned")
+        ) {
+          existing.mastery = node.mastery;
+          existing.masteryUpdatedAt = mu;
+        }
+        existing.updatedAt = now;
+        s.nodes[id] = existing;
+      }
+    }
+    for (const r of p.recalls || []) {
+      if (r?.id && known.has(r.nodeId) && !s.recalls.some((x: any) => x.id === r.id))
+        s.recalls.push(r);
+    }
+    for (const a of [...(p.historicalAnswers || []), ...(p.attempts || [])]) {
+      if (!a?.id || typeof a.correct !== "boolean") continue;
+      if (s.historicalAnswers.some((x: any) => x.id === a.id)) continue;
+      s.historicalAnswers.push({ ...a, verified: false, source: "import" });
+    }
     importRaw.value = null;
     importPreview.value = null;
+    persistState(true);
     notice.value = "备份已合并，历史练习仅作为未验证记录保留。";
-  });
-}
-async function loadAdmin() {
-  const generation = sessionGeneration;
-  await run(async () => {
-    const result = await api("/admin/content");
-    if (generation !== sessionGeneration) return;
-    admin.value = result;
-    draft.value = JSON.stringify(admin.value.draft, null, 2);
-  });
-}
-function structuredEdit() {
-  const c = JSON.parse(draft.value);
-  const item = c[editorType.value]?.find((x: any) => x.id === editorId.value);
-  if (!item) throw Error("请选择有效内容");
-  item[editorField.value] = editorValue.value;
-  draft.value = JSON.stringify(c, null, 2);
-}
-async function saveDraft() {
-  const generation = sessionGeneration;
-  await run(async () => {
-    await api("/admin/content", "PUT", {
-      content: JSON.parse(draft.value),
-      baseRevision: admin.value.revision,
-    });
-    if (generation !== sessionGeneration) return;
-    await loadAdmin();
-    if (generation !== sessionGeneration) return;
-    notice.value = "草稿已通过服务端验证并保存";
-  });
-}
-async function publish() {
-  const generation = sessionGeneration;
-  await run(async () => {
-    await api("/admin/publish", "POST", { revision: admin.value.revision });
-    if (generation !== sessionGeneration) return;
-    await loadAdmin();
-    const result = await api("/content");
-    if (generation !== sessionGeneration) return;
-    content.value = result;
-    notice.value = "已发布内容";
-  });
-}
-async function rollback(version: any) {
-  const generation = sessionGeneration;
-  await run(async () => {
-    await api("/admin/rollback", "POST", { version });
-    if (generation !== sessionGeneration) return;
-    await loadAdmin();
-    const result = await api("/content");
-    if (generation !== sessionGeneration) return;
-    content.value = result;
-    notice.value = "已恢复所选版本";
   });
 }
 onMounted(load);
@@ -833,24 +522,11 @@ onUnmounted(() => document.removeEventListener("keydown", trapDialog));
         >
           <span class="nav-number">0{{ i + 1 }}</span
           >{{ label }}</button
-        ><button
-          v-if="session?.user?.role === 'admin'"
-          :class="{ active: view === 'admin' }"
-          @click="
-            view = 'admin';
-            loadAdmin();
-          "
         >
-          内容管理
-        </button>
       </nav>
       <div class="sidebar-foot">
         <span class="dot"></span> 独立学习平台<small
-          >观澜集成：{{
-            session?.integration?.configured
-              ? "观澜服务已配置"
-              : "观澜尚未接入"
-          }}<br />学习无解锁门槛 · 不设排名</small
+          >本地学习模式 · 记录仅保存在此浏览器<br />学习无解锁门槛 · 不设排名</small
         >
       </div>
     </aside>
@@ -858,17 +534,11 @@ onUnmounted(() => document.removeEventListener("keydown", trapDialog));
       <header>
         <div class="breadcrumb">
           学习空间 <span>/</span>
-          {{ views.find((v) => v[0] === view)?.[1] || "内容管理" }}
-        </div>
-        <div class="account">
-          <span v-if="session?.mode === 'development'" class="dev"
-            >开发模式</span
-          ><span>{{ session?.user?.name || "访客" }}</span
-          ><button v-if="session?.user" @click="logout">退出</button>
+          {{ views.find((v) => v[0] === view)?.[1] }}
         </div>
       </header>
       <main id="main">
-        <div v-if="loading" class="panel">正在读取内容与账户…</div>
+        <div v-if="loading" class="panel">正在读取内容与本地学习记录…</div>
         <template v-else-if="content"
           ><div v-if="error" role="alert" class="alert">
             {{ error }} <button @click="load">重新读取</button>
@@ -877,49 +547,6 @@ onUnmounted(() => document.removeEventListener("keydown", trapDialog));
             {{ notice
             }}<button aria-label="关闭提示" @click="notice = ''">×</button>
           </div>
-          <div v-if="conflict" class="alert">
-            <p>
-              云端版本 {{ state?.revision }}。当前自评：{{
-                state?.nodes[conflict.payload.nodeId]?.mastery || "未设置"
-              }}。
-            </p>
-            <button @click="resolveConflict(true)">核对后重新提交</button
-            ><button @click="resolveConflict(false)">
-              保留云端，舍弃此更改
-            </button>
-          </div>
-          <section v-if="!session?.user" class="login panel">
-            <h2>在自己的学习空间继续</h2>
-            <p v-if="session?.mode === 'development'">
-              以下是本地开发账户，记录分别保存。不是观澜正式登录。
-            </p>
-            <template v-else>
-              <p>使用你的观澜账号登录，学习记录、收藏与笔记将同步到观澜。</p>
-              <div class="row">
-                <button class="primary" @click="guanlanLogin" :disabled="busy">
-                  使用观澜账号登录
-                </button>
-              </div>
-            </template>
-            <div v-if="session?.mode === 'development'" class="row">
-              <button
-                v-for="a in ['learner', 'second', 'admin']"
-                @click="login(a)"
-                :disabled="busy"
-              >
-                开发账户 ·
-                {{
-                  (
-                    {
-                      learner: "学习者一",
-                      second: "学习者二",
-                      admin: "管理员",
-                    } as any
-                  )[a]
-                }}
-              </button>
-            </div>
-          </section>
           <section v-if="view === 'home'">
             <div class="page-heading">
               <div>
@@ -1346,12 +973,11 @@ onUnmounted(() => document.removeEventListener("keydown", trapDialog));
               ></textarea
               ><button
                 class="primary"
-                :disabled="choice < 0 || busy || !!answer || !session?.user"
+                :disabled="choice < 0 || busy || !!answer"
                 @click="submit"
               >
                 {{ pendingAttempt ? "重试同一次提交" : "提交并核验" }}
               </button>
-              <p v-if="!session?.user">登录后提交，记录保存到你的账户。</p>
               <div v-if="answer" class="answer">
                 <h3>
                   {{ answer.correct ? "回答正确" : "还需要辨析" }} · 正确选项
@@ -1372,31 +998,28 @@ onUnmounted(() => document.removeEventListener("keydown", trapDialog));
           </section>
           <section v-if="view === 'notebook'">
             <p class="eyebrow">YOUR PERSONAL COLLECTION</p>
-            <h1>复习笔记</h1>
+            <h1>复习记录</h1>
             <div class="row">
-              <button @click="exportData" :disabled="!session?.user">
+              <button @click="exportData">
                 下载 JSON 备份</button
               ><label class="file-button"
                 >导入备份预览<input
                   type="file"
                   accept="application/json,.json"
-                  @change="readImport"
-                  :disabled="!session?.user" /></label
-              ><button v-if="session?.user" @click="sync">
-                同步当前账户暂存 ({{
-                  safeQueue(queue, session.user.id).length
-                }})
-              </button>
+                  @change="readImport" /></label
+              >
             </div>
+            <p class="fineprint">
+              学习记录仅保存在当前浏览器的 localStorage；清除浏览器数据会重置，可在换设备前导出备份再导入。
+            </p>
             <div v-if="importPreview" class="panel">
               <h3>导入预览</h3>
               <p>
                 {{ importPreview.nodes }} 个知识点 ·
-                {{ importPreview.attempts }} 条练习。导入会合并当前账户；V1
-                答题标记为历史未验证。
+                {{ importPreview.attempts }} 条练习。导入会合并到本地记录；历史答题标记为未验证。
               </p>
               <button class="primary" @click="confirmImport">
-                确认合并到当前账户</button
+                确认合并到本地记录</button
               ><button
                 @click="
                   importRaw = null;
@@ -1406,33 +1029,6 @@ onUnmounted(() => document.removeEventListener("keydown", trapDialog));
                 取消
               </button>
             </div>
-            <div class="notebook-grid">
-              <article v-for="n in notebook" class="panel">
-                <button class="text-button" @click="openNode(n)">
-                  <h3>{{ n.title }}</h3>
-                </button>
-                <p>
-                  {{
-                    state.notes.find((x: any) => x.nodeId === n.id)?.content ||
-                    "已收藏，尚未写笔记。"
-                  }}
-                </p>
-                <small
-                  >自评：{{
-                    (
-                      {
-                        unlearned: "未学习",
-                        fuzzy: "仍模糊",
-                        mastered: "已掌握",
-                      } as any
-                    )[state.nodes[n.id]?.mastery || "unlearned"]
-                  }}</small
-                >
-              </article>
-            </div>
-            <p v-if="!notebook.length" class="panel">
-              还没有收藏或笔记。打开任意概念，即可记录理解与疑问。
-            </p>
             <h2>已到期回忆 · {{ scheduledDue.length }}</h2>
             <div class="chips">
               <button
@@ -1450,81 +1046,6 @@ onUnmounted(() => document.removeEventListener("keydown", trapDialog));
               <button v-for="n in due.slice(0, 20)" @click="openNode(n)">
                 {{ n.title }}
               </button>
-            </div>
-          </section>
-          <section v-if="view === 'admin' && session?.user?.role === 'admin'">
-            <h1>内容管理</h1>
-            <p>草稿通过引用验证后保存，发布后学习端才会更新。</p>
-            <div v-if="admin" class="panel">
-              <h2>结构化编辑</h2>
-              <div class="toolbar">
-                <select v-model="editorType" aria-label="编辑内容类型">
-                  <option value="nodes">概念</option>
-                  <option value="relations">关系</option>
-                  <option value="exercises">练习</option></select
-                ><select v-model="editorId" aria-label="选择编辑记录">
-                  <option value="">选择记录</option>
-                  <option v-for="i in editorItems" :value="i.id">
-                    {{ i.title || i.prompt || i.label }} ({{ i.id }})
-                  </option></select
-                ><select v-model="editorField" aria-label="选择编辑字段">
-                  <option
-                    v-for="f in editorType === 'nodes'
-                      ? [
-                          'title',
-                          'summary',
-                          'detail',
-                          'method',
-                          'trap',
-                          'example',
-                        ]
-                      : editorType === 'relations'
-                        ? ['label', 'explanation', 'condition', 'trap']
-                        : ['prompt', 'explanation', 'reason']"
-                  >
-                    {{ f }}
-                  </option>
-                </select>
-              </div>
-              <textarea
-                v-model="editorValue"
-                aria-label="字段新内容"
-                placeholder="输入字段新内容"
-              ></textarea
-              ><button @click="run(async () => structuredEdit())">
-                应用字段更改到草稿
-              </button>
-              <details>
-                <summary>完整 JSON 草稿</summary>
-                <p v-if="editorJsonError" role="status" class="boundary">
-                  {{ editorJsonError }}
-                </p>
-                <textarea
-                  class="json-editor"
-                  v-model="draft"
-                  aria-label="完整内容 JSON"
-                ></textarea>
-              </details>
-              <div class="row">
-                <button class="primary" @click="saveDraft" :disabled="busy">
-                  验证并保存草稿</button
-                ><button @click="publish" :disabled="busy">
-                  发布已保存草稿</button
-                ><button @click="loadAdmin">重新读取</button>
-              </div>
-              <h3>版本记录</h3>
-              <div v-for="r in admin.revisions" class="revision">
-                <span
-                  >{{ r.version || r.id }} ·
-                  {{
-                    r.publishedAt
-                      ? new Date(r.publishedAt).toLocaleString("zh-CN")
-                      : ""
-                  }}</span
-                ><button @click="rollback(r.version || r.id)">
-                  恢复此版本
-                </button>
-              </div>
             </div>
           </section>
         </template>
@@ -1573,25 +1094,6 @@ onUnmounted(() => document.removeEventListener("keydown", trapDialog));
             {{ label }}
           </button>
         </div>
-        <button
-          @click="toggleFavorite"
-          :disabled="!session?.user"
-          :title="!session?.user ? '请使用观澜账号登录后收藏' : ''"
-        >
-          {{ state?.favorites.includes(selected.id) ? "取消收藏" : "收藏概念" }}
-        </button>
-        <h3>我的笔记</h3>
-        <textarea
-          v-model="note"
-          aria-label="概念笔记"
-          placeholder="记下自己的理解，空内容保存会删除笔记"
-        ></textarea
-        ><button
-          @click="saveNote"
-          :disabled="!session?.user"
-          :title="!session?.user ? '请使用观澜账号登录后保存笔记' : ''"
-          >保存笔记</button
-        >
         <h3>相关联系</h3>
         <button
           class="relation-button"
