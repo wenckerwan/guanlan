@@ -1,4 +1,4 @@
-﻿import type { ViewState } from '../core/index';
+import type { ViewState } from '../core/index';
 
 /** 组件当前可序列化的导航状态（导航 + 视图）。 */
 export interface HistoryRouteState {
@@ -21,7 +21,7 @@ export interface HistoryRouter {
   eventUrl(eventId: string): string;
 }
 
-const NAVS = new Set(['explore', 'compare', 'practice', 'study']);
+const NAVS = new Set(['explore', 'compare']);
 
 export function parseViewParams(params: URLSearchParams): { view: Partial<ViewState>; selectedId: string | null } {
   const view: Partial<ViewState> = {};

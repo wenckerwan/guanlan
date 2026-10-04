@@ -12,4 +12,30 @@
 .history-archive .ha-content-warning{padding:10px 26px;background:#efede4;border-bottom:1px solid #dfddce;color:#8b7754;font-size:11px;line-height:1.8}
 .history-archive .ha-brief-source{display:block;font-family:var(--ha-sans);font-size:8px;line-height:1.6;font-weight:400;color:#9a9e91;letter-spacing:0;white-space:normal}.history-archive .ha-node-date{display:block;white-space:normal;line-height:1.35}.history-archive .ha-node-date .ha-brief-source{font-size:7px;margin-top:2px}.history-archive .ha-compare-date .ha-brief-source{font-size:10px;margin-top:6px}.history-archive .ha-cluster-list .ha-brief-source{font-size:8px}.history-archive .ha-study-row .ha-brief-source{font-size:8px;margin-top:2px}
 .history-archive .ha-storage-warning{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:13px 26px;background:#f4ece2;border-bottom:1px solid #ddcdbb;color:#886346;font-size:11px;line-height:1.9}.history-archive .ha-storage-warning strong{font-weight:600}.history-archive .ha-storage-warning p{font-size:10px;margin-top:3px}.history-archive .ha-storage-warning button{flex:none;border:1px solid #b79876;border-radius:3px;padding:6px 11px;background:#fffefa;color:#886346;font-size:11px}.history-archive .ha-note textarea:read-only{background:#f0f1ed;color:#89938d}@media(max-width:700px){.history-archive .ha-storage-warning{align-items:flex-start;flex-direction:column;gap:9px;padding:12px 17px}.history-archive .ha-storage-warning button{font-size:10px}}
-.history-archive .ha-document-service-note{font-size:9px;line-height:1.8;color:#9a958a;font-weight:400;grid-column:1/-1}.history-archive .ha-compare-service-note{margin:-8px 0 19px}.history-archive .ha-recall-answer .ha-document-service-note{max-width:420px}
+.history-archive .ha-document-service-note{font-size:9px;line-height:1.8;color:#9a958a;font-weight:400;grid-column:1/-1}.history-archive .ha-compare-service-note{margin:-8px 0 19px}
+@media(min-width:1001px){
+  .history-archive{font-size:16px}
+  .history-archive .ha-sidebar{width:112px}
+  .history-archive .ha-sidebar nav button span{font-size:15px;letter-spacing:0}
+  .history-archive .ha-sidebar nav button small{font-size:10px;letter-spacing:0}
+  .history-archive .ha-sidebar-footer>span{font-size:15px}
+  .history-archive .ha-sidebar-footer small{font-size:12px;letter-spacing:0}
+  .history-archive .ha-topbar{font-size:14px;letter-spacing:0}
+  .history-archive .ha-version{font-size:12px}
+  .history-archive .ha-page-intro p,.history-archive .ha-search input{font-size:16px}
+  .history-archive .ha-period span,.history-archive .ha-topic-filters button,.history-archive .ha-archive-toggle,.history-archive .ha-window-controls,.history-archive .ha-window-controls input,.history-archive .ha-window-controls>div span{font-size:14px}
+  .history-archive .ha-axis-caption>span,.history-archive .ha-ruler span,.history-archive .ha-track-name{font-size:14px}
+  .history-archive .ha-track-name small{font-size:12px}
+  .history-archive .ha-track-plot,.history-archive .ha-track-svg{height:190px}
+  .history-archive .ha-node{max-width:160px}
+  .history-archive .ha-node-title{font-size:14px;line-height:1.5}
+  .history-archive .ha-node-date{font-size:12px}
+  .history-archive .ha-node-date .ha-brief-source{font-size:11px}
+  .history-archive .ha-overview-caption,.history-archive .ha-timeline-footnote,.history-archive .ha-app-footer{font-size:12px}
+  .history-archive .ha-evidence h2,.history-archive .ha-comparison-grid h2{font-size:24px}
+  .history-archive .ha-original-text,.history-archive .ha-comparison-grid article>p,.history-archive .ha-note textarea{font-size:16px;line-height:1.9}
+  .history-archive .ha-evidence h3,.history-archive .ha-evidence-actions button,.history-archive .ha-date-assertion,.history-archive .ha-date-assertion a,.history-archive .ha-review-note,.history-archive .ha-comparison-hint,.history-archive .ha-pending-date a,.history-archive .ha-pending-date>span{font-size:14px}
+  .history-archive .ha-field-label,.history-archive .ha-evidence>header,.history-archive .ha-document-service-note{font-size:12px}
+  .history-archive .ha-date-assertion strong,.history-archive .ha-pending-comparisons h2{font-size:18px}
+}
+.history-archive .ha-recall-answer .ha-document-service-note{max-width:420px}
