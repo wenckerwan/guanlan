@@ -41,6 +41,63 @@ const activeNoteId = ref("");
 const webglFailed = ref(false); // 3D 星空 WebGL 失败 → 回退 SVG star 视图
 let sessionGeneration = 0;
 const pendingAttempt = ref<any>(null);
+// ---- 观澜集成(任务1 登录 / 任务3 收藏·笔记) ----
+const guanlanBase = useRuntimeConfig().public.guanlanBase as string;
+/** 读同域观澜人态 Cookie guanlan.token;token 不进 URL/日志/页面消息。 */
+function guanlanToken(): string {
+  if (typeof document === "undefined") return "";
+  for (const part of document.cookie.split(";")) {
+    const i = part.indexOf("=");
+    if (i < 0) continue;
+    if (part.slice(0, i).trim() === "guanlan.token")
+      return decodeURIComponent(part.slice(i + 1).trim());
+  }
+  return "";
+}
+const hasGuanlanToken = ref(false);
+/** 节点类型 → 观澜 study targetType。当前主要用 concept。 */
+function targetTypeOf(node: any): string {
+  const t = node?.type || node?.kind || "concept";
+  return (
+    ({
+      concept: "mayuan_concept",
+      relation: "mayuan_relation",
+      comparison: "mayuan_comparison",
+      experiment: "mayuan_experiment",
+    }) as any
+  )[t] || "mayuan_concept";
+}
+/** 调观澜 study API(同域 /api/v1,经观澜网关),带 Bearer 人态 token。 */
+async function guanlanApi(path: string, method = "GET", body?: any) {
+  const token = guanlanToken();
+  if (!token)
+    throw Object.assign(Error("未登录观澜"), { status: 401, guanlan: true });
+  const headers: Record<string, string> = {
+    Authorization: "Bearer " + token,
+    Accept: "application/json",
+  };
+  if (body) headers["Content-Type"] = "application/json";
+  const r = await fetch("/api/v1/study" + path, {
+    method,
+    credentials: "same-origin",
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (r.status === 204) return null;
+  const json = r.ok ? await r.json().catch(() => null) : await r.json().catch(() => null);
+  if (!r.ok) {
+    if (r.status === 401) {
+      // 观澜侧 token 失效:清马原会话,引导重新登录,保留未同步操作。
+      clearAccount();
+      notice.value = "观澜登录已失效，请重新登录后继续。";
+    }
+    throw Object.assign(
+      Error(json?.error?.message || json?.message || "观澜请求失败"),
+      { status: r.status, guanlan: true },
+    );
+  }
+  return json?.data ?? json;
+}
 function applyState(result: any) {
   if (!state.value || result.revision >= state.value.revision)
     state.value = result;
@@ -232,6 +289,21 @@ async function api(
       "账户已在另一窗口切换，请核对当前账户后继续。原账户暂存记录仍保留。";
     void load();
   }
+  // 任务1:观澜会话失效 → 清会话,引导重新登录,保留未同步操作(queue 不清)。
+  if (
+    r.status === 401 &&
+    ["session_expired", "invalid_identity", "identity_validation_failed", "unauthenticated"].includes(
+      json.error?.code,
+    ) &&
+    session.value?.mode !== "development"
+  ) {
+    const hadUser = !!session.value?.user;
+    clearAccount();
+    if (hadUser) {
+      notice.value = "观澜登录已失效，请重新登录。未同步的本地操作已保留。";
+      void load();
+    }
+  }
   if (!r.ok)
     throw Object.assign(Error(json.error?.message || "请求失败"), {
       status: r.status,
@@ -243,6 +315,19 @@ async function load() {
   loading.value = true;
   error.value = "";
   try {
+    // 任务1:有观澜 token 且当前无会话 → 先走后端 /guanlan/validate 建马原会话。
+    const token = guanlanToken();
+    hasGuanlanToken.value = !!token;
+    if (token && !session.value?.user && session.value?.mode !== "development") {
+      try {
+        await api("/guanlan/validate", "POST", { token });
+      } catch (e: any) {
+        // token 无效/观澜不可用:不阻断,按未登录处理,引导重新登录。
+        if (generation === sessionGeneration && e?.status !== 401)
+          error.value = e.message;
+      }
+      if (generation !== sessionGeneration) return;
+    }
     const s = await api("/session");
     if (generation !== sessionGeneration) return;
     if (session.value?.user?.id && session.value.user.id !== s.user?.id) {
@@ -263,10 +348,39 @@ async function load() {
       view.value =
         ({ overview: "home", lab: "labs" } as any)[state.value.resume.view] ||
         state.value.resume.view;
+    // 任务3:加载时从观澜拉收藏/笔记,填充展示缓存(离线只读)。
+    await refreshStudyCache();
   } catch (e: any) {
     if (generation === sessionGeneration) error.value = e.message;
   } finally {
     if (generation === sessionGeneration) loading.value = false;
+  }
+}
+/** 从观澜 study 接口拉收藏/笔记填充 state 展示缓存(state.favorites/state.notes 仅作展示)。 */
+async function refreshStudyCache() {
+  if (!session.value?.user || session.value?.mode === "development") return;
+  if (!guanlanToken() || !state.value) return;
+  try {
+    const [favs, notes] = await Promise.all([
+      guanlanApi("/favorites?targetType=mayuan_concept"),
+      guanlanApi("/notes?targetType=mayuan_concept"),
+    ]);
+    if (Array.isArray(favs))
+      // 观澜 favorite: {id,targetType,targetId,title,url,createdAt}
+      state.value.favorites = favs
+        .map((f: any) => f.targetId ?? f.target_id)
+        .filter(Boolean);
+    if (Array.isArray(notes))
+      // 观澜 note: {id,targetType,targetId,title,content,createdAt}(无 updatedAt)
+      state.value.notes = notes
+        .map((n: any) => ({
+          id: String(n.id ?? ""),
+          nodeId: n.targetId ?? n.target_id,
+          content: n.content ?? "",
+        }))
+        .filter((n: any) => n.nodeId);
+  } catch {
+    /* 离线/未登录:保留现有缓存,只读 */
   }
 }
 async function login(account: string) {
@@ -275,6 +389,13 @@ async function login(account: string) {
     await api("/dev-login", "POST", { account });
     await load();
   });
+}
+/** 任务1:跳转观澜登录,登录后回跳当前马原路径。guanlanBase 已注入。 */
+function guanlanLogin() {
+  const base = (guanlanBase || "/").replace(/\/$/, "");
+  const redirect = "/mayuan" + (window.location.pathname.replace(/^\/mayuan/, "") || "/");
+  window.location.href =
+    base + "/login?redirect=" + encodeURIComponent(redirect);
 }
 async function logout() {
   const expectedUserId = session.value?.user?.id;
@@ -402,12 +523,100 @@ function openNode(n: any) {
     state.value?.notes.find((x: any) => x.nodeId === n.id)?.content || "";
   event("visit", { nodeId: n.id });
 }
+/** 任务3:收藏写观澜 PUT /favorites 幂等;失败回滚展示缓存。 */
+async function toggleFavorite() {
+  const n = selected.value;
+  if (!n) return;
+  if (!session.value?.user || !guanlanToken()) {
+    notice.value = "请使用观澜账号登录后收藏。";
+    return;
+  }
+  const id = n.id,
+    favorited = !(state.value?.favorites || []).includes(id),
+    prev = [...(state.value?.favorites || [])];
+  state.value.favorites = favorited
+    ? [...prev, id]
+    : prev.filter((x: any) => x !== id);
+  try {
+    await guanlanApi("/favorites", "PUT", {
+      targetType: targetTypeOf(n),
+      targetId: id,
+      title: title(id),
+      url: "/mayuan/concept/" + id,
+      favorited,
+    });
+    notice.value = favorited ? "已收藏" : "已取消收藏";
+  } catch (e: any) {
+    state.value.favorites = prev;
+    if (e?.status !== 401) error.value = e.message;
+  }
+}
 async function saveNote() {
-  await event("note", {
-    id: activeNoteId.value,
-    nodeId: selected.value.id,
-    content: note.value,
-  });
+  const n = selected.value;
+  if (!n) return;
+  if (!session.value?.user || !guanlanToken()) {
+    notice.value = "请使用观澜账号登录后保存笔记。";
+    return;
+  }
+  const nodeId = n.id,
+    contentText = note.value,
+    tt = targetTypeOf(n);
+  const prev = JSON.parse(JSON.stringify(state.value?.notes || []));
+  try {
+    // 观澜 notes 不唯一:先查该 (targetType,targetId) 最新一条(id 倒序,第一条=最新)定位,不依赖缓存。
+    const list = await guanlanApi(
+      "/notes?targetType=" +
+        encodeURIComponent(tt) +
+        "&targetId=" +
+        encodeURIComponent(nodeId),
+    );
+    const existing = Array.isArray(list) && list.length ? list[0] : null;
+    const existingId = existing ? String(existing.id ?? "") : "";
+    if (!contentText.trim()) {
+      // 空内容:删除观澜该节点最新一条笔记
+      if (existingId)
+        await guanlanApi("/notes/" + encodeURIComponent(existingId), "DELETE");
+      state.value.notes = (state.value.notes || []).filter(
+        (x: any) => x.nodeId !== nodeId,
+      );
+      notice.value = "笔记已删除";
+      return;
+    }
+    if (existingId) {
+      await guanlanApi("/notes/" + encodeURIComponent(existingId), "PATCH", {
+        content: contentText,
+      });
+      const cached = (state.value.notes || []).find(
+        (x: any) => x.nodeId === nodeId,
+      );
+      if (cached) {
+        cached.id = existingId;
+        cached.content = contentText;
+      } else
+        state.value.notes = [
+          ...(state.value.notes || []),
+          { id: existingId, nodeId, content: contentText },
+        ];
+    } else {
+      const created = await guanlanApi("/notes", "POST", {
+        targetType: tt,
+        targetId: nodeId,
+        title: title(nodeId),
+        url: "/mayuan/concept/" + nodeId,
+        content: contentText,
+      });
+      const newId = String(created?.id ?? activeNoteId.value);
+      state.value.notes = [
+        ...(state.value.notes || []).filter((x: any) => x.nodeId !== nodeId),
+        { id: newId, nodeId, content: contentText },
+      ];
+      activeNoteId.value = newId;
+    }
+    notice.value = "笔记已保存";
+  } catch (e: any) {
+    state.value.notes = prev;
+    if (e?.status !== 401) error.value = e.message;
+  }
 }
 async function submit() {
   if (choice.value < 0) return;
@@ -684,7 +893,14 @@ onUnmounted(() => document.removeEventListener("keydown", trapDialog));
             <p v-if="session?.mode === 'development'">
               以下是本地开发账户，记录分别保存。不是观澜正式登录。
             </p>
-            <p v-else>观澜身份服务尚未配置，请由管理员启用真实身份接口。</p>
+            <template v-else>
+              <p>使用你的观澜账号登录，学习记录、收藏与笔记将同步到观澜。</p>
+              <div class="row">
+                <button class="primary" @click="guanlanLogin" :disabled="busy">
+                  使用观澜账号登录
+                </button>
+              </div>
+            </template>
             <div v-if="session?.mode === 'development'" class="row">
               <button
                 v-for="a in ['learner', 'second', 'admin']"
@@ -1358,12 +1574,9 @@ onUnmounted(() => document.removeEventListener("keydown", trapDialog));
           </button>
         </div>
         <button
-          @click="
-            event('favorite', {
-              nodeId: selected.id,
-              favorited: !state?.favorites.includes(selected.id),
-            })
-          "
+          @click="toggleFavorite"
+          :disabled="!session?.user"
+          :title="!session?.user ? '请使用观澜账号登录后收藏' : ''"
         >
           {{ state?.favorites.includes(selected.id) ? "取消收藏" : "收藏概念" }}
         </button>
@@ -1373,7 +1586,12 @@ onUnmounted(() => document.removeEventListener("keydown", trapDialog));
           aria-label="概念笔记"
           placeholder="记下自己的理解，空内容保存会删除笔记"
         ></textarea
-        ><button @click="saveNote">保存笔记</button>
+        ><button
+          @click="saveNote"
+          :disabled="!session?.user"
+          :title="!session?.user ? '请使用观澜账号登录后保存笔记' : ''"
+          >保存笔记</button
+        >
         <h3>相关联系</h3>
         <button
           class="relation-button"
