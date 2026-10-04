@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Controller\AdminController;
-use App\Controller\AdminShizhengController;
 use App\Controller\ArticleController;
 use App\Controller\AuthController;
 use App\Controller\CommentController;
@@ -42,12 +41,10 @@ Router::get('/api/v1/papers/{pid}', [PaperController::class, 'show']);
 Router::get('/api/v1/questions', [QuestionController::class, 'index']);
 Router::get('/api/v1/questions/{id:\d+}', [QuestionController::class, 'show']);
 
-// 真题分析 / 时政热点 / 时政预测（AuthMiddleware 只解析身份，游客配额据此计算）
+// 真题分析 / 时政预测（AuthMiddleware 只解析身份，游客配额据此计算）
 Router::addGroup('/api/v1', function () {
     Router::get('/analysis', [ArticleController::class, 'analysisIndex']);
     Router::get('/analysis/{slug}', [ArticleController::class, 'analysisShow']);
-    Router::get('/hotspots', [ArticleController::class, 'hotspotIndex']);
-    Router::get('/hotspots/{slug}', [ArticleController::class, 'hotspotShow']);
     Router::get('/predictions', [ArticleController::class, 'predictionIndex']);
     Router::get('/predictions/{slug}', [ArticleController::class, 'predictionShow']);
 }, ['middleware' => [AuthMiddleware::class]]);
@@ -137,10 +134,6 @@ Router::addGroup('/api/v1/admin', function () {
     Router::put('/mistakes/students/{code}/profile', [AdminController::class, 'saveMistakeProfile']);
     Router::patch('/mistakes/items/{id:\d+}', [AdminController::class, 'updateMistakeItem']);
     Router::get('/mistakes/review-stats', [AdminController::class, 'mistakeReviewStats']);
-    Router::get('/hotspots', [AdminController::class, 'hotspots']);
-    Router::post('/hotspots', [AdminController::class, 'createHotspot']);
-    Router::patch('/hotspots/{id:\d+}', [AdminController::class, 'updateHotspot']);
-    Router::delete('/hotspots/{id:\d+}', [AdminController::class, 'deleteHotspot']);
     Router::get('/analysis', [AdminController::class, 'analysis']);
     Router::post('/analysis', [AdminController::class, 'createAnalysis']);
     Router::patch('/analysis/{id:\d+}', [AdminController::class, 'updateAnalysis']);
@@ -151,13 +144,4 @@ Router::addGroup('/api/v1/admin', function () {
     Router::put('/comments/mode', [CommentController::class, 'setMode']);
     Router::patch('/comments/{id:\d+}', [CommentController::class, 'adminUpdate']);
     Router::delete('/comments/{id:\d+}', [CommentController::class, 'adminDestroy']);
-
-    // 每日时政：AI 配置 / 候选池 / 筛选 / 发布
-    Router::get('/shizheng/config', [AdminShizhengController::class, 'getConfig']);
-    Router::put('/shizheng/config', [AdminShizhengController::class, 'saveConfig']);
-    Router::post('/shizheng/config/test', [AdminShizhengController::class, 'testConfig']);
-    Router::post('/shizheng/candidates', [AdminShizhengController::class, 'pushCandidates']);
-    Router::get('/shizheng/candidates', [AdminShizhengController::class, 'candidates']);
-    Router::post('/shizheng/screen', [AdminShizhengController::class, 'screen']);
-    Router::post('/shizheng/publish', [AdminShizhengController::class, 'publish']);
 }, ['middleware' => [AuthMiddleware::class, RequireAdminMiddleware::class]]);

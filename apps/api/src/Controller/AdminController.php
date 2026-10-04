@@ -336,40 +336,6 @@ class AdminController
         return ApiResponse::data($this->service->mistakeReviewStats());
     }
 
-    public function hotspots(): ResponseInterface
-    {
-        return ApiResponse::data(ArticleResource::collection($this->service->hotspots()));
-    }
-
-    public function createHotspot(): ResponseInterface
-    {
-        if (trim((string) $this->request->input('title', '')) === '') {
-            return ApiResponse::message('请求校验失败', 422, ['title' => '标题不能为空']);
-        }
-
-        $hotspot = $this->service->saveHotspot($this->request->all());
-        $this->audit->log($this->user(), 'hotspot.create', 'hotspot', (string) $hotspot->id, ['title' => (string) $hotspot->title]);
-        return ApiResponse::data(ArticleResource::detail($hotspot), 201);
-    }
-
-    public function updateHotspot(int $id): ResponseInterface
-    {
-        $hotspot = $this->service->saveHotspot($this->request->all(), $id);
-        $this->audit->log($this->user(), 'hotspot.update', 'hotspot', (string) $id, ['title' => (string) $hotspot->title]);
-        return ApiResponse::data(ArticleResource::detail($hotspot));
-    }
-
-    public function deleteHotspot(int $id): ResponseInterface
-    {
-        $ok = $this->service->deleteHotspot($id);
-        if ($ok) {
-            $this->audit->log($this->user(), 'hotspot.delete', 'hotspot', (string) $id);
-        }
-        return $ok
-            ? ApiResponse::data(['ok' => true])
-            : ApiResponse::message('记录不存在', 404);
-    }
-
     public function analysis(): ResponseInterface
     {
         return ApiResponse::data(ArticleResource::collection($this->service->analysis()));

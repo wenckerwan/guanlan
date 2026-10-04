@@ -1,6 +1,6 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { onMounted } from 'vue'
-import { BarChart3, FileText, Newspaper, Users, ScrollText, Target, Lightbulb, ClipboardList, Rss, History, ArrowLeft, MessageSquare } from 'lucide-vue-next'
+import { BarChart3, FileText, Users, ScrollText, Target, Lightbulb, ClipboardList, History, ArrowLeft, MessageSquare } from 'lucide-vue-next'
 
 const router = useRouter()
 const { user, isAdmin, restore, token } = useAuth()
@@ -12,8 +12,6 @@ onMounted(() => {
 const nav = [
   { to: '/admin', label: '总览', icon: BarChart3 },
   { to: '/admin/users', label: '用户', icon: Users },
-  { to: '/admin/hotspots', label: '时政', icon: Newspaper },
-  { to: '/admin/shizheng', label: '每日时政', icon: Rss },
   { to: '/admin/analysis', label: '分析', icon: FileText },
   { to: '/admin/papers', label: '真题', icon: ScrollText },
   { to: '/admin/mocks', label: '押题', icon: Target },

@@ -29,7 +29,6 @@ const message = ref('')
 
 const TYPE_LABELS: Record<string, string> = {
   analysis: '真题分析',
-  hotspot: '时政热点',
   prediction: '时政预测',
 }
 
@@ -99,7 +98,6 @@ async function remove(row: AdminComment) {
       <select class="admin-select" :value="articleType" @change="setType">
         <option value="">全部栏目</option>
         <option value="analysis">真题分析</option>
-        <option value="hotspot">时政热点</option>
         <option value="prediction">时政预测</option>
       </select>
     </div>

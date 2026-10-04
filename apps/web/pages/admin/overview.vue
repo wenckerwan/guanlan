@@ -33,7 +33,6 @@ const labels: Record<string, string> = {
   papers: '试卷',
   questions: '题目',
   analysis_articles: '真题分析',
-  hotspots: '时政热点',
   predictions: '时政预测',
   mistake_items: '错题',
   mistake_reviews: '复习记录',
@@ -51,7 +50,7 @@ const attemptMax = computed(() => Math.max(1, ...attemptSeries.value.map((item) 
 const attemptSum = computed(() => trendTotal(attemptSeries.value))
 
 const statusLabels: Record<string, string> = { published: '已发布', hidden: '已隐藏' }
-const statusNames: Record<string, string> = { hotspots: '时政热点', analysis_articles: '真题分析', predictions: '时政预测' }
+const statusNames: Record<string, string> = { analysis_articles: '真题分析', predictions: '时政预测' }
 const recentAudit = computed(() => (data.value as { recentAudit?: { action: string; targetType: string; targetId: string; adminEmail: string; createdAt: string }[] } | null)?.recentAudit ?? [])
 </script>
 

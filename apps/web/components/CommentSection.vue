@@ -4,7 +4,7 @@ import { MessageSquare, Pin, Send, Trash2 } from 'lucide-vue-next'
 import UserGroupBadge from '~/components/UserGroupBadge.vue'
 
 const props = defineProps<{
-  articleType: 'analysis' | 'hotspot' | 'prediction'
+  articleType: 'analysis' | 'prediction'
   slug: string
 }>()
 

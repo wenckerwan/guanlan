@@ -6,7 +6,6 @@ namespace App\Service;
 
 use App\Model\AnalysisArticle;
 use App\Model\Comment;
-use App\Model\Hotspot;
 use App\Model\Prediction;
 use App\Model\User;
 use App\Support\UserGroup;
@@ -18,13 +17,12 @@ use Hyperf\Database\Model\Builder;
  */
 class CommentService
 {
-    public const ARTICLE_TYPES = ['analysis', 'hotspot', 'prediction'];
+    public const ARTICLE_TYPES = ['analysis', 'prediction'];
 
     public const MODES = ['open', 'review', 'closed'];
 
     private const ARTICLE_MODELS = [
         'analysis' => AnalysisArticle::class,
-        'hotspot' => Hotspot::class,
         'prediction' => Prediction::class,
     ];
 

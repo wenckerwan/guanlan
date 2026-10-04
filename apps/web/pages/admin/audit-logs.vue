@@ -51,9 +51,6 @@ const actionLabels: Record<string, string> = {
   'user.create': '创建用户',
   'user.update': '更新用户',
   'user.reset_password': '重置密码',
-  'hotspot.create': '新建热点',
-  'hotspot.update': '更新热点',
-  'hotspot.delete': '删除热点',
   'analysis.create': '新建分析',
   'analysis.update': '更新分析',
   'analysis.delete': '删除分析',
@@ -61,9 +58,6 @@ const actionLabels: Record<string, string> = {
   'paper.update': '更新试卷',
   'paper.delete': '删除试卷',
   'question.update': '编辑题目',
-  'shizheng.config.save': '时政 AI 配置',
-  'shizheng.screen': '时政筛选',
-  'shizheng.publish': '时政发布',
   'mistake.profile.replace': '替换错题画像',
   'mistake.item.update': '更新错题',
 }
@@ -74,7 +68,7 @@ const actionLabels: Record<string, string> = {
     <div class="section-heading"><div><span class="section-kicker">审计日志</span><h2>共 {{ total }} 条操作记录</h2></div></div>
 
     <form class="filter-search" role="search" @submit.prevent="page = 1; load()">
-      <input v-model="action" type="search" placeholder="按操作前缀筛选，如 user. / hotspot. / shizheng." />
+      <input v-model="action" type="search" placeholder="按操作前缀筛选，如 user. / analysis." />
       <button class="ghost-button" type="submit">筛选</button>
     </form>
 

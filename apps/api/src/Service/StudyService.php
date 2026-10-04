@@ -19,7 +19,7 @@ use Hyperf\Database\Model\Builder;
 class StudyService
 {
     public const TARGET_TYPES = [
-        'question', 'paper', 'analysis', 'hotspot', 'prediction', 'mistake', 'mistake_item', 'handbook', 'mock',
+        'question', 'paper', 'analysis', 'prediction', 'mistake', 'mistake_item', 'handbook', 'mock',
         // 马原知识宇宙
         'mayuan_concept', 'mayuan_relation', 'mayuan_comparison', 'mayuan_experiment',
         // 近现代史时间实验室

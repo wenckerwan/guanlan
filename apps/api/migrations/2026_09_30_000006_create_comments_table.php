@@ -30,9 +30,6 @@ class CreateCommentsTable extends Migration
         Schema::table('analysis_articles', function (Blueprint $table) {
             $table->string('comment_mode', 16)->default('open');
         });
-        Schema::table('hotspots', function (Blueprint $table) {
-            $table->string('comment_mode', 16)->default('open');
-        });
         Schema::table('predictions', function (Blueprint $table) {
             $table->string('comment_mode', 16)->default('open');
         });
@@ -42,9 +39,6 @@ class CreateCommentsTable extends Migration
     {
         Schema::dropIfExists('comments');
         Schema::table('analysis_articles', function (Blueprint $table) {
-            $table->dropColumn('comment_mode');
-        });
-        Schema::table('hotspots', function (Blueprint $table) {
             $table->dropColumn('comment_mode');
         });
         Schema::table('predictions', function (Blueprint $table) {

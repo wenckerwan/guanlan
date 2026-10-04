@@ -14,10 +14,6 @@ declare(strict_types=1);
  * 与 hyperf/server 提供的 start 命令追加共存（ApplicationFactory 读取该键实例化命令）。
  */
 
-use App\Command\ShizhengRescoreCandidatesCommand;
 use Hyperf\Database\Commands\CommandCollector;
 
-return array_merge(CommandCollector::getAllCommands(), [
-    // 时政候选真题相关度重算（新列回填 / 题库变更后刷新）
-    ShizhengRescoreCandidatesCommand::class,
-]);
+return CommandCollector::getAllCommands();

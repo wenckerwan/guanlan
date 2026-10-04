@@ -7,7 +7,6 @@ namespace App\Service;
 use App\Model\AnalysisArticle;
 use App\Model\Attempt;
 use App\Model\Favorite;
-use App\Model\Hotspot;
 use App\Model\Mock;
 use App\Model\MistakeItem;
 use App\Model\MistakeProfile;
@@ -42,7 +41,6 @@ class AdminService
             'papers' => Paper::class,
             'questions' => Question::class,
             'analysis_articles' => AnalysisArticle::class,
-            'hotspots' => Hotspot::class,
             'predictions' => Prediction::class,
             'mistake_items' => MistakeItem::class,
             'mistake_reviews' => \App\Model\MistakeReview::class,
@@ -78,7 +76,7 @@ class AdminService
 
         // 内容上下线分布
         $statusCounts = [];
-        foreach (['hotspots' => Hotspot::class, 'analysis_articles' => AnalysisArticle::class, 'predictions' => Prediction::class] as $key => $model) {
+        foreach (['analysis_articles' => AnalysisArticle::class, 'predictions' => Prediction::class] as $key => $model) {
             $rows = $model::query()->selectRaw('status, count(*) as total')->groupBy('status')->get();
             $statusCounts[$key] = [];
             foreach ($rows as $row) {
@@ -340,46 +338,6 @@ class AdminService
             $out[(string) $row->module] = (int) $row->total;
         }
         return $out;
-    }
-
-    /** @return array<int, Hotspot> */
-    public function hotspots(int $limit = 100): array
-    {
-        return Hotspot::query()->orderByDesc('id')->limit($limit)->get()->all();
-    }
-
-    public function saveHotspot(array $data, ?int $id = null): Hotspot
-    {
-        $hotspot = $id ? Hotspot::find($id) : new Hotspot();
-        if (! $hotspot) {
-            $hotspot = new Hotspot();
-        }
-
-        $hotspot->fill([
-            'title' => (string) ($data['title'] ?? $hotspot->title ?? ''),
-            'level' => (string) ($data['level'] ?? $hotspot->level ?? 'A'),
-            'priority' => (string) ($data['priority'] ?? $hotspot->priority ?? 'A'),
-            'summary' => (string) ($data['summary'] ?? $hotspot->summary ?? ''),
-            'type' => (string) ($data['type'] ?? $hotspot->type ?? ''),
-            'tag' => (string) ($data['tag'] ?? $hotspot->tag ?? ''),
-            'period' => (string) ($data['period'] ?? $hotspot->period ?? ''),
-            'html' => (string) ($data['html'] ?? $hotspot->html ?? ''),
-            'subject_id' => (int) ($data['subjectId'] ?? $hotspot->subject_id ?? 1),
-            'status' => ContentStatus::normalize(isset($data['status']) ? (string) $data['status'] : null),
-        ]);
-
-        if (! $hotspot->slug) {
-            $hotspot->slug = 'admin-' . bin2hex(random_bytes(6));
-        }
-
-        $hotspot->save();
-
-        return $hotspot;
-    }
-
-    public function deleteHotspot(int $id): bool
-    {
-        return (bool) Hotspot::query()->where('id', $id)->delete();
     }
 
     /** @return array<int, AnalysisArticle> */

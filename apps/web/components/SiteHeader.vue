@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Bookmark, BookOpen, ClipboardList, Clock3, FileText, Menu, Newspaper, Search, Sparkles, TrendingUp, UserRound, X } from 'lucide-vue-next'
+import { Bookmark, BookOpen, ClipboardList, Clock3, FileText, Menu, Search, Sparkles, TrendingUp, UserRound, X } from 'lucide-vue-next'
 
 const isOpen = ref(false)
 const route = useRoute()
@@ -11,7 +11,6 @@ const query = ref('')
 const navItems = [
   { label: '首页', to: '/' },
   { label: '真题', to: '/papers' },
-  { label: '时政', to: '/hotspots' },
   { label: '预测', to: '/predictions' },
   { label: '分析', to: '/analysis' },
   { label: '错题', to: '/mistakes' },
@@ -22,7 +21,6 @@ const navItems = [
 const drawerItems = [
   { label: '首页', to: '/', icon: BookOpen },
   { label: '真题回顾', to: '/papers', icon: FileText },
-  { label: '时政热点', to: '/hotspots', icon: Newspaper },
   { label: '时政预测', to: '/predictions', icon: TrendingUp },
   { label: '真题分析', to: '/analysis', icon: Sparkles },
   { label: '错题分析', to: '/mistakes', icon: ClipboardList },
@@ -101,14 +99,13 @@ async function handleLogout() {
           <button type="button" @click="handleLogout">退出登录</button>
         </template>
       </div>
-      <p class="drawer-note">V0.1-dev.24 · 真题 / 时政 / 错题 / 模拟</p>
+      <p class="drawer-note">V0.1-dev.24 · 真题 / 错题 / 模拟</p>
     </aside>
   </div>
 
   <nav class="mobile-bottom-nav" aria-label="移动端主导航">
     <NuxtLink to="/" :class="{ active: route.path === '/' }"><BookOpen :size="18" />首页</NuxtLink>
     <NuxtLink to="/papers" :class="{ active: route.path.startsWith('/papers') }"><FileText :size="18" />真题</NuxtLink>
-    <NuxtLink to="/hotspots" :class="{ active: route.path.startsWith('/hotspots') }"><Newspaper :size="18" />时政</NuxtLink>
     <NuxtLink to="/mistakes" :class="{ active: route.path.startsWith('/mistakes') }"><ClipboardList :size="18" />错题</NuxtLink>
   </nav>
 </template>

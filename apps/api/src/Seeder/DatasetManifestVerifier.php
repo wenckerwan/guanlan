@@ -12,7 +12,6 @@ final class DatasetManifestVerifier
     /** @var array<int, string> */
     private const REQUIRED_DATASETS = [
         'analysis_articles.json',
-        'hotspots.json',
         'mistakes.json',
         'mocks.json',
         'papers.json',

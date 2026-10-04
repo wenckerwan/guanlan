@@ -7,7 +7,6 @@ export const SEARCH_TYPES = [
   { value: 'question', label: '真题' },
   { value: 'paper', label: '试卷' },
   { value: 'analysis', label: '真题分析' },
-  { value: 'hotspot', label: '时政热点' },
   { value: 'prediction', label: '时政预测' },
   { value: 'mock', label: '模拟押题' },
   { value: 'mistake', label: '错题' },

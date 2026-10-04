@@ -6,7 +6,6 @@ namespace App\Service;
 
 use App\Model\AnalysisArticle;
 use App\Model\Document;
-use App\Model\Hotspot;
 use App\Model\MistakeItem;
 use App\Model\Paper;
 use App\Model\Prediction;
@@ -17,26 +16,6 @@ class HomeService
 {
     public function __construct(private ArticleService $articles)
     {
-    }
-
-    /**
-     * 首页热点卡片：优先时政长文（slug 非空），再回落到 dev.2 的卡片式热点。
-     *
-     * @return array<int, Hotspot>
-     */
-    public function hotspots(): array
-    {
-        $long = $this->articles->hotspotCards(6);
-        if ($long !== []) {
-            return $long;
-        }
-
-        return Hotspot::query()
-            ->with(['subject', 'chapter'])
-            ->orderByRaw("FIELD(level, 'S', 'A', 'B', 'C')")
-            ->orderByDesc('updated_at')
-            ->get()
-            ->all();
     }
 
     /**
@@ -75,7 +54,6 @@ class HomeService
         return [
             'questions' => (int) Question::query()->count(),
             'papers' => (int) Paper::query()->count(),
-            'hotspots' => (int) Hotspot::query()->whereNotNull('slug')->count(),
             'predictions' => (int) Prediction::query()->count(),
             'analysis' => (int) AnalysisArticle::query()->count(),
             'mistakes' => (int) MistakeItem::query()->count(),

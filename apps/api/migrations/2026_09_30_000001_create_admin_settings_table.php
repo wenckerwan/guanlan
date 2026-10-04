@@ -8,7 +8,7 @@ use Hyperf\Database\Schema\Schema;
 
 /**
  * 后台键值配置存储：AI 配置等需要服务端保存的后台设置。
- * key 形如 shizheng.ai，value 为 JSON 字符串。
+ * key 形如 ai.mistake，value 为 JSON 字符串。
  */
 class CreateAdminSettingsTable extends Migration
 {

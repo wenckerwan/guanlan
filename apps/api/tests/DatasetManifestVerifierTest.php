@@ -47,7 +47,6 @@ try {
 
     $datasets = [
         'analysis_articles.json' => [['id' => 1]],
-        'hotspots.json' => [['id' => 2]],
         'mistakes.json' => ['items' => [['id' => 3]], 'handbooks' => [['id' => 4]]],
         'mocks.json' => [['id' => 5]],
         'papers.json' => [['id' => 6]],
@@ -71,7 +70,7 @@ try {
     // 让本测试不依赖 python3（api 容器是纯 PHP 镜像）。字段口径与 verifier 一致。
     $buildFixtureManifest = static function (string $datasetDir, string $sourceManifestPath, string $outputPath): void {
         $required = [
-            'analysis_articles.json', 'hotspots.json', 'mistakes.json', 'mocks.json',
+            'analysis_articles.json', 'mistakes.json', 'mocks.json',
             'papers.json', 'predictions.json', 'questions.json', 'stats.json',
         ];
         $source = json_decode((string) file_get_contents($sourceManifestPath), true, 512, JSON_THROW_ON_ERROR);

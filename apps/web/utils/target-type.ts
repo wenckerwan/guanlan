@@ -6,7 +6,6 @@ export const TARGET_TYPE_LABELS: Record<string, string> = {
   question: '题目',
   paper: '真题',
   analysis: '真题分析',
-  hotspot: '时政热点',
   prediction: '时政预测',
   mistake: '错题本',
   mistake_item: '错题',

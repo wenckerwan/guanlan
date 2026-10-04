@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Resource\DocumentResource;
-use App\Resource\HotspotResource;
 use App\Resource\SubjectSummaryResource;
 use App\Service\HomeService;
 use App\Support\ApiResponse;
@@ -20,7 +19,6 @@ class HomeController
     public function index(): ResponseInterface
     {
         return ApiResponse::data([
-            'hotspots' => HotspotResource::collection($this->service->hotspots()),
             'documents' => DocumentResource::collection($this->service->documents()),
             'subjects' => SubjectSummaryResource::collection($this->service->subjects()),
             'stats' => $this->service->stats(),

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Model\AnalysisArticle;
-use App\Model\Hotspot;
 use App\Model\Prediction;
 use App\Resource\ArticleResource;
 use App\Service\ArticleService;
@@ -48,27 +47,6 @@ class ArticleController
         return $this->detailOrQuota($this->service->analysis(), $slug, $article);
     }
 
-    public function hotspotIndex(): ResponseInterface
-    {
-        return ApiResponse::data(ArticleResource::collection(
-            $this->service->hotspots(
-                (string) $this->request->input('period', ''),
-                (string) $this->request->input('priority', '')
-            ),
-            $this->lockedSlugs($this->service->hotspots())
-        ));
-    }
-
-    public function hotspotShow(string $slug): ResponseInterface
-    {
-        $hotspot = $this->service->hotspotBySlug($slug);
-        if (! $hotspot) {
-            return ApiResponse::message('时政内容不存在', 404);
-        }
-
-        return $this->detailOrQuota($this->service->hotspots(), $slug, $hotspot);
-    }
-
     public function predictionIndex(): ResponseInterface
     {
         return ApiResponse::data(ArticleResource::collection(
@@ -90,7 +68,7 @@ class ArticleController
     /**
      * 按栏目整体顺序算出被锁定的 slug 集合；登录用户为空集。
      *
-     * @param iterable<AnalysisArticle|Hotspot|Prediction> $ordered
+     * @param iterable<AnalysisArticle|Prediction> $ordered
      * @return array<string, true>
      */
     private function lockedSlugs(iterable $ordered): array
@@ -110,7 +88,7 @@ class ArticleController
     /**
      * 详情统一入口：访客超出本栏目配额时拒绝，否则返回完整正文。
      *
-     * @param iterable<AnalysisArticle|Hotspot|Prediction> $ordered
+     * @param iterable<AnalysisArticle|Prediction> $ordered
      */
     private function detailOrQuota(iterable $ordered, string $slug, object $model): ResponseInterface
     {
