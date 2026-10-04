@@ -18,11 +18,11 @@ const config = useRuntimeConfig()
 const route = useRoute()
 const apiBase = (config.public.apiBase as string) || '/api/v1'
 
-// 同一 key 强制重挂载：Nuxt watch route.query 变化时重建组件，挂载时经 parse() 自恢复（前进/回退由 Nuxt 路由负责）。
-const historyKey = computed(() => `history:${route.fullPath}`)
-
 const container = ref<HTMLElement | null>(null)
+const mountError = ref('')
 let app: { unmount: () => void } | null = null
+let mounting = false
+let disposed = false
 
 function authHeaders(): HeadersInit {
   const token = readAuthToken()
@@ -47,8 +47,12 @@ const routeAdapter = {
   },
 }
 
-onMounted(async () => {
-  if (!container.value) return
+async function mountHistory() {
+  const target = container.value
+  if (!target || app || mounting || disposed) return
+  mounting = true
+  mountError.value = ''
+  try {
   const [{ createGuanlanHistoryApp }, { GuanlanHistoryRepository }, { GuanlanStudyRepository }] = await Promise.all([
     import('~/components/history/ui/guanlan-app'),
     import('~/components/history/adapters/history-http'),
@@ -69,16 +73,27 @@ onMounted(async () => {
       void navigateTo({ path: '/login', query: { redirect: route.fullPath } })
     },
   })
+  if (disposed || container.value !== target) return
   app = createGuanlanHistoryApp({
-    mount: container.value,
+    mount: target,
     repository,
     studyRepository,
     route: routeAdapter,
     basePath: '/history/',
   })
-})
+  } catch (error) {
+    if (!disposed) mountError.value = error instanceof Error ? error.message : '时间轴初始化失败'
+  } finally {
+    mounting = false
+  }
+}
+
+// ClientOnly creates its slot after the parent has mounted; wait for the actual element.
+watch(container, () => { void mountHistory() }, { flush: 'post' })
+onMounted(() => { void mountHistory() })
 
 onBeforeUnmount(() => {
+  disposed = true
   app?.unmount()
   app = null
 })
@@ -88,7 +103,11 @@ onBeforeUnmount(() => {
   <div class="history-host">
     <a class="history-host__skip" href="/">返回观澜首页</a>
     <ClientOnly>
-      <div :key="historyKey" ref="container" class="history-host__mount" />
+      <div ref="container" class="history-host__mount" />
+      <div v-if="mountError" class="history-host__loading" role="alert">
+        <p>时间轴暂时无法打开：{{ mountError }}</p>
+        <button type="button" @click="mountHistory">重新加载</button>
+      </div>
       <template #fallback>
         <div class="history-host__loading">
           <HistoryIcon :size="18" /> 正在载入史纲时间轴…
