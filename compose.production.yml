@@ -157,6 +157,77 @@ services:
           cpus: "0.20"
           memory: 192M
 
+  # 马原知识宇宙（独立子应用，源码 subtree 于 vendor/mayuan）。与观澜同实例 MySQL、独立 schema `mayuan`。
+  # 身份：读观澜 Cookie guanlan.token，内网调观澜 api 验证（GUANLAN_API_INTERNAL_BASE）；详细学习记录存马原库。
+  mayuan-api:
+    build:
+      context: ./vendor/mayuan/apps/api
+    restart: unless-stopped
+    environment:
+      MAYUAN_MODE: guanlan
+      # 连观澜同实例 MySQL，库名 mayuan（首次启动由 init 脚本/迁移建库）。
+      MAYUAN_DB_DSN: "mysql:host=mysql;dbname=mayuan;charset=utf8mb4"
+      MAYUAN_DB_USER: ${DB_USERNAME:?DB_USERNAME is required}
+      MAYUAN_DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      # 内网验证观澜身份（任务书 §一：允许 http，容器内网）
+      GUANLAN_API_INTERNAL_BASE: http://api:9501/api/v1
+      # 摘要推送（任务书 §2.4；GUANLAN_SERVICE_TOKEN 已废弃，改用人态 token）
+      GUANLAN_SUMMARY_PROTOCOL: mayuan-summary-v1
+      GUANLAN_SUMMARY_URL: http://api:9501/api/v1/integrations/mayuan/summary
+      MAYUAN_ORIGINS: ${MAYUAN_ORIGINS:-https://guanlan.wencker.top}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(fsockopen('127.0.0.1', 9501) ? 0 : 1);"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+
+  mayuan-web:
+    build:
+      context: ./vendor/mayuan
+      dockerfile: deploy/web.Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      # Nitro 服务端代理 /api/v2/* → mayuan-api 内网（见 apps/web/server/api/v2/[...path].ts）
+      NUXT_API_BASE: http://mayuan-api:9501
+      # 「使用观澜账号登录」跳转基址（同域即 /）
+      NUXT_PUBLIC_GUANLAN_BASE: /
+    depends_on:
+      mayuan-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.40"
+          memory: 384M
+
 volumes:
   mysql_data:
   redis_data:
