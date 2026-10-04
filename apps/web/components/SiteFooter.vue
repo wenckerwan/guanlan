@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { HeartHandshake } from 'lucide-vue-next'
+import { HeartHandshake, Home } from 'lucide-vue-next'
 
 /**
  * 站点页脚：友情链接区 + 版权行。
  * 友链与赞助入口集中在此维护；外链一律 rel="noopener noreferrer" 新窗口打开。
  */
 const friendLinks = [
+  { href: 'https://wencker.top/', label: '个人主页', note: 'wencker.top', home: true },
   { href: 'https://afdian.com/a/wencker', label: '爱发电赞助', note: '支持观澜持续更新', sponsor: true },
 ]
 const year = new Date().getFullYear()
@@ -20,6 +21,7 @@ const year = new Date().getFullYear()
           <li v-for="link in friendLinks" :key="link.href">
             <a :href="link.href" target="_blank" rel="noopener noreferrer" class="site-footer__link" :class="{ sponsor: link.sponsor }">
               <HeartHandshake v-if="link.sponsor" :size="14" aria-hidden="true" />
+              <Home v-else-if="link.home" :size="14" aria-hidden="true" />
               <span class="site-footer__label">{{ link.label }}</span>
               <small v-if="link.note">{{ link.note }}</small>
             </a>
@@ -28,7 +30,7 @@ const year = new Date().getFullYear()
       </section>
       <div class="site-footer__meta">
         <span>观澜 · 考研政治知识库</span>
-        <span>© {{ year }} wencker</span>
+        <span>© {{ year }} <a href="https://wencker.top/" target="_blank" rel="noopener noreferrer" class="site-footer__author">wencker</a></span>
       </div>
     </div>
   </footer>
@@ -43,6 +45,9 @@ const year = new Date().getFullYear()
 .site-footer__link:hover { border-color: var(--red); transform: translateY(-1px); }
 .site-footer__link.sponsor { color: var(--red); }
 .site-footer__link.sponsor svg { color: var(--red); flex: none; }
+.site-footer__link svg { color: var(--muted); flex: none; }
+.site-footer__author { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--line); }
+.site-footer__author:hover { color: var(--red); border-bottom-color: var(--red); }
 .site-footer__link small { color: var(--muted); font-size: 11px; }
 .site-footer__meta { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 26px; padding-top: 18px; border-top: 1px dashed var(--line); color: var(--muted); font-size: 11px; }
 @media (max-width: 640px) { .site-footer { margin-top: 52px; } }
