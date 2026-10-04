@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, ref } from 'vue'
 import { ArrowRight, BookOpen, CalendarDays, ChevronRight, ClipboardList, FileText, Globe2, History, Newspaper, Search, Sparkles, TrendingUp } from 'lucide-vue-next'
 import type { HomePayload, LeaderboardEntry } from '~/types/api'
@@ -13,6 +13,7 @@ const historyBase = computed(() => (config.public.historyBase as string) || '/hi
 const universeSections = computed(() => [
   { href: mayuanBase.value, label: '马原知识宇宙', copy: '概念星球 · 关系网络 · 主动回忆', icon: Globe2, tone: 'blue' },
   { href: historyBase.value, label: '近现代史时间实验室', copy: '时间轴探索 · 来源对照 · 排序回忆', icon: History, tone: 'gold' },
+  { href: '/meetings/index.html', label: '党史会议专题', copy: '会议汇总 · 精讲速记 · 配套练习', icon: BookOpen, tone: 'red' },
 ])
 
 const { data: home } = await useApiFetch<HomePayload>('/home', { hotspots: [], documents: [], subjects: [], stats: undefined })
