@@ -1,9 +1,10 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, ref } from 'vue'
-import { ArrowRight, BookOpen, CalendarDays, ChevronRight, ClipboardList, FileText, Globe2, History, Search, Sparkles, TrendingUp } from 'lucide-vue-next'
+import { ArrowRight, BookOpen, CalendarDays, ChevronRight, ClipboardList, FileText, Globe2, History, Newspaper, Search, Sparkles, TrendingUp } from 'lucide-vue-next'
 import type { HomePayload, LeaderboardEntry } from '~/types/api'
+import { sortHotspots } from '~/utils/home.mjs'
 
-useHead({ title: '观澜｜考研政治知识库', meta: [{ name: 'description', content: '观澜考研政治知识库：真题、错题分析与模拟押题一站式复习。' }] })
+useHead({ title: '观澜｜考研政治知识库', meta: [{ name: 'description', content: '观澜考研政治知识库：真题、时政、错题分析与模拟押题一站式复习。' }] })
 
 const config = useRuntimeConfig()
 const mayuanBase = computed(() => (config.public.mayuanBase as string) || '/mayuan/')
@@ -14,7 +15,7 @@ const universeSections = computed(() => [
   { href: historyBase.value, label: '近现代史时间实验室', copy: '时间轴探索 · 来源对照 · 排序回忆', icon: History, tone: 'gold' },
 ])
 
-const { data: home } = await useApiFetch<HomePayload>('/home', { documents: [], subjects: [], stats: undefined })
+const { data: home } = await useApiFetch<HomePayload>('/home', { hotspots: [], documents: [], subjects: [], stats: undefined })
 
 const { data: leaderboardData } = useApiFetch<{ period: string; items: LeaderboardEntry[] }>('/stats/leaderboard?period=week&limit=10', { period: 'week', items: [] }, { lazy: true, server: false })
 const leaderboard = computed(() => leaderboardData.value?.items ?? [])
@@ -30,12 +31,21 @@ function formatDuration(seconds: number) {
 const router = useRouter()
 const query = ref('')
 
+const sortedHotspots = computed(() => sortHotspots(home.value?.hotspots ?? []))
+const filteredHotspots = computed(() => {
+  const keyword = query.value.trim().toLowerCase()
+  const list = keyword
+    ? sortedHotspots.value.filter((item) => `${item.title}${item.summary}${item.type}`.toLowerCase().includes(keyword))
+    : sortedHotspots.value
+  return list.slice(0, 4)
+})
 const documents = computed(() => home.value?.documents ?? [])
 const subjectSummaries = computed(() => (home.value?.subjects ?? []).slice(0, 6))
 const stats = computed(() => home.value?.stats)
 
 const sections = computed(() => [
   { to: '/papers', label: '真题回顾', copy: `${stats.value?.papers ?? 0} 份试卷 · ${stats.value?.questions ?? 0} 道题`, icon: FileText, tone: 'jade' },
+  { to: '/hotspots', label: '时政热点', copy: `${stats.value?.hotspots ?? 0} 期逐月整理`, icon: Newspaper, tone: 'red' },
   { to: '/predictions', label: '时政预测', copy: `${stats.value?.predictions ?? 0} 篇真题反推`, icon: TrendingUp, tone: 'gold' },
   { to: '/analysis', label: '真题分析', copy: `${stats.value?.analysis ?? 0} 篇规律统计`, icon: Sparkles, tone: 'blue' },
   { to: '/mistakes', label: '错题分析', copy: `${stats.value?.mistakes ?? 0} 道个人错题`, icon: ClipboardList, tone: 'violet' },
@@ -57,7 +67,7 @@ function submitSearch() {
         <div class="eyebrow"><Sparkles :size="14" />2027 考研政治</div>
         <h1>从可靠资料中，<br class="mobile-only" />快速找到答案</h1>
         <p class="hero-copy">
-          真题 {{ stats?.questions ?? 0 }} 道 · 试卷 {{ stats?.papers ?? 0 }} 份 · 错题 {{ stats?.mistakes ?? 0 }} 道
+          真题 {{ stats?.questions ?? 0 }} 道 · 试卷 {{ stats?.papers ?? 0 }} 份 · 时政 {{ stats?.hotspots ?? 0 }} 期 · 错题 {{ stats?.mistakes ?? 0 }} 道
         </p>
         <form class="search-box" @submit.prevent="submitSearch">
           <Search :size="20" aria-hidden="true" />
@@ -94,14 +104,18 @@ function submitSearch() {
 
       <section class="content-grid">
         <div class="primary-column">
-          <div class="section-heading"><div><span class="section-kicker">资料导航</span><h2>按学科浏览</h2></div><NuxtLink to="/subjects">进入资料库 <ChevronRight :size="15" /></NuxtLink></div>
-          <div id="subjects" class="subject-grid">
-            <NuxtLink v-for="subject in subjectSummaries" :key="subject.slug" :to="`/subjects/${subject.slug}`" class="subject-item" :class="subject.tone">
-              <span class="subject-icon"><BookOpen :size="17" /></span>
-              <span><strong>{{ subject.short }}</strong><small>{{ subject.detail }}</small></span>
-              <b>{{ subject.count }}<small>章</small></b>
+          <div class="section-heading"><div><span class="section-kicker">命题窗口</span><h2>最新时政热点</h2></div><NuxtLink to="/hotspots">查看全部 <ChevronRight :size="15" /></NuxtLink></div>
+          <div id="hotspots" class="hotspot-list">
+            <NuxtLink v-for="item in filteredHotspots" :key="item.slug || item.title" class="hotspot-row" :to="item.url || `/subjects/${item.subjectSlug}`">
+              <span class="level-mark" :class="(item.priority || item.level).toLowerCase()">{{ item.priority || item.level }}</span>
+              <div class="hotspot-body">
+                <div class="hotspot-title">{{ item.title }} <span>{{ item.tag }}</span></div>
+                <p>{{ item.summary }}</p>
+                <small>{{ item.type }}{{ item.period ? ` · ${item.period}` : '' }}</small>
+              </div>
+              <time>{{ (item.updatedAt || '').slice(5).replace('-', '月') }}日</time>
             </NuxtLink>
-            <div v-if="!subjectSummaries.length" class="empty-state"><BookOpen :size="18" />学科数据暂不可用，请稍后重试。</div>
+            <div v-if="!filteredHotspots.length" class="empty-state"><FileText :size="18" />没有找到匹配的热点，换一个关键词试试。</div>
           </div>
         </div>
 
@@ -135,6 +149,18 @@ function submitSearch() {
             </ul>
           </div>
         </aside>
+      </section>
+
+      <section class="subject-section">
+        <div class="section-heading"><div><span class="section-kicker">资料导航</span><h2>按学科浏览</h2></div><NuxtLink to="/subjects">进入资料库 <ChevronRight :size="15" /></NuxtLink></div>
+        <div id="subjects" class="subject-grid">
+          <NuxtLink v-for="subject in subjectSummaries" :key="subject.slug" :to="`/subjects/${subject.slug}`" class="subject-item" :class="subject.tone">
+            <span class="subject-icon"><BookOpen :size="17" /></span>
+            <span><strong>{{ subject.short }}</strong><small>{{ subject.detail }}</small></span>
+            <b>{{ subject.count }}<small>章</small></b>
+          </NuxtLink>
+          <div v-if="!subjectSummaries.length" class="empty-state"><BookOpen :size="18" />学科数据暂不可用，请稍后重试。</div>
+        </div>
       </section>
 
       <section class="signal-strip">

@@ -11,7 +11,7 @@ use Psr\Http\Message\ResponseInterface;
 
 class SearchController
 {
-    private const TYPES = ['question', 'paper', 'analysis', 'prediction', 'mock', 'mistake'];
+    private const TYPES = ['question', 'paper', 'analysis', 'hotspot', 'prediction', 'mock', 'mistake'];
 
     public function __construct(
         private SearchService $service,

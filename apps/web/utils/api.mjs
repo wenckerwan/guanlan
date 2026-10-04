@@ -13,14 +13,16 @@ export function unwrapEnvelope(payload, fallback = null) {
 
 /**
  * 把 `/home` 的包络转成首屏摘要：
- * subjects 截断到 6 条，documents 原样透传。
+ * hotspots 经 buildHomeSummary 排序并截断到 4 条、subjects 截断到 6 条，documents 原样透传。
  */
 export function toHomeSummary(payload) {
-  const data = unwrapEnvelope(payload, { documents: [], subjects: [] })
+  const data = unwrapEnvelope(payload, { hotspots: [], documents: [], subjects: [] })
   const summary = buildHomeSummary({
+    hotspots: Array.isArray(data.hotspots) ? data.hotspots : [],
     subjects: Array.isArray(data.subjects) ? data.subjects : [],
   })
   return {
+    hotspots: summary.hotspots,
     subjects: summary.subjects,
     documents: Array.isArray(data.documents) ? data.documents : [],
   }

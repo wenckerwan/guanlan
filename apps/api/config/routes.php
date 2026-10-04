@@ -41,10 +41,12 @@ Router::get('/api/v1/papers/{pid}', [PaperController::class, 'show']);
 Router::get('/api/v1/questions', [QuestionController::class, 'index']);
 Router::get('/api/v1/questions/{id:\d+}', [QuestionController::class, 'show']);
 
-// 真题分析 / 时政预测（AuthMiddleware 只解析身份，游客配额据此计算）
+// 真题分析 / 时政热点 / 时政预测（AuthMiddleware 只解析身份，游客配额据此计算）
 Router::addGroup('/api/v1', function () {
     Router::get('/analysis', [ArticleController::class, 'analysisIndex']);
     Router::get('/analysis/{slug}', [ArticleController::class, 'analysisShow']);
+    Router::get('/hotspots', [ArticleController::class, 'hotspotIndex']);
+    Router::get('/hotspots/{slug}', [ArticleController::class, 'hotspotShow']);
     Router::get('/predictions', [ArticleController::class, 'predictionIndex']);
     Router::get('/predictions/{slug}', [ArticleController::class, 'predictionShow']);
 }, ['middleware' => [AuthMiddleware::class]]);
@@ -134,6 +136,10 @@ Router::addGroup('/api/v1/admin', function () {
     Router::put('/mistakes/students/{code}/profile', [AdminController::class, 'saveMistakeProfile']);
     Router::patch('/mistakes/items/{id:\d+}', [AdminController::class, 'updateMistakeItem']);
     Router::get('/mistakes/review-stats', [AdminController::class, 'mistakeReviewStats']);
+    Router::get('/hotspots', [AdminController::class, 'hotspots']);
+    Router::post('/hotspots', [AdminController::class, 'createHotspot']);
+    Router::patch('/hotspots/{id:\d+}', [AdminController::class, 'updateHotspot']);
+    Router::delete('/hotspots/{id:\d+}', [AdminController::class, 'deleteHotspot']);
     Router::get('/analysis', [AdminController::class, 'analysis']);
     Router::post('/analysis', [AdminController::class, 'createAnalysis']);
     Router::patch('/analysis/{id:\d+}', [AdminController::class, 'updateAnalysis']);

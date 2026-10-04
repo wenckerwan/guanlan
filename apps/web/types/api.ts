@@ -17,7 +17,23 @@ export type Subject = {
   tone: string
   detail: string
   intro: string
+  hotspots: string[]
   chapters: SubjectChapter[]
+}
+
+export type Hotspot = {
+  slug: string
+  level: string
+  priority: string
+  title: string
+  summary: string
+  type: string
+  period: string
+  updatedAt: string
+  tag: string
+  subjectSlug: string
+  chapterId: string
+  url: string
 }
 
 export type DocumentCard = {
@@ -40,12 +56,14 @@ export type SubjectSummary = {
 export type HomeStats = {
   questions: number
   papers: number
+  hotspots: number
   predictions: number
   analysis: number
   mistakes: number
 }
 
 export type HomePayload = {
+  hotspots: Hotspot[]
   documents: DocumentCard[]
   subjects: SubjectSummary[]
   stats?: HomeStats
@@ -332,7 +350,7 @@ export type AdminAttempt = {
   createdAt: string
 }
 
-export type SearchHitType = 'question' | 'paper' | 'analysis' | 'prediction' | 'mock' | 'mistake'
+export type SearchHitType = 'question' | 'paper' | 'analysis' | 'hotspot' | 'prediction' | 'mock' | 'mistake'
 
 export type SearchHit = {
   type: SearchHitType

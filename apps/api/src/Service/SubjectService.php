@@ -16,7 +16,7 @@ class SubjectService
     public function list(): array
     {
         return Subject::query()
-            ->with(['chapters.knowledgePoints'])
+            ->with(['chapters.knowledgePoints', 'hotspots'])
             ->orderBy('sort_order')
             ->get()
             ->all();
@@ -25,7 +25,7 @@ class SubjectService
     public function findBySlug(string $slug): ?Subject
     {
         return Subject::query()
-            ->with(['chapters.knowledgePoints'])
+            ->with(['chapters.knowledgePoints', 'hotspots'])
             ->where('slug', $slug)
             ->first();
     }

@@ -7,7 +7,7 @@ namespace App\Support;
 use App\Model\User;
 
 /**
- * 访客文章配额：真题分析 / 时政预测各自可免费阅读的篇数。
+ * 访客文章配额：真题分析 / 时政热点 / 时政预测各自可免费阅读的篇数。
  */
 class GuestQuota
 {

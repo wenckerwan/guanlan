@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Model\AnalysisArticle;
+use App\Model\Hotspot;
 use App\Model\MistakeItem;
 use App\Model\Mock;
 use App\Model\Paper;
@@ -17,7 +18,7 @@ use App\Support\MistakeAccess;
  * 全站统一检索：把六类内容收敛成一个结果列表。
  *
  * 结果契约（camelCase）：
- *   type    question | paper | analysis | prediction | mock | mistake
+ *   type    question | paper | analysis | hotspot | prediction | mock | mistake
  *   title   主标题
  *   snippet 摘要片段
  *   url     站内相对路由
@@ -41,6 +42,7 @@ class SearchService
             $this->questions($like),
             $this->papers($like),
             $this->articles(AnalysisArticle::query(), 'analysis', $like),
+            $this->articles(Hotspot::query(), 'hotspot', $like),
             $this->articles(Prediction::query(), 'prediction', $like),
             $this->mocks($like),
             $this->mistakes($like),
@@ -120,8 +122,8 @@ class SearchService
      */
     private function articles($query, string $type, string $like): array
     {
-        // 分析与预测有发布状态：hidden 的内容不进搜索
-        if (in_array($type, ['analysis', 'prediction'], true)) {
+        // 热点与分析有发布状态：hidden 的内容不进搜索（预测是数据集只读内容，无状态列）
+        if (in_array($type, ['analysis', 'hotspot'], true)) {
             $query->where('status', '<>', ContentStatus::HIDDEN);
         }
 
@@ -134,11 +136,12 @@ class SearchService
             ->limit(self::PER_TYPE)
             ->get();
 
-        $prefix = ['analysis' => '/analysis/', 'prediction' => '/predictions/'][$type];
+        $prefix = ['analysis' => '/analysis/', 'hotspot' => '/hotspots/', 'prediction' => '/predictions/'][$type];
         $out = [];
         foreach ($rows as $row) {
             $meta = match ($type) {
                 'analysis' => (string) $row->category,
+                'hotspot' => (string) $row->period,
                 default => (string) $row->layer,
             };
             $out[] = $this->item(

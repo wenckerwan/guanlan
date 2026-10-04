@@ -20,6 +20,10 @@ class SubjectResource
             'tone' => (string) $subject->tone,
             'detail' => (string) $subject->detail,
             'intro' => (string) $subject->intro,
+            'hotspots' => array_values(array_map(
+                static fn ($hotspot) => (string) $hotspot->title,
+                $subject->hotspots->all()
+            )),
             'chapters' => ChapterResource::collection($subject->chapters->all()),
         ];
     }

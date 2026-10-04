@@ -29,12 +29,12 @@ test('groupCounts recomputes counts from items and ignores blanks', () => {
     items: [
       { type: 'question' },
       { type: 'question' },
-      { type: 'prediction' },
+      { type: 'hotspot' },
       { type: '' },
       null,
     ],
   })
-  assert.deepEqual(counts, { question: 2, prediction: 1 })
+  assert.deepEqual(counts, { question: 2, hotspot: 1 })
 })
 
 test('groupCounts returns an empty object for malformed payloads', () => {

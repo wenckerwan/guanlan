@@ -18,6 +18,11 @@ class Subject extends Model
         return $this->hasMany(Chapter::class, 'subject_id')->orderBy('sort_order');
     }
 
+    public function hotspots(): HasMany
+    {
+        return $this->hasMany(Hotspot::class, 'subject_id');
+    }
+
     public function documents(): HasMany
     {
         return $this->hasMany(Document::class, 'subject_id');

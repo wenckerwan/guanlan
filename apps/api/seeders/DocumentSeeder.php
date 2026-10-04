@@ -15,6 +15,7 @@ class DocumentSeeder extends Seeder
     {
         $cards = [
             ['title' => '真题库（1994—2026）', 'meta' => '42 份试卷 · 1479 道题', 'progress' => 100, 'cover' => '真题', 'tone' => 'jade'],
+            ['title' => '时政热点（2026）', 'meta' => '1—9 月逐月整理', 'progress' => 100, 'cover' => '时政', 'tone' => 'red'],
             ['title' => '2027 时政考点预测', 'meta' => '纯真题反推', 'progress' => 100, 'cover' => '预测', 'tone' => 'gold'],
             ['title' => '个人错题分析', 'meta' => '2 位考生 · 提分手册', 'progress' => 100, 'cover' => '错题', 'tone' => 'jade'],
         ];

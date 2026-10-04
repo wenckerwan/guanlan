@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { Search, SearchX } from 'lucide-vue-next'
 import type { SearchResult } from '~/types/api'
@@ -14,6 +14,7 @@ const TYPES = [
   { value: 'question', label: '真题' },
   { value: 'paper', label: '试卷' },
   { value: 'analysis', label: '真题分析' },
+  { value: 'hotspot', label: '时政热点' },
   { value: 'prediction', label: '时政预测' },
   { value: 'mock', label: '模拟押题' },
   { value: 'mistake', label: '错题' },
