@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import { marked } from 'marked'
+import { renderReportMarkdown } from '~/utils/report-markdown.mjs'
 import { ArrowLeft, Upload, Sparkles, Settings, FileText, Download } from 'lucide-vue-next'
 import type { MistakeStudent } from '~/types/api'
 
@@ -161,14 +161,7 @@ ${result.error || '未知错误'}
 }
 
 // 分析报告：marked 渲染 + 保存/历史
-const reportHtml = computed(() => {
-  if (!analysisResult.value) return ''
-  try {
-    return marked.parse(analysisResult.value, { async: false }) as string
-  } catch {
-    return '<pre>' + analysisResult.value.replace(/</g, '&lt;') + '</pre>'
-  }
-})
+const reportHtml = computed(() => renderReportMarkdown(analysisResult.value))
 
 type SavedReport = { id: number; title: string; createdAt: string }
 const savedReports = ref<SavedReport[]>([])

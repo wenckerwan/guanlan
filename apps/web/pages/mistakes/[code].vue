@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
 import { computed, reactive, ref, watch, onMounted } from 'vue'
-import { marked } from 'marked'
+import { renderReportMarkdown } from '~/utils/report-markdown.mjs'
 import { ArrowLeft, BookOpen, Check, FileText, RotateCcw, Send, Sparkles, Star, Trash2 } from 'lucide-vue-next'
 import type { Handbook, MistakeItemsPayload, MistakeItem } from '~/types/api'
 import { displayAnswer, isCorrect } from '~/utils/quiz.mjs'
@@ -55,14 +55,7 @@ type SavedReport = { id: number; title: string; createdAt: string }
 const aiReports = ref<SavedReport[]>([])
 const activeReportId = ref<number | null>(null)
 const reportMarkdown = ref('')
-const reportHtml = computed(() => {
-  if (!reportMarkdown.value) return ''
-  try {
-    return marked.parse(reportMarkdown.value, { async: false }) as string
-  } catch {
-    return '<pre>' + reportMarkdown.value.replace(/</g, '&lt;') + '</pre>'
-  }
-})
+const reportHtml = computed(() => renderReportMarkdown(reportMarkdown.value))
 
 async function openAiReport(id: number) {
   try {
