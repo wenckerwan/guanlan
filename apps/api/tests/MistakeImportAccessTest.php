@@ -11,8 +11,12 @@ namespace Hyperf\HttpServer\Contract {
 namespace Hyperf\Context {
     class ApplicationContext {
         public static int $calls = 0;
-        public static function getContainer(): never {
+        public static ?\App\Service\AIAnalysisService $ai = null;
+        public static function getContainer(): object {
             ++self::$calls;
+            if (self::$ai !== null) return new class {
+                public function get(string $class): \App\Service\AIAnalysisService { return ApplicationContext::$ai; }
+            };
             throw new \RuntimeException('AI must not be resolved for denied imports');
         }
     }
@@ -48,23 +52,27 @@ namespace App\Support {
     }
 }
 namespace App\Service { class MistakeReviewService {} }
+namespace Hyperf\Guzzle { class ClientFactory {} }
 namespace {
     $root = dirname(__DIR__);
     require $root . '/src/Support/MistakeAccess.php';
     require $root . '/src/Support/Validator.php';
     require $root . '/src/Service/MistakeService.php';
     require $root . '/src/Controller/MistakeController.php';
+    require $root . '/src/Support/AiOutboundPolicy.php';
+    require $root . '/src/Service/SafeAiHttpClient.php';
+    require $root . '/src/Service/AIAnalysisService.php';
 
     class StudentService extends \App\Service\MistakeService {
         public function __construct(private \App\Model\MistakeStudent $value) {}
         public function student(string $code): ?\App\Model\MistakeStudent { return $this->value; }
     }
     class Request implements \Hyperf\HttpServer\Contract\RequestInterface {
-        public function __construct(private mixed $flag) {}
+        public function __construct(private mixed $flag, private array $data = []) {}
         public function input(string $key, mixed $default = null): mixed {
-            return $key === 'importToMistakes' ? $this->flag : $default;
+            return $key === 'importToMistakes' ? $this->flag : ($this->data[$key] ?? $default);
         }
-        public function all(): array { return []; }
+        public function all(): array { return $this->data; }
     }
     class Response implements \Hyperf\HttpServer\Contract\ResponseInterface {
         public function withHeader(string $name, string $value): never {
@@ -119,5 +127,18 @@ namespace {
         \App\Support\Auth::$current = $user;
         check($service->importUploadedItems($student, '') === ['imported' => 0, 'updated' => 0, 'skipped' => 0], 'owner/admin passes service write gate');
     }
-    echo "MistakeImportAccessTest: PASS\n";
+    // Execute the real URL gate before any upload import, provider request, or SSE preparation.
+    \Hyperf\Context\ApplicationContext::$ai = new \App\Service\AIAnalysisService(new \Hyperf\Guzzle\ClientFactory());
+    \App\Support\Auth::$current = new \App\Model\User(9, 'admin');
+    foreach (['http://127.0.0.1/v1', 'http://169.254.169.254/v1', 'https://[::ffff:127.0.0.1]/v1'] as $url) {
+        foreach (['requestAIAnalysis', 'requestAIAnalysisStream', 'testAIConnection', 'chatTestAIConnection'] as $method) {
+            $controller = new \App\Controller\MistakeController(new StudentService($public), new \App\Service\MistakeReviewService(), new Request(true, [
+                'provider' => 'openai', 'apiKey' => 'fake', 'baseUrl' => $url, 'markdown' => 'Must never be imported',
+            ]), new Response());
+            $result = str_starts_with($method, 'request') ? $controller->$method('A') : $controller->$method();
+            check($result->status === 422 && str_contains($result->message, '出网地址'), "$method rejects URL before AI/SSE/import");
+        }
+    }
+    check(\App\Model\MistakeItem::$queries === 0, 'URL rejection does not reach database');
+    echo "MistakeImportAccessTest: PASS (including 12 controller outbound rejection cases)\n";
 }

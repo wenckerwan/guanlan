@@ -35,6 +35,8 @@ namespace App\Model {
 namespace {
     use App\Service\AIAnalysisService;
 
+    require dirname(__DIR__) . '/src/Support/AiOutboundPolicy.php';
+    require dirname(__DIR__) . '/src/Service/SafeAiHttpClient.php';
     require dirname(__DIR__) . '/src/Service/AIAnalysisService.php';
 
     $failures = [];
@@ -110,6 +112,9 @@ namespace {
     $check('chat test ssrf blocked openai', str_contains((string) ($result['error'] ?? ''), '无效'), true);
 
     $urlGate = $reflection->getMethod('assertAllowedUrl');
+    $empty = $reflection->getMethod('emptyContentError')->invoke($service, '{"error":{"message":"secret must not leak"}}');
+    $check('empty response has string error', is_string($empty['error'] ?? null), true);
+    $check('empty response is sanitized', str_contains($empty['error'], 'secret'), false);
     $check('public url allowed', $urlGate->invoke($service, 'https://api.openai.com/v1'), null);
     $check('internal url message', str_contains((string) $urlGate->invoke($service, 'http://10.0.0.5/api'), '不允许'), true);
 

@@ -430,6 +430,10 @@ class MistakeController
             return ApiResponse::message('AI 配置无效', 422);
         }
 
+        if (($outboundError = $aiService->validateOutboundConfig($config)) !== null) {
+            return ApiResponse::message('AI 出网地址无效: ' . $outboundError, 422);
+        }
+
         $markdown = trim((string) $this->request->input('markdown', ''));
         if (mb_strlen($markdown) > 200000) {
             return ApiResponse::message('错题内容过长（上限 20 万字符）', 422);
@@ -502,6 +506,10 @@ class MistakeController
 
         if (! $aiService->validateConfig($config)) {
             return ApiResponse::message('AI 配置无效', 422);
+        }
+
+        if (($outboundError = $aiService->validateOutboundConfig($config)) !== null) {
+            return ApiResponse::message('AI 出网地址无效: ' . $outboundError, 422);
         }
 
         $markdown = trim((string) $this->request->input('markdown', ''));
@@ -582,6 +590,10 @@ class MistakeController
             'endpoint' => $validator->string('endpoint'),
         ];
 
+        if (($outboundError = $aiService->validateOutboundConfig($config)) !== null) {
+            return ApiResponse::message('AI 出网地址无效: ' . $outboundError, 422);
+        }
+
         return ApiResponse::data($aiService->testConnection($config));
     }
 
@@ -613,6 +625,10 @@ class MistakeController
             'model' => $validator->string('model'),
             'endpoint' => $validator->string('endpoint'),
         ];
+
+        if (($outboundError = $aiService->validateOutboundConfig($config)) !== null) {
+            return ApiResponse::message('AI 出网地址无效: ' . $outboundError, 422);
+        }
 
         return ApiResponse::data($aiService->chatTest($config));
     }

@@ -5,18 +5,21 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Model\MistakeStudent;
-use GuzzleHttp\Client;
+use App\Support\AiOutboundPolicy;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Utils;
 use Hyperf\Guzzle\ClientFactory;
 
 class AIAnalysisService
 {
-    private Client $httpClient;
+    private SafeAiHttpClient $httpClient;
+
+    private AiOutboundPolicy $outboundPolicy;
 
     public function __construct(ClientFactory $clientFactory)
     {
-        $this->httpClient = $clientFactory->create();
+        $this->outboundPolicy = new AiOutboundPolicy();
+        $this->httpClient = new SafeAiHttpClient($this->outboundPolicy);
     }
 
     /**
@@ -178,7 +181,7 @@ PROMPT;
                     return ['error' => "认证失败（API Key 无效或无权限），HTTP {$status}"];
                 }
 
-                return ['error' => "AI 分析请求被拒绝，HTTP {$status}: " . mb_substr($raw, 0, 200)];
+                return ['error' => "AI 分析请求被拒绝，HTTP {$status}: " . '供应商拒绝请求'];
             }
 
             return $this->consumeOpenAIStream($response->getBody(), $onDelta);
@@ -224,12 +227,11 @@ PROMPT;
             if (trim($content) === '') {
                 return ['error' => 'AI 分析流式读取失败: ' . mb_substr($e->getMessage(), 0, 200)];
             }
-            // 已有部分内容：把已生成的部分作为结果返回，避免全部丢弃
-            return ['success' => true, 'content' => $content, 'usage' => $usage, 'partial' => true];
+            return ['error' => 'AI 分析流式响应中断，结果不完整'];
         }
 
         if ($streamError !== '') {
-            return ['error' => 'AI 分析流式响应出错: ' . mb_substr($streamError, 0, 200)];
+            return ['error' => 'AI 分析流式响应出错: ' . '供应商返回错误'];
         }
         if (trim($content) === '') {
             return ['error' => '模型没有返回内容（流式）。请重试，或换用非推理模型（如 deepseek-chat）'];
@@ -286,7 +288,7 @@ PROMPT;
                     return ['error' => "认证失败（API Key 无效或无权限），HTTP {$status}"];
                 }
 
-                return ['error' => "AI 分析请求被拒绝，HTTP {$status}: " . mb_substr($raw, 0, 200)];
+                return ['error' => "AI 分析请求被拒绝，HTTP {$status}: " . '供应商拒绝请求'];
             }
 
             return $this->consumeClaudeStream($response->getBody(), $onDelta);
@@ -322,7 +324,7 @@ PROMPT;
                 } elseif ($type === 'message_delta' && isset($body['usage'])) {
                     $usage = array_merge($usage, $body['usage']);
                 } elseif ($type === 'error') {
-                    return ['error' => 'AI 分析流式响应出错: ' . mb_substr(json_encode($body['error'], JSON_UNESCAPED_UNICODE), 0, 200)];
+                    return ['error' => 'AI 分析流式响应出错: ' . '供应商返回错误'];
                 }
             }
         } catch (\Throwable $e) {
@@ -330,7 +332,7 @@ PROMPT;
                 return ['error' => 'AI 分析流式读取失败: ' . mb_substr($e->getMessage(), 0, 200)];
             }
 
-            return ['success' => true, 'content' => $content, 'usage' => $usage, 'partial' => true];
+            return ['error' => 'AI 分析流式响应中断，结果不完整'];
         }
 
         if (trim($content) === '') {
@@ -604,7 +606,7 @@ PROMPT;
             return ['error' => '该模型是推理型（先思考后回答），本次思考把输出额度占满了，正式回答为空。建议改用非推理模型（如 deepseek-chat）后重试。' . $this->htmlHint($raw)];
         }
 
-        return ['error' => $this->emptyContentError($raw)];
+        return ['error' => '模型没有返回内容。' . $this->htmlHint($raw)];
     }
 
     /**
@@ -617,7 +619,7 @@ PROMPT;
             return '端点返回的是网页而非 API 响应——请检查地址是否为完整 API 端点（例如 https://api.deepseek.com/chat/completions），而不是网站首页';
         }
 
-        return '原始响应: ' . mb_substr($raw, 0, 300);
+        return '供应商响应格式无法识别';
     }
 
     private function extractReply(string $raw): string
@@ -645,7 +647,7 @@ PROMPT;
             return ['ok' => false, 'latencyMs' => $latencyMs, 'reply' => '', 'error' => "认证失败（API Key 无效或无权限），HTTP {$status}"];
         }
         if ($status >= 400) {
-            return ['ok' => false, 'latencyMs' => $latencyMs, 'reply' => '', 'error' => "请求被拒绝，HTTP {$status}: " . mb_substr($raw, 0, 200)];
+            return ['ok' => false, 'latencyMs' => $latencyMs, 'reply' => '', 'error' => "请求被拒绝，HTTP {$status}: " . '供应商拒绝请求'];
         }
         if ($reply === '') {
             $body = json_decode($raw, true);
@@ -717,30 +719,14 @@ PROMPT;
      */
     private function assertAllowedUrl(string $url): ?string
     {
-        if (! preg_match('~^https?://~i', $url)) {
-            return '仅支持 http/https 地址';
+        try {
+            $this->outboundPolicy->resolve($url);
+            return null;
+        } catch (\InvalidArgumentException $e) {
+            return $e->getMessage();
+        } catch (\Throwable) {
+            return '主机解析失败';
         }
-
-        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
-        if ($host === '') {
-            return '地址缺少主机名';
-        }
-
-        if ($host === 'localhost'
-            || str_ends_with($host, '.localhost')
-            || str_ends_with($host, '.local')
-            || str_ends_with($host, '.internal')) {
-            return '不允许访问内网地址';
-        }
-
-        if (filter_var($host, FILTER_VALIDATE_IP)) {
-            $flags = FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE;
-            if (filter_var($host, FILTER_VALIDATE_IP, $flags) === false) {
-                return '不允许访问内网/保留 IP 地址';
-            }
-        }
-
-        return null;
     }
 
     /**
@@ -852,7 +838,7 @@ PROMPT;
             $content = $body['content'][0]['text'] ?? $body['content'][0]['content'] ?? '';
 
             if (trim((string) $content) === '') {
-                return ['error' => $this->emptyContentError($raw)];
+                return $this->emptyContentError($raw);
             }
 
             return [
@@ -929,7 +915,7 @@ PROMPT;
                 ?? '';
 
             if (trim((string) $content) === '') {
-                return ['error' => $this->emptyContentError($raw)];
+                return $this->emptyContentError($raw);
             }
 
             return [
@@ -1059,6 +1045,10 @@ PROMPT;
      */
     private function normalizeProviderConfig(array $config): array
     {
+        $defaults = ['openai' => 'https://api.openai.com/v1', 'claude' => 'https://api.anthropic.com/v1'];
+        if (isset($defaults[$config['provider'] ?? '']) && trim((string) ($config['baseUrl'] ?? '')) === '') {
+            $config['baseUrl'] = $defaults[$config['provider']];
+        }
         if (($config['provider'] ?? '') === 'deepseek') {
             $config['provider'] = 'openai';
             if (trim((string) ($config['baseUrl'] ?? '')) === '') {
@@ -1073,6 +1063,15 @@ PROMPT;
         }
 
         return $config;
+    }
+
+    public function validateOutboundConfig(array $config): ?string
+    {
+        $config = $this->normalizeProviderConfig($config);
+        $url = ($config['provider'] ?? '') === 'custom'
+            ? (string) ($config['endpoint'] ?? '')
+            : (string) ($config['baseUrl'] ?? (($config['provider'] ?? '') === 'claude' ? 'https://api.anthropic.com/v1' : 'https://api.openai.com/v1'));
+        return $this->assertAllowedUrl($url);
     }
 
     /**
