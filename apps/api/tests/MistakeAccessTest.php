@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace App\Model {
     class User
     {
-        public function __construct(public string $role = 'user', public string $mistake_code = '')
+        public function __construct(public string $role = 'user', public string $mistake_code = '', public int $id = 0)
         {
         }
 
@@ -24,7 +24,7 @@ namespace App\Model {
 
     class MistakeStudent
     {
-        public function __construct(public string $code = '')
+        public function __construct(public string $code = '', public int $owner_user_id = 0)
         {
         }
     }
@@ -68,9 +68,9 @@ namespace {
     };
 
     $guest = null;
-    $plain = new User('user', '');
-    $bound7 = new User('user', '7');
-    $admin = new User('admin', '');
+    $plain = new User('user', '', 1);
+    $bound7 = new User('user', '7', 2);
+    $admin = new User('admin', '', 3);
 
     // A 是公开模板
     $check('guest sees A', MistakeAccess::canViewCode('A', $guest), true);
@@ -96,6 +96,20 @@ namespace {
     $student = new MistakeStudent('9');
     $check('student helper blocks guest', MistakeAccess::canViewStudent($student, $guest), false);
     $check('student helper allows admin', MistakeAccess::canViewStudent($student, $admin), true);
+
+    $publicStudent = new MistakeStudent('A', 0);
+    $ownStudent = new MistakeStudent('7', 2);
+    $otherStudent = new MistakeStudent('8', 9);
+    $check('guest cannot write public A', MistakeAccess::canWriteStudent($publicStudent, null), false);
+    $check('plain user cannot write public A', MistakeAccess::canWriteStudent($publicStudent, $plain), false);
+    $check('bound user cannot write public A', MistakeAccess::canWriteStudent($publicStudent, $bound7), false);
+    $check('admin can write public A', MistakeAccess::canWriteStudent($publicStudent, $admin), true);
+    $check('owner can write own student', MistakeAccess::canWriteStudent($ownStudent, $bound7), true);
+    $check('user cannot write other student', MistakeAccess::canWriteStudent($otherStudent, $bound7), false);
+    $check('matching code without ownership cannot write', MistakeAccess::canWriteStudent(new MistakeStudent('7', 9), $bound7), false);
+    $check('public A owner still cannot write', MistakeAccess::canWriteStudent(new MistakeStudent('A', 2), $bound7), false);
+    $check('unowned student cannot be claimed by missing user id', MistakeAccess::canWriteStudent(new MistakeStudent('7'), new User()), false);
+    $check('admin can write private student', MistakeAccess::canWriteStudent($otherStudent, $admin), true);
 
     $check('allowedCodes admin is unlimited', MistakeAccess::allowedCodes($admin), null);
     $codes = MistakeAccess::allowedCodes($guest);

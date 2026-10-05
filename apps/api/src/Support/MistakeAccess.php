@@ -64,6 +64,26 @@ class MistakeAccess
     }
 
     /**
+     * 错题写权限与读取权限分离：公开 A 仅管理员可写，其余错题仅所属账号或管理员可写。
+     */
+    public static function canWriteStudent(MistakeStudent $student, ?User $user = null): bool
+    {
+        $user ??= Auth::user();
+        if (! $user instanceof User) {
+            return false;
+        }
+        if (self::isAdmin($user)) {
+            return true;
+        }
+        if ((string) $student->code === self::PUBLIC_CODE) {
+            return false;
+        }
+
+        return (int) $user->id > 0
+            && (int) ($student->owner_user_id ?? 0) === (int) $user->id;
+    }
+
+    /**
      * 当前访问者可见的考生编号白名单；管理员返回 null 表示不受限。
      *
      * @return array<int, string>|null

@@ -186,6 +186,7 @@ chmod 600 .env.production
 
 | 文档 | 内容 |
 | --- | --- |
+| [下次开发计划](下次开发计划.md) | 下一轮首要入口：最高优先级发布阻断项、验收条件及完整检查报告 |
 | [主站部署手册](docs/deployment.md) | 环境准备、反向代理、备份、更新与排错 |
 | [马原部署说明](docs/mayuan-deployment.md) | 子应用路由、数据库准备和后端对接；学习状态以当前前端模式为准 |
 | [生产验收清单](docs/production-acceptance-checklist.md) | 上线与运行检查项 |

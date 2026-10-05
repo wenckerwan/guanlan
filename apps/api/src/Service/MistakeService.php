@@ -8,6 +8,7 @@ use App\Model\MistakeHandbook;
 use App\Model\MistakeItem;
 use App\Model\MistakeStudent;
 use App\Model\Question;
+use App\Support\MistakeAccess;
 use Hyperf\Database\Model\Builder;
 
 /**
@@ -218,6 +219,10 @@ class MistakeService
      */
     public function importUploadedItems(MistakeStudent $student, string $markdown, array $aiItems = []): array
     {
+        if (! MistakeAccess::canWriteStudent($student)) {
+            throw new \RuntimeException('该错题本没有导入权限');
+        }
+
         $candidates = $aiItems !== [] ? $aiItems : self::parseMarkdownItems($markdown);
         $candidates = array_slice($candidates, 0, 100);
 

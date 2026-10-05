@@ -58,6 +58,10 @@ class MistakeController
      */
     private function importUploadedMarkdown(?AIAnalysisService $aiService, MistakeStudent $student, string $markdown, array $config): array
     {
+        if (! MistakeAccess::canWriteStudent($student)) {
+            return ['imported' => 0, 'updated' => 0, 'skipped' => 0, 'error' => '该错题本没有导入权限'];
+        }
+
         $aiItems = [];
         if ($aiService !== null) {
             $extraction = $aiService->extractItems($markdown, $config);
@@ -397,6 +401,10 @@ class MistakeController
             return ApiResponse::message('该错题本仅对应账号和管理员可见', 403);
         }
 
+        if ($this->wantsImport() && ! MistakeAccess::canWriteStudent($student, $user)) {
+            return ApiResponse::message('该错题本没有导入权限', 403);
+        }
+
         $validator = new Validator($this->request->all());
         $validator->required('provider', 'AI 提供商')
             ->required('apiKey', 'API Key');
@@ -465,6 +473,10 @@ class MistakeController
         }
         if (! MistakeAccess::canViewStudent($student)) {
             return ApiResponse::message('该错题本仅对应账号和管理员可见', 403);
+        }
+
+        if ($this->wantsImport() && ! MistakeAccess::canWriteStudent($student, $user)) {
+            return ApiResponse::message('该错题本没有导入权限', 403);
         }
 
         $validator = new Validator($this->request->all());

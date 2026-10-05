@@ -1,5 +1,12 @@
 # 更新记录
 
+## SEC-01 公共错题模板写权限 - 2026-10-05
+
+- 新增 `MistakeAccess::canWriteStudent()`，将错题读取权限与写入权限分离：公开 A 仅管理员可写，私有错题仅所属账号或管理员可写。
+- `requestAIAnalysis` 与 `requestAIAnalysisStream` 在配置校验、AI 抽取和 SSE 之前拒绝无导入权限的请求；`MistakeService::importUploadedItems()` 增加服务层防线，防止绕过控制器写入。
+- 新增 `apps/api/tests/MistakeImportAccessTest.php`，覆盖普通用户对 A 的 SSE/非流式导入拒绝、游客拒绝、所有者/管理员继续进入流程、直接服务调用拒绝及无数据库访问。
+- 验证：便携 PHP 8.3 执行 `MistakeAccessTest.php`、`MistakeImportAccessTest.php`、`AccountIdTest.php`、`DatasetManifestVerifierTest.php`、`StudyIntegrationTest.php`、`ContentStatusTest.php`、`AdminCredentialsTest.php` 均通过；`phpcheck.py` 通过。目标容器与生产 HTTP 多账号验收仍待执行。
+
 ## 部署同步 - 2026-10-03
 
 - 服务器 `/www/wwwroot/guanlan` 的 `dev` 分支与 GitHub `origin/dev` 同步（`0dff862` → `b10dab1`）：仅新增 `services/shizheng-crawler/deploy/export_shizheng_candidates.sh`（云端候选池 TSV 导出脚本），不改运行代码，`--ff-only` 合并，生产容器未重启，健康检查 `/api/v1/health` 与 `/` 均 200。
