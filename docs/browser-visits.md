@@ -34,4 +34,8 @@ The HTTP test modifies last_counted_at and leaves test counts behind, so it expl
 - PHP 8.3.35: visit-window test and new PHP source lint passed.
 - Offline structural checker and its self-test passed.
 - Playwright: homepage renders counts using mock responses at 1440x900 and 390x844; mobile has no horizontal overflow. Tooltip is keyboard-accessible and a mocked 503 clears counts to `--`. Mock tests do not validate PHP HTTP behavior or MySQL locks.
-- Real Hyperf/MySQL HTTP integration and restart persistence remain unverified because this workstation lacks vendor dependencies, MySQL and Docker. No production deployment performed.
+- Server verification: VisitWindowTest and VisitHttpIntegrationTest passed against an isolated `guanlan_visit_test` database with real Hyperf/MySQL. Eight parallel requests after window expiry counted exactly once; restart preserved counts. The disposable container, database and database grant were removed after testing.
+- Production deployed on 2026-10-07. Public HTTPS homepage, visit script, read/write statistics and shared mayuan/meetings tracking were checked. First browser visit counted once and refresh returned counted=false. Cookie HttpOnly/Secure/SameSite=Lax flags and mobile overflow checks passed.
+- Runtime file ownership is assigned to node in both Web Dockerfiles. This prevents root-only public assets from failing when the build environment has a restrictive umask.
+- API deployment reused the active PHP/vendor runtime and layered the committed source/config/migrations/tests onto it. No PHP dependency changes were needed. Main Web and Mayuan Web images were built normally. Database backup and prior runtime images are retained on the server.
+- Container replacement requires reloading gateway Nginx before waiting for gateway HTTP health, followed by a bounded wait for container health status to recover.
