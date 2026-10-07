@@ -17,6 +17,7 @@ use App\Controller\SearchController;
 use App\Controller\StatsController;
 use App\Controller\StudyController;
 use App\Controller\SubjectController;
+use App\Controller\VisitController;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\RequireAdminMiddleware;
 use App\Middleware\RequireAuthMiddleware;
@@ -28,6 +29,8 @@ Router::get('/api/v1/home', [HomeController::class, 'index']);
 Router::get('/api/v1/stats/overview', [StatsController::class, 'overview']);
 Router::post('/api/v1/stats/heartbeat', [StatsController::class, 'heartbeat'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
 Router::get('/api/v1/stats/leaderboard', [StatsController::class, 'leaderboard']);
+Router::get('/api/v1/stats/visits', [VisitController::class, 'overview']);
+Router::post('/api/v1/stats/visit', [VisitController::class, 'record']);
 Router::get('/api/v1/search', [SearchController::class, 'index'], ['middleware' => [AuthMiddleware::class]]);
 
 // 学科
