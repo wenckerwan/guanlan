@@ -15,6 +15,7 @@ const universeSections = computed(() => [
   { href: historyBase.value, label: '近现代史时间实验室', copy: '时间轴探索 · 来源对照 · 排序回忆', icon: History, tone: 'gold' },
   { href: '/meetings/index.html', label: '党史会议专题', copy: '会议汇总 · 精讲速记 · 配套练习', icon: BookOpen, tone: 'red' },
   { href: '/works/index.html', label: '党史著作专题', copy: '著作分析 · 精讲速记 · 真题训练', icon: FileText, tone: 'red' },
+  { href: '/exam-2026/index.html', label: '2026真题深度研究', copy: '命题变化 · 真模对照 · 备考策略', icon: Sparkles, tone: 'blue' },
 ])
 
 const { data: home } = await useApiFetch<HomePayload>('/home', { hotspots: [], documents: [], subjects: [], stats: undefined })
