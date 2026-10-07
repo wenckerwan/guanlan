@@ -4,14 +4,18 @@ import { useRegisterSW } from 'virtual:pwa-register/vue'
 
 // 版本更新策略：检测到新 Service Worker 时不静默接管，
 // 由用户确认后刷新，避免打断做题/作答（M1-T3，见 观澜丨App/M1-PWA实施计划.md）。
+// useRegisterSW 只能在浏览器执行（SSR 侧无 navigator.serviceWorker，会抛未处理异常）。
 const needRefresh = ref(false)
 const updating = ref(false)
+let updateServiceWorker: (reloadPage?: boolean) => Promise<void> = async () => {}
 
-const updateServiceWorker = useRegisterSW({
-  onNeedRefresh() {
-    needRefresh.value = true
-  },
-})
+if (import.meta.client) {
+  updateServiceWorker = useRegisterSW({
+    onNeedRefresh() {
+      needRefresh.value = true
+    },
+  })
+}
 
 function refresh() {
   updating.value = true
