@@ -29,7 +29,7 @@ The HTTP test modifies last_counted_at and leaves test counts behind, so it expl
 
 ## Verification on 2026-10-07
 
-- Main web: 66 Node tests passed; production build passed.
+- Main web: 55 Node tests passed on the production baseline; production build passed. PWA remains on the separate development branch.
 - Mayuan: production build passed (existing chunk-size and dependency deprecation warnings).
 - PHP 8.3.35: visit-window test and new PHP source lint passed.
 - Offline structural checker and its self-test passed.

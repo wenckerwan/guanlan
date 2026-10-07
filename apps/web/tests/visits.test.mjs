@@ -2,7 +2,6 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import vm from 'node:vm'
-import { cacheStrategy, CACHE_STRATEGIES } from '../utils/sw-cache-rules.mjs'
 
 function browser({ path = '/', hostname = 'example.test', fail = false, hidden = false, rejectPost = false } = {}) {
   const calls = [], listeners = {}, events = []
@@ -65,8 +64,4 @@ test('cookie rejection clears displayed data instead of suggesting successful co
   const b = browser({ rejectPost: true }); await settle()
   assert.equal(b.context.GuanlanVisits, null)
   assert.equal(b.calls.length, 2)
-})
-test('statistics endpoints remain network-only in PWA', () => {
-  assert.equal(cacheStrategy('/api/v1/stats/visits'), CACHE_STRATEGIES.NETWORK_ONLY)
-  assert.equal(cacheStrategy('/api/v1/stats/visit', 'POST'), CACHE_STRATEGIES.NETWORK_ONLY)
 })
