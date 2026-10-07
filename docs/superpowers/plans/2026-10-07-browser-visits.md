@@ -19,7 +19,7 @@
 - [x] Add VisitWindow, visit tables, VisitService, and VisitController. Lock the singleton totals row before changing a browser row and daily counters; use a transaction retry for deadlocks. GET issues a cookie but never increments; POST requires the cookie. Every response uses Cache-Control: no-store.
 - [x] Add shared visit-tracker.js, Nuxt navigation hook, compact homepage statistics component, and script inclusion in the meetings and mayuan entries.
 - [x] Run Node tests, production builds, PHP syntax/structural checks and available policy tests. Check homepage desktop/mobile rendering and errors using a local preview and mock API; document that mocks do not validate MySQL.
-- [ ] Run the real HTTP/MySQL integration test and restart-persistence check on a disposable Hyperf/MySQL stack.
+- [x] Run the real HTTP/MySQL integration test and restart-persistence check on a disposable Hyperf/MySQL stack.
 
 ## Deployment Verification
 
