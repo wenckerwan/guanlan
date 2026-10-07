@@ -16,6 +16,7 @@ const universeSections = computed(() => [
   { href: '/meetings/index.html', label: '党史会议专题', copy: '会议汇总 · 精讲速记 · 配套练习', icon: BookOpen, tone: 'red' },
   { href: '/works/index.html', label: '党史著作专题', copy: '著作分析 · 精讲速记 · 真题训练', icon: FileText, tone: 'red' },
   { href: '/exam-2026/index.html', label: '2026真题深度研究', copy: '命题变化 · 真模对照 · 备考策略', icon: Sparkles, tone: 'blue' },
+  { href: '/mipeng-compare/index.html', label: '米鹏套卷与720题对照', copy: '重复题清单 · 逐题对照 · 复用链', icon: FileText, tone: 'blue' },
 ])
 
 const { data: home } = await useApiFetch<HomePayload>('/home', { hotspots: [], documents: [], subjects: [], stats: undefined })

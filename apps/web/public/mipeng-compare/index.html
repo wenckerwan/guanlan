@@ -1,0 +1,654 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>观澜丨米鹏2026六套三套卷与2027版720题重复对照</title>
+<style>/* 液态玻璃皮肤 · 用于「米鹏2026套卷 × 2027版720题 重复对照」单页
+   沿用原页面的全部类名，只换视觉层：背景光晕 + 磨砂玻璃面板 + 高光描边。 */
+:root{
+  --ink:#141a33;--ink-2:#3d466a;--muted:#6b7494;--line:rgba(255,255,255,.62);--line-2:rgba(20,26,51,.10);
+  --glass:rgba(255,255,255,.55);--glass-2:rgba(255,255,255,.38);--glass-3:rgba(255,255,255,.72);
+  --sheet:rgba(255,255,255,.66);--bg:#eef0fa;
+  --a1:#6a5cff;--a2:#c14bff;--a3:#ff5d8f;--a4:#22c8d8;
+  --accent:#4a3fe0;--accent-ink:#2b2a8f;
+  --r-s:12px;--r-m:18px;--r-l:26px;--r-xl:34px;
+  --sh:0 22px 48px -26px rgba(16,22,58,.42),0 2px 6px -2px rgba(16,22,58,.10);
+  --hi:inset 0 1px 0 rgba(255,255,255,.85),inset 0 -1px 0 rgba(255,255,255,.28);
+  --blur:blur(26px) saturate(185%);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:96px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.78 -apple-system,BlinkMacSystemFont,"Segoe UI Variable","Segoe UI","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden}
+body::before,body::after{content:"";position:fixed;inset:-20vh -10vh;z-index:-2;pointer-events:none;filter:blur(0)}
+body::before{background:
+  radial-gradient(46vw 46vw at 12% 6%,rgba(106,92,255,.55),transparent 62%),
+  radial-gradient(42vw 42vw at 88% 12%,rgba(255,93,143,.45),transparent 60%),
+  radial-gradient(50vw 50vw at 72% 88%,rgba(34,200,216,.42),transparent 62%),
+  radial-gradient(40vw 40vw at 22% 92%,rgba(193,75,255,.38),transparent 60%);
+  animation:drift 34s ease-in-out infinite alternate}
+body::after{background:radial-gradient(70vw 50vh at 50% -8%,rgba(255,255,255,.85),transparent 70%);z-index:-1}
+@keyframes drift{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(-3%,2%,0) scale(1.08)}}
+a{color:var(--accent);text-underline-offset:4px}a:hover{color:var(--a2)}
+button,input,select{font:inherit;color:inherit}button,select{cursor:pointer}
+button{min-height:44px;padding:9px 18px;border:1px solid var(--line);border-radius:999px;background:var(--glass-3);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:var(--sh),var(--hi);font-size:14px;font-weight:600;color:var(--ink);transition:transform .16s,background-color .16s,box-shadow .16s}
+button:hover{background:rgba(255,255,255,.92);transform:translateY(-1px)}
+button:active{transform:translateY(0) scale(.985)}
+button[aria-pressed="true"]{background:linear-gradient(135deg,var(--a1),var(--a2));color:#fff;border-color:transparent;box-shadow:0 12px 26px -14px rgba(90,60,220,.9)}
+:focus-visible{outline:3px solid rgba(106,92,255,.75);outline-offset:3px;border-radius:8px}
+[hidden]{display:none!important}
+.wrap{width:min(1240px,calc(100% - 44px));margin:auto}
+.skip{position:absolute;left:14px;top:-90px;padding:12px 18px;background:#fff;z-index:100;border-radius:999px}
+.skip:focus{top:14px}
+
+.masthead{position:relative;margin:22px auto 0;padding:40px 0 34px;border:1px solid var(--line);border-radius:var(--r-xl);background:linear-gradient(160deg,rgba(255,255,255,.72),rgba(255,255,255,.34));-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:var(--sh),var(--hi);overflow:hidden}
+.masthead:before{content:"";position:absolute;inset:auto -18% -55% 42%;height:70%;background:radial-gradient(closest-side,rgba(255,255,255,.95),transparent);opacity:.75;pointer-events:none}
+.masthead:after{content:"";position:absolute;right:-90px;top:-110px;width:320px;height:320px;border-radius:50%;background:radial-gradient(closest-side,rgba(106,92,255,.35),transparent 70%);pointer-events:none;z-index:0}
+.eyebrow{position:relative;z-index:1;font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 10px;font-weight:700}
+.masthead h1{position:relative;font-size:clamp(28px,4vw,46px);line-height:1.28;letter-spacing:-.015em;margin:0 0 14px;font-weight:800;background:linear-gradient(120deg,#1a1f3d 8%,#4a3fe0 46%,#c14bff 78%,#ff5d8f 96%);-webkit-background-clip:text;background-clip:text;color:transparent;text-wrap:balance}
+.lead{position:relative;max-width:860px;margin:0;color:var(--ink-2);font-size:17px}
+.top-meta{position:relative;display:flex;justify-content:space-between;gap:18px;align-items:center;margin-top:26px;font-size:13px;color:var(--muted);line-height:1.7}
+.masthead .wrap{position:relative;z-index:1}
+.print-button{white-space:nowrap}
+.nav{position:sticky;top:14px;z-index:30;margin-top:26px}
+.nav-inner{display:flex;align-items:center;gap:4px;overflow:auto;padding:7px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.6);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:var(--sh),var(--hi);scrollbar-width:none}
+.nav-inner::-webkit-scrollbar{display:none}
+.nav a{padding:9px 16px;border-radius:999px;color:var(--ink);white-space:nowrap;text-decoration:none;font-size:14px;font-weight:600;transition:background-color .16s,color .16s}
+.nav a:hover{background:rgba(255,255,255,.9);color:var(--accent)}
+
+main{padding:8px 0 0}
+section{padding:34px 0}
+h2{font-size:clamp(21px,2.4vw,27px);line-height:1.42;margin:0 0 10px;font-weight:800;letter-spacing:-.01em;color:var(--ink)}
+h3{font-size:18px;line-height:1.6;margin:22px 0 8px;color:var(--ink);font-weight:750}
+h4{font-size:15.5px;color:var(--ink);font-weight:750}
+p{margin:10px 0;text-wrap:pretty}
+.intro{color:var(--muted);margin:0 0 20px;max-width:960px}
+
+.glass,.stats .stat,.callout,.compare-panel,.tool-panel,.method-panel,.lesson,.routes .route,.test-panel{
+  border:1px solid var(--line);border-radius:var(--r-l);background:var(--glass);
+  -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:var(--sh),var(--hi)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:6px}
+.stat{padding:20px 22px;position:relative;overflow:hidden}
+.stat:after{content:"";position:absolute;inset:auto -30% -60% auto;width:150px;height:150px;border-radius:50%;background:radial-gradient(closest-side,rgba(106,92,255,.22),transparent 70%);z-index:0}
+.stat strong{position:relative;z-index:1}
+.stat span{position:relative;z-index:1}
+.stat strong{display:block;font-size:clamp(30px,3.4vw,40px);line-height:1.18;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em;background:linear-gradient(120deg,var(--a1),var(--a2) 55%,var(--a3));-webkit-background-clip:text;background-clip:text;color:transparent}
+.stat span{font-size:13.5px;color:var(--muted);display:block;margin-top:6px}
+.callout{background:linear-gradient(120deg,rgba(255,238,214,.78),rgba(255,214,232,.6));border-left:3px solid var(--a3);padding:18px 22px;margin:22px 0;border-radius:var(--r-m)}
+.callout p{margin:0}
+.routes{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:8px}
+.route{padding:18px 20px;border-top:2px solid transparent;background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.34))}
+.route h3{margin:0 0 6px;font-size:16px}
+.route p{font-size:14.5px;color:var(--ink-2);margin:0}
+
+.tool-panel{padding:22px}
+.toolbar{display:flex;gap:14px;flex-wrap:wrap;align-items:end}
+.control{display:flex;flex-direction:column;gap:6px;flex:1;min-width:150px}
+.control.search{flex:3;min-width:260px}
+.control label{font-size:12.5px;color:var(--muted);font-weight:650;letter-spacing:.02em}
+input,select{width:100%;min-height:46px;padding:10px 15px;background:rgba(255,255,255,.78);border:1px solid rgba(20,26,51,.10);border-radius:14px;font-size:15px;box-shadow:inset 0 1px 2px rgba(20,26,51,.06);transition:border-color .16s,box-shadow .16s}
+input:focus,select:focus{border-color:rgba(106,92,255,.7);box-shadow:0 0 0 4px rgba(106,92,255,.16)}
+input::placeholder{color:#98a0bd}
+.result-line{display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap;margin:16px 0 0;font-size:13px;color:var(--muted)}
+.table-scroll{overflow:auto;border:1px solid var(--line-2);border-radius:var(--r-m);margin-top:18px;max-height:520px;overscroll-behavior:contain;background:rgba(255,255,255,.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.7)}
+table{width:100%;border-collapse:separate;border-spacing:0;background:transparent;min-width:760px}
+th,td{text-align:left;vertical-align:top;padding:13px 15px;border-bottom:1px solid rgba(20,26,51,.08);font-size:14px}
+th{background:rgba(244,245,252,.9);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);position:sticky;top:0;z-index:2;color:var(--ink);white-space:nowrap;font-weight:750;font-size:13px;letter-spacing:.02em}
+td:first-child,th:first-child{position:sticky;left:0;z-index:1;background:rgba(255,255,255,.86);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);min-width:210px;max-width:300px}
+th:first-child{z-index:3;background:rgba(244,244,252,.94)}
+tbody tr{transition:background-color .14s}
+tbody tr:hover td{background:rgba(255,255,255,.72)}
+tbody tr:last-child td{border-bottom:0}
+.number{text-align:center;font-variant-numeric:tabular-nums;font-weight:650}
+.tag{display:inline-block;background:linear-gradient(120deg,rgba(106,92,255,.14),rgba(193,75,255,.14));color:var(--accent);padding:2px 9px;border-radius:999px;font-size:11.5px;white-space:nowrap;font-weight:700;border:1px solid rgba(106,92,255,.18)}
+.tag.supplement{background:rgba(20,26,51,.06);color:var(--ink-2);border-color:rgba(20,26,51,.10)}
+.tag.practice{background:rgba(255,142,46,.16);color:#8a4a06;border-color:rgba(255,142,46,.3)}
+.sub{display:block;font-size:12px;color:var(--muted);font-weight:400}
+.empty{padding:30px;text-align:center;color:var(--muted);border:1px dashed rgba(20,26,51,.18);border-radius:var(--r-m);margin-top:16px;background:rgba(255,255,255,.34)}
+
+.reader-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;margin-bottom:18px}
+.mode-bar{display:flex;gap:10px;flex-wrap:wrap}
+.lesson{margin:14px 0;scroll-margin-top:96px;overflow:clip;transition:box-shadow .2s,transform .2s}
+.lesson:hover{box-shadow:0 26px 54px -28px rgba(16,22,58,.5),var(--hi)}
+.lesson>summary{padding:19px 22px;cursor:pointer;display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:start;list-style:none}
+.lesson>summary::-webkit-details-marker{display:none}
+.lesson>summary:after{content:"展开 ＋";font-size:12.5px;font-weight:700;color:var(--accent);grid-column:3;grid-row:1;white-space:nowrap;padding-top:4px}
+.lesson[open]>summary:after{content:"收起 −"}
+.lesson>summary:hover{background:rgba(255,255,255,.5)}
+.lesson[open]>summary{border-bottom:1px solid rgba(20,26,51,.09);background:rgba(255,255,255,.44)}
+.lesson-code{display:inline-grid;place-items:center;width:44px;height:28px;border-radius:999px;font-size:13px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--a1),var(--a2));box-shadow:0 8px 18px -10px rgba(90,60,220,.9)}
+.lesson[data-cls="丙"] .lesson-code{background:linear-gradient(135deg,#ff9a3d,#ff5d8f)}
+.lesson[data-cls="丁"] .lesson-code{background:linear-gradient(135deg,#5b6472,#8d97a8)}
+.lesson-title{font-size:17px;font-weight:750;line-height:1.55;color:var(--ink);overflow-wrap:anywhere}
+.lesson-date{display:block;font-size:12.5px;color:var(--muted);font-weight:500;margin-top:5px;font-variant-numeric:tabular-nums}
+.summary-hook{grid-column:2 / 4;font-size:13.5px;color:var(--muted);margin-top:4px}
+.lesson-body{padding:24px 26px 26px}
+.source-note{font-size:13px;color:var(--muted);border-top:1px solid rgba(20,26,51,.08);padding-top:14px;margin-top:20px;overflow-wrap:anywhere}
+.compare-panel,.method-panel,.test-panel{padding:26px 28px}
+.compare-panel .table-scroll{max-height:none;margin-bottom:8px}
+.compare-panel th,.compare-panel td{font-size:14px}
+.method-panel>details{border-top:1px solid rgba(20,26,51,.09);padding:14px 0}
+.method-panel>details:first-child{border-top:0}
+.method-panel>details>summary{cursor:pointer;color:var(--ink);font-weight:750;padding:4px 0}
+.method-panel>details>summary:hover{color:var(--accent)}
+.prose ol,.prose ul{padding-left:24px}.prose{overflow-wrap:anywhere}.prose li{margin:7px 0}
+code{background:rgba(20,26,51,.06);padding:2px 7px;border-radius:6px;font-size:13px}
+
+.pair-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.pair-col{border:1px solid var(--line-2);border-radius:var(--r-m);padding:18px 20px;background:rgba(255,255,255,.6);box-shadow:inset 0 1px 0 rgba(255,255,255,.8)}
+.pair-col.alt{background:linear-gradient(160deg,rgba(106,92,255,.10),rgba(193,75,255,.06) 60%,rgba(255,93,143,.06))}
+.pair-col h4{margin:0 0 10px;font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.pair-col .stem{font-size:15px;margin:0 0 12px;color:var(--ink)}
+.options{list-style:none;padding-left:0;margin:0}
+.options li{margin:9px 0;padding:9px 12px;border-radius:12px;background:rgba(255,255,255,.62);border:1px solid rgba(20,26,51,.06)}
+.options li b{color:var(--accent)}
+.options .sim{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+
+.footer{margin:26px auto 0;padding:26px 0 40px;color:var(--muted);font-size:13px;border-top:1px solid rgba(20,26,51,.08)}
+.back-top{position:fixed;bottom:22px;right:22px;z-index:40;padding:11px 17px;border-radius:999px;font-size:13px}
+
+@media(max-width:980px){.stats{grid-template-columns:repeat(2,1fr)}.routes{grid-template-columns:1fr}.pair-grid{grid-template-columns:1fr}.wrap{width:calc(100% - 32px)}.compare-panel,.method-panel,.tool-panel,.lesson-body{padding:20px}}
+@media(max-width:620px){body{font-size:15.5px}.wrap{width:calc(100% - 24px)}.masthead{margin-top:14px;padding:28px 0 24px;border-radius:var(--r-l)}.nav{top:10px}.stats{gap:12px}.stat{padding:16px 18px}.control,.control.search{min-width:0;flex-basis:calc(50% - 7px)}.control.search{flex-basis:100%}.toolbar>button{flex-basis:100%}.lesson>summary{grid-template-columns:52px 1fr;padding:16px}.lesson>summary:after{grid-column:2;grid-row:3}.table-scroll td:first-child,.table-scroll th:first-child{min-width:150px;max-width:180px}.back-top{right:12px;bottom:12px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}body::before{animation:none}button{transition:none}}
+@supports not ((backdrop-filter:blur(2px)) or (-webkit-backdrop-filter:blur(2px))){
+  :root{--glass:rgba(255,255,255,.9);--glass-2:rgba(255,255,255,.9);--glass-3:rgba(255,255,255,.95)}
+  .masthead,.nav-inner,button{background:rgba(255,255,255,.92)}
+}
+@media (prefers-color-scheme:dark){
+  :root{--ink:#eef0fb;--ink-2:#c3c8e6;--muted:#98a0c0;--line:rgba(255,255,255,.14);--line-2:rgba(255,255,255,.10);
+    --glass:rgba(24,28,48,.55);--glass-2:rgba(30,34,56,.5);--glass-3:rgba(40,46,72,.6);--bg:#0b0e1c;
+    --accent:#a99cff;--hi:inset 0 1px 0 rgba(255,255,255,.14),inset 0 -1px 0 rgba(255,255,255,.04);
+    --sh:0 24px 50px -26px rgba(0,0,0,.8),0 2px 8px -2px rgba(0,0,0,.5)}
+  body::before{background:
+    radial-gradient(46vw 46vw at 12% 6%,rgba(106,92,255,.42),transparent 62%),
+    radial-gradient(42vw 42vw at 88% 12%,rgba(255,93,143,.3),transparent 60%),
+    radial-gradient(50vw 50vw at 72% 88%,rgba(34,200,216,.26),transparent 62%),
+    radial-gradient(40vw 40vw at 22% 92%,rgba(193,75,255,.3),transparent 60%)}
+  body::after{background:radial-gradient(70vw 50vh at 50% -8%,rgba(255,255,255,.10),transparent 70%)}
+  .masthead{background:linear-gradient(160deg,rgba(40,46,78,.66),rgba(20,24,44,.42))}
+  .masthead h1{background:linear-gradient(120deg,#dfe3ff 8%,#a99cff 46%,#ff9ec4 78%,#8ff0ff 96%);-webkit-background-clip:text;background-clip:text}
+  th{background:rgba(18,22,40,.86)}
+  td:first-child,th:first-child{background:rgba(16,20,36,.86)}
+  th:first-child{background:rgba(18,22,40,.94)}
+  tbody tr:hover td{background:rgba(255,255,255,.05)}
+  input,select{background:rgba(12,15,30,.6);border-color:rgba(255,255,255,.16);color:var(--ink)}
+  input:focus,select:focus{border-color:rgba(169,156,255,.8);box-shadow:0 0 0 4px rgba(169,156,255,.2)}
+  .options li{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1)}
+  .callout{background:linear-gradient(120deg,rgba(255,142,46,.16),rgba(255,93,143,.14))}
+  .tag.practice{background:rgba(255,142,46,.2);color:#ffd0a3;border-color:rgba(255,142,46,.34)}
+  .tag.supplement{background:rgba(255,255,255,.08);color:var(--ink-2);border-color:rgba(255,255,255,.14)}
+  code{background:rgba(255,255,255,.1)}
+  .table-scroll{background:rgba(12,15,30,.4)}
+  .lesson>summary:hover,.lesson[open]>summary{background:rgba(255,255,255,.05)}
+}
+@media print{
+  @page{margin:14mm}
+  body{background:#fff;color:#000;font-size:10pt;overflow:visible}
+  body::before,body::after{display:none}
+  .wrap{width:100%}
+  .nav,.toolbar,.mode-bar,.result-line,.back-top,.print-button,.skip,.empty{display:none!important}
+  .masthead,.stats .stat,.callout,.compare-panel,.tool-panel,.method-panel,.lesson,.routes .route,.pair-col,.pair-col.alt{
+    background:#fff!important;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;border:1px solid #c9c9c9;border-radius:8px;color:#000}
+  .masthead h1,.stat strong{background:none!important;color:#000!important;-webkit-text-fill-color:initial}
+  .eyebrow{color:#000}.lead,.intro,.source-note,.sub,.stat span,.lesson-date,.summary-hook,.muted,.options .sim{color:#333}
+  .lesson-code{background:#000!important;color:#fff}
+  section{padding:10px 0}
+  .lesson>summary{padding:9px 11px;break-after:avoid}.lesson>summary:after{display:none}
+  .lesson-body{padding:9px 11px}
+  .pair-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .options li{background:#fff;border-color:#ddd;padding:4px 7px}
+  .table-scroll{overflow:visible;max-height:none;border:none;background:none}
+  table{min-width:0!important;width:100%}
+  th,td,th:first-child,td:first-child{position:static!important;min-width:0!important;max-width:none!important;white-space:normal;padding:5px;font-size:9pt;background:#fff!important}
+  .lesson,.route,.callout{break-inside:avoid}
+  a{color:#000}
+}
+</style><script src="/visit-tracker.js" defer></script></head>
+<body id="top"><a class="skip" href="#list">跳到重复题清单</a>
+<header class="masthead"><div class="wrap">
+<p class="eyebrow">2027 考研政治 / 资料查重对照页</p>
+<h1>观澜丨米鹏 2026 六套卷·三套卷 × 2027 版 720 题 重复对照</h1>
+<p class="lead">同一位老师的三本题库到底重不重复？逐题比对 342 道 2026 卷客观题与 776 道 2027 版 720 题，给出完全同题、同题改编、同材料换设问三档清单，并追出复用链。</p>
+<div class="top-meta"><span>对照：2026《冲刺模拟6套卷》＋《考前冲刺3套卷》一/二/三 ↔ 2027 版《全真模拟720题》试题册（2026-06-05 改色版）<br>整理日期：2026年10月7日 · 专题学习资料</span>
+<button id="print" class="print-button">打印完整学习页</button></div></div></header>
+
+<nav class="nav" aria-label="页面导航"><div class="wrap nav-inner"><a href="/" class="home-link">返回观澜</a>
+<a href="#overview">结论总览</a><a href="#list">重复题清单</a><a href="#pairs">逐题对照</a>
+<a href="#chain">复用链</a><a href="#advice">使用建议</a><a href="#sources">口径与来源</a></div></nav>
+
+<main>
+<section id="overview"><div class="wrap">
+<h2>结论：有 16 道题被几乎一字不差地搬了过去</h2>
+<p class="intro">判定用字符级比对：去掉标点空格后算题干相似度、设问（题干末句）相似度，以及四个选项逐个配对的重合数。三本同为米鹏、大李子（"大米"）系列——2027 版 720 题前言原话："到了最后两个月，大家再做一下我和米鹏老师的《大米 6+3 套卷》……'720+6+3+真题'就是通关密码！"</p>
+<div class="stats">
+<div class="stat"><strong>16</strong><span>甲类：完全同题（组）</span></div>
+<div class="stat"><strong>11</strong><span>乙类：同题改编（组）</span></div>
+<div class="stat"><strong>27</strong><span>2026卷被复用的题</span></div>
+<div class="stat"><strong>25</strong><span>720题中的老题</span></div>
+</div>
+<div class="callout"><p><b>一句话：</b>2026 卷里有 <b>16 道题</b>被 2027 版 720 题原样搬走（题干相同、四个选项相同，只调换顺序或改一两个字），加上同题改编共 <b>27 道</b>（六套卷 18 道、三套卷 9 道）。反过来看，776 题的 720 题里约 25 题（3%）是 2026 卷老题——<b>重复率不高，但集中在马原、毛中特、史纲的选择题高频考点上，不是随机分布。</b></p></div>
+
+<div class="compare-panel"><h3>四类怎么分</h3>
+<div class="table-scroll"><table><thead><tr><th>类别</th><th>判定标准</th><th>组数</th><th>涉及2026卷</th><th>涉及720题</th></tr></thead><tbody>
+<tr><td>甲 完全同题</td><td>题干相似度 ≥0.80 且 四个选项里 ≥3 个基本一致</td><td class="number">16</td><td class="number">16</td><td class="number">14</td></tr>
+<tr><td>乙 同题改编</td><td>选项照搬但材料/设问改动，或题干照搬但单选拆成多选</td><td class="number">11</td><td class="number">11</td><td class="number">11</td></tr>
+<tr><td>丙 同材料换设问</td><td>材料公共片段 ≥40 字，但问法与选项不同</td><td class="number">22</td><td class="number">21</td><td class="number">20</td></tr>
+<tr><td>丁 考点撞车</td><td>同一知识点、同一句标准表述两边都用到，不算重复</td><td class="number">16</td><td class="number">14</td><td class="number">14</td></tr>
+</tbody></table></div>
+<p class="source-note">"设问一致"只比题干最后约 28 字，用来区分"同材料换设问"和"同题"。阈值是人为分档，甲乙、乙丙之间存在灰带，每条都给了三项指标可自行复核。</p></div>
+
+<div class="compare-panel"><h3>按套卷分布</h3>
+<div class="table-scroll"><table><thead><tr><th>资料</th><th>题量</th><th>甲</th><th>乙</th><th>丙</th><th>丁</th><th>合计涉及</th></tr></thead>
+<tbody><tr><td>第一套</td><td class="number">38</td><td class="number">1</td><td class="number">1</td><td class="number">3</td><td class="number">1</td><td class="number"><b>6</b></td></tr><tr><td>第二套</td><td class="number">38</td><td class="number">1</td><td class="number">1</td><td class="number">1</td><td class="number">1</td><td class="number"><b>4</b></td></tr><tr><td>第三套</td><td class="number">38</td><td class="number">5</td><td class="number">1</td><td class="number">2</td><td class="number">3</td><td class="number"><b>10</b></td></tr><tr><td>第四套</td><td class="number">38</td><td class="number">0</td><td class="number">3</td><td class="number">0</td><td class="number">1</td><td class="number"><b>4</b></td></tr><tr><td>第五套</td><td class="number">38</td><td class="number">2</td><td class="number">0</td><td class="number">2</td><td class="number">1</td><td class="number"><b>5</b></td></tr><tr><td>第六套</td><td class="number">38</td><td class="number">1</td><td class="number">2</td><td class="number">5</td><td class="number">3</td><td class="number"><b>10</b></td></tr><tr><td>3套卷一</td><td class="number">38</td><td class="number">1</td><td class="number">3</td><td class="number">3</td><td class="number">1</td><td class="number"><b>8</b></td></tr><tr><td>3套卷二</td><td class="number">38</td><td class="number">4</td><td class="number">0</td><td class="number">1</td><td class="number">1</td><td class="number"><b>6</b></td></tr><tr><td>3套卷三</td><td class="number">38</td><td class="number">1</td><td class="number">0</td><td class="number">4</td><td class="number">2</td><td class="number"><b>7</b></td></tr><tr><td><b>六套卷合计</b></td><td class="number">226</td><td class="number">10</td><td class="number">8</td><td class="number">13</td><td class="number">10</td><td class="number"><b>39</b></td></tr><tr><td><b>三套卷合计</b></td><td class="number">101</td><td class="number">6</td><td class="number">3</td><td class="number">8</td><td class="number">4</td><td class="number"><b>21</b></td></tr></tbody></table></div>
+<p class="source-note">重复密度最高的是《六套卷·第三套》（10 题涉及、5 题完全同题）与《3套卷·二》（6 题涉及、4 题完全同题）。</p></div>
+</div></section>
+
+<section id="list"><div class="wrap">
+<h2>重复题清单（65 组，可筛选）</h2>
+<p class="intro">按类别、套卷筛选，或直接搜题干关键词。命中结果同时定位到下方逐题对照。</p>
+<div class="tool-panel"><div class="toolbar">
+<div class="control search"><label for="query">搜索题干</label><input id="query" type="search" placeholder="例如：遵义会议、资本原始积累、人工智能、网络空间" aria-label="搜索题干关键词"></div>
+<div class="control"><label for="cls">重复类别</label><select id="cls"><option value="all">全部类别</option><option value="甲">甲 完全同题</option><option value="乙">乙 同题改编</option><option value="丙">丙 同材料换设问</option><option value="丁">丁 考点撞车</option></select></div>
+<div class="control"><label for="paper">出自哪套卷</label><select id="paper"><option value="all">全部套卷</option><option value="第一套">第一套</option><option value="第二套">第二套</option><option value="第三套">第三套</option><option value="第四套">第四套</option><option value="第五套">第五套</option><option value="第六套">第六套</option><option value="3套卷一">3套卷一</option><option value="3套卷二">3套卷二</option><option value="3套卷三">3套卷三</option></select></div>
+<button id="reset">清除筛选</button></div>
+<div class="result-line"><span id="resultCount"></span><span id="filterDescription">筛选只改变显示，收录总量不变。</span></div>
+<div class="table-scroll"><table><thead><tr><th>类别</th><th>2026卷出处</th><th>2027版720题出处</th><th>题干</th><th>设问</th><th>选项</th><th>题干（2026卷，节选）</th></tr></thead>
+<tbody id="tbody"><tr data-cls="甲" data-paper="第三套" id="p1"><td>甲 完全同题 <span class="tag supplement">2026版720已有</span></td><td>第三套 第7题<span class="sub">单选</span></td><td>新思想·第六章推动高质量发展 第7题<span class="sub">单选</span></td><td class="number">0.99</td><td class="number">1.00</td><td class="number">3/4</td><td>发展社会主义市场经济是我们党的一个伟大创造党的二十届三中全会研究进一步全面深化改革推进中国式…</td></tr>
+<tr data-cls="甲" data-paper="3套卷二" id="p2"><td>甲 完全同题 <span class="tag supplement">2026版720已有</span></td><td>3套卷二 第27题<span class="sub">多选</span></td><td>史纲·第四章中国共产党成立和中国革命新局面 第22题<span class="sub">多选</span></td><td class="number">0.99</td><td class="number">1.00</td><td class="number">3/4</td><td>1926年7月以推翻北洋军阀统治为目标的北伐战争开始国民革命军在工农群众的支援下采取各个击破…</td></tr>
+<tr data-cls="甲" data-paper="第五套" id="p3"><td>甲 完全同题 <span class="tag practice">仅2027版新出现</span></td><td>第五套 第14题<span class="sub">单选</span></td><td>思法·第五章遵守道德规范锤炼道德品格 第10题<span class="sub">单选</span></td><td class="number">0.99</td><td class="number">1.00</td><td class="number">4/4</td><td>中华传统美德是中华文化的精髓是社会主义道德建设的源头活水儒家经典礼记中明确提出修身是齐家治国…</td></tr>
+<tr data-cls="甲" data-paper="第三套" id="p4"><td>甲 完全同题 <span class="tag supplement">2026版720已有</span></td><td>第三套 第21题<span class="sub">多选</span></td><td>马原·第六章社会主义的发展及其规律 第8题<span class="sub">多选</span></td><td class="number">0.99</td><td class="number">1.00</td><td class="number">4/4</td><td>1926~1927年初邓小平在莫斯科中山大学留学一年此时正值列宁的新经济政策在莫斯科和整个苏…</td></tr>
+<tr data-cls="甲" data-paper="第一套" id="p5"><td>甲 完全同题 <span class="tag supplement">2026版720已有</span></td><td>第一套 第4题<span class="sub">单选</span></td><td>马原·第五章资本主义的发展及其趋势 第6题<span class="sub">单选</span></td><td class="number">0.99</td><td class="number">1.00</td><td class="number">4/4</td><td>进入21世纪以来随着经济全球化的深入发展新一轮科技革命和产业变革进入空前密集活跃期社会化大生…</td></tr>
+<tr data-cls="甲" data-paper="3套卷三" id="p6"><td>甲 完全同题 <span class="tag supplement">2026版720已有</span></td><td>3套卷三 第22题<span class="sub">多选</span></td><td>毛中特·第三章社会主义改造理论 第14题<span class="sub">多选</span></td><td class="number">0.98</td><td class="number">1.00</td><td class="number">4/4</td><td>毛泽东指出当人民推翻了帝国主义封建主义和官僚资本主义的统治之后中国要向哪里去？向资本主义还是…</td></tr>
+<tr data-cls="甲" data-paper="第三套" id="p7"><td>甲 完全同题 <span class="tag supplement">2026版720已有</span></td><td>第三套 第11题<span class="sub">单选</span></td><td>史纲·第四章中国共产党成立和中国革命新局面 第11题<span class="sub">单选</span></td><td class="number">0.98</td><td class="number">0.93</td><td class="number">4/4</td><td>1924年1月中国国民党第一次全国代表大会在广州召开大会通过的宣言对三民主义作出了新的解释新…</td></tr>
+<tr data-cls="甲" data-paper="第三套" id="p8"><td>甲 完全同题 <span class="tag supplement">2026版720已有</span></td><td>第三套 第27题<span class="sub">多选</span></td><td>史纲·第三章辛亥革命与君主专制制度的终结 第9题<span class="sub">多选</span></td><td class="number">0.97</td><td class="number">1.00</td><td class="number">4/4</td><td>1912年3月中华民国临时参议院颁布的中华民国临时约法是中国历史上第一部具有资产阶级共和国宪…</td></tr>
+<tr data-cls="甲" data-paper="3套卷二" id="p9"><td>甲 完全同题 <span class="tag supplement">2026版720已有</span></td><td>3套卷二 第5题<span class="sub">单选</span></td><td>毛中特·第二章新民主主义革命理论 第7题<span class="sub">单选</span></td><td class="number">0.97</td><td class="number">1.00</td><td class="number">4/4</td><td>毛泽东在共产党人发刊词中指出为取得新民主主义革命社会主义革命和建设的伟大胜利必须推进的一项伟…</td></tr>
+<tr data-cls="甲" data-paper="3套卷二" id="p10"><td>甲 完全同题 <span class="tag supplement">2026版720已有</span></td><td>3套卷二 第30题<span class="sub">多选</span></td><td>思法·第五章遵守道德规范锤炼道德品格 第28题<span class="sub">多选</span></td><td class="number">0.97</td><td class="number">0.93</td><td class="number">3/4</td><td>网络生活中的道德要求是人们为了维护正常的网络公共秩序而需要共同遵守的基本道德准则是社会公德规…</td></tr>
+<tr data-cls="甲" data-paper="第五套" id="p11"><td>甲 完全同题 <span class="tag supplement">2026版720已有</span></td><td>第五套 第3题<span class="sub">单选</span></td><td>马原·第四章资本主义的本质及规律 第6题<span class="sub">单选</span></td><td class="number">0.97</td><td class="number">0.96</td><td class="number">4/4</td><td>马克思把商品转换成货币称为商品的惊险的跳跃这个跳跃如果不成功摔坏的不是商品但一定是商品的占有…</td></tr>
+<tr data-cls="甲" data-paper="3套卷二" id="p12"><td>甲 完全同题 <span class="tag supplement">2026版720已有</span></td><td>3套卷二 第4题<span class="sub">单选</span></td><td>马原·第五章资本主义的发展及其趋势 第6题<span class="sub">单选</span></td><td class="number">0.96</td><td class="number">1.00</td><td class="number">4/4</td><td>进人21世纪以来随着经济全球化的深人发展新一轮科技革命和产业变革进人空前密集活跃期社会化大生…</td></tr>
+<tr data-cls="甲" data-paper="第三套" id="p13"><td>甲 完全同题 <span class="tag supplement">2026版720已有</span></td><td>第三套 第22题<span class="sub">多选</span></td><td>毛中特·第四章社会主义建设道路初步探索的理论成果 第13题<span class="sub">多选</span></td><td class="number">0.88</td><td class="number">0.29</td><td class="number">3/4</td><td>在社会主义建设时期党领导人民探索社会主义建设道路历经艰辛和曲折在理论和实践上取得了一系列重要…</td></tr>
+<tr data-cls="甲" data-paper="第六套" id="p14"><td>甲 完全同题 <span class="tag supplement">2026版720已有</span></td><td>第六套 第12题<span class="sub">单选</span></td><td>史纲·第八章中华人民共和国的成立与中国社会主义 第10题<span class="sub">单选</span></td><td class="number">0.84</td><td class="number">1.00</td><td class="number">4/4</td><td>毛泽东曾在论十大关系中指出最近苏联方面暴露了他们在建设社会主义过程中的一些缺点和错误他们走过…</td></tr>
+<tr data-cls="甲" data-paper="第二套" id="p15"><td>甲 完全同题 <span class="tag supplement">2026版720已有</span></td><td>第二套 第5题<span class="sub">单选</span></td><td>毛中特·第四章社会主义建设道路初步探索的理论成果 第4题<span class="sub">单选</span></td><td class="number">0.84</td><td class="number">0.64</td><td class="number">4/4</td><td>新中国的工业化是在苏联的影响下起步的走中国工业化道路是中国共产党初步探索我国社会主义建设道路…</td></tr>
+<tr data-cls="甲" data-paper="3套卷一" id="p16"><td>甲 完全同题 <span class="tag supplement">2026版720已有</span></td><td>3套卷一 第20题<span class="sub">多选</span></td><td>马原·第五章资本主义的发展及其趋势 第6题<span class="sub">单选</span></td><td class="number">0.83</td><td class="number">0.39</td><td class="number">3/4</td><td>进人21世纪以来随着经济全球化的深人发展新一轮科技革命和产业变革进人空前密集活跃期社会化大生…</td></tr>
+<tr data-cls="乙" data-paper="3套卷一" id="p17"><td>乙 同题改编 <span class="tag supplement">2026版720已有</span></td><td>3套卷一 第10题<span class="sub">单选</span></td><td>史纲·第五章中国革命的新道路 第22题<span class="sub">多选</span></td><td class="number">0.98</td><td class="number">1.00</td><td class="number">0/4</td><td>1935年1月7日红军攻克黔北重镇遵义1月15日至17日中共中央在此召开政治局扩大会议即遵义…</td></tr>
+<tr data-cls="乙" data-paper="第六套" id="p18"><td>乙 同题改编 <span class="tag supplement">2026版720已有</span></td><td>第六套 第22题<span class="sub">多选</span></td><td>毛中特·第三章社会主义改造理论 第8题<span class="sub">多选</span></td><td class="number">0.97</td><td class="number">1.00</td><td class="number">2/4</td><td>1952年底党中央在酝酿过渡时期总路线时毛泽东把实现向社会主义转变的设想由建国之初的先搞工业…</td></tr>
+<tr data-cls="乙" data-paper="3套卷一" id="p19"><td>乙 同题改编 <span class="tag supplement">2026版720已有</span></td><td>3套卷一 第11题<span class="sub">单选</span></td><td>史纲·第六章中华民族的抗日战争 第11题<span class="sub">单选</span></td><td class="number">0.96</td><td class="number">0.82</td><td class="number">0/4</td><td>1941年5月毛泽东作了改造我们的学习的报告整风运动首先在党的高级干部中进行1942年2月毛…</td></tr>
+<tr data-cls="乙" data-paper="第四套" id="p20"><td>乙 同题改编 <span class="tag supplement">2026版720已有</span></td><td>第四套 第22题<span class="sub">多选</span></td><td>毛中特·第三章社会主义改造理论 第14题<span class="sub">多选</span></td><td class="number">0.93</td><td class="number">0.64</td><td class="number">0/4</td><td>毛泽东指出当人民推翻了帝国主义封建主义和官僚资本主义的统治之后中国要向哪里去向资本主义还是向…</td></tr>
+<tr data-cls="乙" data-paper="第四套" id="p21"><td>乙 同题改编 <span class="tag supplement">2026版720已有</span></td><td>第四套 第31题<span class="sub">多选</span></td><td>思法·第六章学习法治思想提升法治素养 第8题<span class="sub">单选</span></td><td class="number">0.81</td><td class="number">0.61</td><td class="number">0/4</td><td>习近平总书记强调全面推进依法治国涉及很多方面在实际工作中必须有一个总揽全局牵引各方的总抓手这…</td></tr>
+<tr data-cls="乙" data-paper="第三套" id="p22"><td>乙 同题改编 <span class="tag supplement">2026版720已有</span></td><td>第三套 第3题<span class="sub">单选</span></td><td>马原·第四章资本主义的本质及规律 第27题<span class="sub">多选</span></td><td class="number">0.79</td><td class="number">0.82</td><td class="number">4/4</td><td>马克思指出资本来到世间从头到脚每个毛孔都滴着血和肮脏的东西所谓资本原始积累只不过是生产者和生…</td></tr>
+<tr data-cls="乙" data-paper="第二套" id="p23"><td>乙 同题改编 <span class="tag supplement">2026版720已有</span></td><td>第二套 第21题<span class="sub">多选</span></td><td>马原·第六章社会主义的发展及其规律 第11题<span class="sub">多选</span></td><td class="number">0.77</td><td class="number">0.07</td><td class="number">3/4</td><td>马克思恩格斯创立了科学社会主义理论并提出了正确对待科学社会主义基本原则的科学态度他们在共产党…</td></tr>
+<tr data-cls="乙" data-paper="第一套" id="p24"><td>乙 同题改编 <span class="tag supplement">2026版720已有</span></td><td>第一套 第20题<span class="sub">多选</span></td><td>马原·第四章资本主义的本质及规律 第32题<span class="sub">多选</span></td><td class="number">0.75</td><td class="number">0.36</td><td class="number">3/4</td><td>把剩余价值转化为资本就是资本积累马克思形容资本积累在一极是财富的积累同时在另一极即在把自己的…</td></tr>
+<tr data-cls="乙" data-paper="第四套" id="p25"><td>乙 同题改编 <span class="tag supplement">2026版720已有</span></td><td>第四套 第20题<span class="sub">多选</span></td><td>马原·第五章资本主义的发展及其趋势 第19题<span class="sub">多选</span></td><td class="number">0.58</td><td class="number">0.50</td><td class="number">3/4</td><td>信息数字技术人工智能技术生物技术空间工程技术新材料和新能源在内的新一轮科技革命极大地提高了劳…</td></tr>
+<tr data-cls="乙" data-paper="3套卷一" id="p26"><td>乙 同题改编 <span class="tag supplement">2026版720已有</span></td><td>3套卷一 第22题<span class="sub">多选</span></td><td>毛中特·第四章社会主义建设道路初步探索的理论成果 第12题<span class="sub">多选</span></td><td class="number">0.52</td><td class="number">0.29</td><td class="number">4/4</td><td>实现工业化是中国近代以来历史发展的必然要求也是国家独立和富强的必要条件新中国成立初期我化道路…</td></tr>
+<tr data-cls="乙" data-paper="第六套" id="p27"><td>乙 同题改编 <span class="tag practice">仅2027版新出现</span></td><td>第六套 第26题<span class="sub">多选</span></td><td>新思想·第七章社会主义现代化建设的教育、科技、人才战略 第9题<span class="sub">多选</span></td><td class="number">0.49</td><td class="number">0.43</td><td class="number">4/4</td><td>习近平总书记强调人工智能作为引领新一轮科技革命和产业变革的战略性技术深刻改变人类生产生活方式…</td></tr>
+<tr data-cls="丙" data-paper="3套卷三" id="p28"><td>丙 同材料换设问</td><td>3套卷三 第21题<span class="sub">多选</span></td><td>马原·第五章资本主义的发展及其趋势 第6题<span class="sub">单选</span></td><td class="number">0.84</td><td class="number">0.32</td><td class="number">0/4</td><td>进人21世纪以来随着经济全球化的深人发展新一轮科技革命和产业变革进人空前密集活跃期社会化大生…</td></tr>
+<tr data-cls="丙" data-paper="第六套" id="p29"><td>丙 同材料换设问</td><td>第六套 第8题<span class="sub">单选</span></td><td>新思想·第八章发展全过程人民民主 第15题<span class="sub">多选</span></td><td class="number">0.84</td><td class="number">0.32</td><td class="number">0/4</td><td>中华民族是有着五千多年文明史的伟大民族各民族共同开拓了祖国的辽阔疆域共同缔造了统一的多民族国…</td></tr>
+<tr data-cls="丙" data-paper="第二套" id="p30"><td>丙 同材料换设问</td><td>第二套 第28题<span class="sub">多选</span></td><td>史纲·第七章为建立新中国而奋斗 第16题<span class="sub">多选</span></td><td class="number">0.78</td><td class="number">0.89</td><td class="number">2/4</td><td>1946年1月10日政治协商会议在重庆开幕出席会议的有国民党共产党民主同盟青年党和无党派人士…</td></tr>
+<tr data-cls="丙" data-paper="第六套" id="p31"><td>丙 同材料换设问</td><td>第六套 第23题<span class="sub">多选</span></td><td>新思想·第八章发展全过程人民民主 第8题<span class="sub">单选</span></td><td class="number">0.78</td><td class="number">0.29</td><td class="number">0/4</td><td>2025年5月习近平来到始建于东汉年间的白马寺考察详细了解佛教中国化和寺院文物保护情况他指出…</td></tr>
+<tr data-cls="丙" data-paper="第三套" id="p32"><td>丙 同材料换设问</td><td>第三套 第14题<span class="sub">单选</span></td><td>思法·第六章学习法治思想提升法治素养 第15题<span class="sub">单选</span></td><td class="number">0.77</td><td class="number">0.89</td><td class="number">1/4</td><td>马克思认为权利决不能超出社会的经济结构以及由经济结构制约的社会的文化发展这表明马克思主义权利…</td></tr>
+<tr data-cls="丙" data-paper="第六套" id="p33"><td>丙 同材料换设问</td><td>第六套 第21题<span class="sub">多选</span></td><td>马原·第五章资本主义的发展及其趋势 第14题<span class="sub">多选</span></td><td class="number">0.73</td><td class="number">0.14</td><td class="number">0/4</td><td>习近平主席指出经济全球化确实带来了新问题但我们不能就此把经济全球化一棍子打死而是要适应和引导…</td></tr>
+<tr data-cls="丙" data-paper="第一套" id="p34"><td>丙 同材料换设问</td><td>第一套 第9题<span class="sub">单选</span></td><td>新思想·第十七章全面从严治党 第9题<span class="sub">单选</span></td><td class="number">0.72</td><td class="number">0.36</td><td class="number">2/4</td><td>党的十八大以来我们坚定不移推进全面从严治党取得一系列理论创新实践创新制度创新成果构建起全面从…</td></tr>
+<tr data-cls="丙" data-paper="第五套" id="p35"><td>丙 同材料换设问</td><td>第五套 第29题<span class="sub">多选</span></td><td>史纲·第十章中国特色社会主义进入新时代 第4题<span class="sub">多选</span></td><td class="number">0.68</td><td class="number">0.89</td><td class="number">1/4</td><td>2013年11月9日至12日党的十八届三中全会在北京召开党的十八届三中全会是继党的十一届三中…</td></tr>
+<tr data-cls="丙" data-paper="3套卷一" id="p36"><td>丙 同材料换设问</td><td>3套卷一 第13题<span class="sub">单选</span></td><td>史纲·第九章改革开放与中国特色社会主义的开创和发展 第3题<span class="sub">单选</span></td><td class="number">0.67</td><td class="number">0.29</td><td class="number">0/4</td><td>1982年9月1日至11日中国共产党第十二次全国代表大会在北京举行邓小平在开幕词中响亮提出一…</td></tr>
+<tr data-cls="丙" data-paper="3套卷三" id="p37"><td>丙 同材料换设问</td><td>3套卷三 第28题<span class="sub">多选</span></td><td>史纲·第五章中国革命的新道路 第24题<span class="sub">多选</span></td><td class="number">0.67</td><td class="number">0.07</td><td class="number">0/4</td><td>1935年10月19日红军到达陕北吴起镇至此中央红军的二万五千里长征胜利结束1936年10月…</td></tr>
+<tr data-cls="丙" data-paper="3套卷一" id="p38"><td>丙 同材料换设问</td><td>3套卷一 第29题<span class="sub">多选</span></td><td>史纲·第八章中华人民共和国的成立与中国社会主义 第15题<span class="sub">多选</span></td><td class="number">0.67</td><td class="number">0.21</td><td class="number">0/4</td><td>从中华人民共和国成立到社会主义改造基本完成这是一个过渡时期党在这个过渡时期的总路线和总任务要…</td></tr>
+<tr data-cls="丙" data-paper="3套卷三" id="p39"><td>丙 同材料换设问</td><td>3套卷三 第14题<span class="sub">单选</span></td><td>思法·第六章学习法治思想提升法治素养 第37题<span class="sub">多选</span></td><td class="number">0.64</td><td class="number">0.61</td><td class="number">0/4</td><td>习近平总书记指出有了法律不能有效实施那再多法律也是一纸空文依法治国就会成为一句空话建设中国特…</td></tr>
+<tr data-cls="丙" data-paper="第三套" id="p40"><td>丙 同材料换设问</td><td>第三套 第4题<span class="sub">单选</span></td><td>马原·第六章社会主义的发展及其规律 第7题<span class="sub">多选</span></td><td class="number">0.62</td><td class="number">0.25</td><td class="number">0/4</td><td>19世纪以圣西门傅立叶欧文三大空想社会主义者的学说虽然含有十分虚幻和空想的性质但他们终究是属…</td></tr>
+<tr data-cls="丙" data-paper="第六套" id="p41"><td>丙 同材料换设问</td><td>第六套 第5题<span class="sub">单选</span></td><td>史纲·第八章中华人民共和国的成立与中国社会主义 第15题<span class="sub">多选</span></td><td class="number">0.58</td><td class="number">0.50</td><td class="number">0/4</td><td>中共中央在1952年底开始酝酿并于1953年正式提出党在过渡时期的总路线明确规定从中华人民共…</td></tr>
+<tr data-cls="丙" data-paper="3套卷二" id="p42"><td>丙 同材料换设问</td><td>3套卷二 第21题<span class="sub">多选</span></td><td>马原·第四章资本主义的本质及规律 第15题<span class="sub">单选</span></td><td class="number">0.58</td><td class="number">0.18</td><td class="number">0/4</td><td>资本是在运动中增殖的必须不断地周而复始地循环才能不断地带来剩余价值这种周而复始不断反复着的资…</td></tr>
+<tr data-cls="丙" data-paper="第六套" id="p43"><td>丙 同材料换设问</td><td>第六套 第12题<span class="sub">单选</span></td><td>毛中特·第四章社会主义建设道路初步探索的理论成果 第2题<span class="sub">单选</span></td><td class="number">0.54</td><td class="number">0.07</td><td class="number">0/4</td><td>毛泽东曾在论十大关系中指出最近苏联方面暴露了他们在建设社会主义过程中的一些缺点和错误他们走过…</td></tr>
+<tr data-cls="丙" data-paper="3套卷一" id="p44"><td>丙 同材料换设问</td><td>3套卷一 第4题<span class="sub">单选</span></td><td>马原·第四章资本主义的本质及规律 第13题<span class="sub">单选</span></td><td class="number">0.54</td><td class="number">0.04</td><td class="number">0/4</td><td>第二次世界大战以后资本主义国家经历了第三次科学技术革命电子计算机数控机床等自动化装置在生产中…</td></tr>
+<tr data-cls="丙" data-paper="第六套" id="p45"><td>丙 同材料换设问</td><td>第六套 第21题<span class="sub">多选</span></td><td>马原·第五章资本主义的发展及其趋势 第15题<span class="sub">多选</span></td><td class="number">0.54</td><td class="number">1.00</td><td class="number">1/4</td><td>习近平主席指出经济全球化确实带来了新问题但我们不能就此把经济全球化一棍子打死而是要适应和引导…</td></tr>
+<tr data-cls="丙" data-paper="3套卷三" id="p46"><td>丙 同材料换设问</td><td>3套卷三 第5题<span class="sub">单选</span></td><td>史纲·第八章中华人民共和国的成立与中国社会主义 第15题<span class="sub">多选</span></td><td class="number">0.53</td><td class="number">0.18</td><td class="number">0/4</td><td>1953年6月毛泽东在中央政治局会议上正式提出过渡时期的总路线和总任务同年12月形成了关于总…</td></tr>
+<tr data-cls="丙" data-paper="第一套" id="p47"><td>丙 同材料换设问</td><td>第一套 第31题<span class="sub">多选</span></td><td>思法·第六章学习法治思想提升法治素养 第38题<span class="sub">多选</span></td><td class="number">0.52</td><td class="number">0.18</td><td class="number">1/4</td><td>在领导制定五四宪法时毛泽东同志曾把宪法比喻为轨道指出用宪法这样一个根本大法的形式把人民民主和…</td></tr>
+<tr data-cls="丙" data-paper="第一套" id="p48"><td>丙 同材料换设问</td><td>第一套 第32题<span class="sub">多选</span></td><td>新思想·第六章推动高质量发展 第16题<span class="sub">多选</span></td><td class="number">0.51</td><td class="number">0.14</td><td class="number">0/4</td><td>在2025年2月17日召开的民营企业座谈会上习近平总书记精辟概括党和国家对民营经济发展的基本…</td></tr>
+<tr data-cls="丙" data-paper="第五套" id="p49"><td>丙 同材料换设问</td><td>第五套 第13题<span class="sub">单选</span></td><td>史纲·第八章中华人民共和国的成立与中国社会主义 第21题<span class="sub">多选</span></td><td class="number">0.48</td><td class="number">0.04</td><td class="number">0/4</td><td>1956年9月15日至27日中国共产党第八次全国代表大会在北京举行大会肯定了陈云同志提出的一…</td></tr>
+<tr data-cls="丁" data-paper="第四套" id="p50"><td>丁 考点撞车</td><td>第四套 第28题<span class="sub">多选</span></td><td>史纲·第六章中华民族的抗日战争 第28题<span class="sub">多选</span></td><td class="number">0.70</td><td class="number">0.46</td><td class="number">0/4</td><td>抗日战争是近代以来中华民族反抗外敌入侵第一次取得完全胜利的民族解放战争中国赢得抗日战争胜利的…</td></tr>
+<tr data-cls="丁" data-paper="第三套" id="p51"><td>丁 考点撞车</td><td>第三套 第12题<span class="sub">单选</span></td><td>史纲·第七章为建立新中国而奋斗 第12题<span class="sub">单选</span></td><td class="number">0.67</td><td class="number">0.57</td><td class="number">2/4</td><td>新中国成立前夕毛泽东在一篇重要文章中回顾中国共产党走过的历史道路时指出总结我们的经验集中到一…</td></tr>
+<tr data-cls="丁" data-paper="3套卷三" id="p52"><td>丁 考点撞车</td><td>3套卷三 第12题<span class="sub">单选</span></td><td>史纲·第六章中华民族的抗日战争 第28题<span class="sub">多选</span></td><td class="number">0.65</td><td class="number">0.29</td><td class="number">0/4</td><td>中国人民抗日战争最后胜利这是近代以来中国人民反抗外敌入侵第一次取得完全胜利的民族解放斗争也是…</td></tr>
+<tr data-cls="丁" data-paper="3套卷三" id="p53"><td>丁 考点撞车</td><td>3套卷三 第12题<span class="sub">单选</span></td><td>史纲·第六章中华民族的抗日战争 第14题<span class="sub">单选</span></td><td class="number">0.62</td><td class="number">0.32</td><td class="number">0/4</td><td>中国人民抗日战争最后胜利这是近代以来中国人民反抗外敌入侵第一次取得完全胜利的民族解放斗争也是…</td></tr>
+<tr data-cls="丁" data-paper="3套卷二" id="p54"><td>丁 考点撞车</td><td>3套卷二 第10题<span class="sub">单选</span></td><td>毛中特·第二章新民主主义革命理论 第13题<span class="sub">多选</span></td><td class="number">0.62</td><td class="number">0.29</td><td class="number">0/4</td><td>近代中国社会矛盾呈现错综复杂的状况在诸多社会矛盾中主要矛盾是帝国主义和中华民族的矛盾封建主义…</td></tr>
+<tr data-cls="丁" data-paper="第四套" id="p55"><td>丁 考点撞车</td><td>第四套 第28题<span class="sub">多选</span></td><td>史纲·第六章中华民族的抗日战争 第14题<span class="sub">单选</span></td><td class="number">0.61</td><td class="number">0.57</td><td class="number">0/4</td><td>抗日战争是近代以来中华民族反抗外敌入侵第一次取得完全胜利的民族解放战争中国赢得抗日战争胜利的…</td></tr>
+<tr data-cls="丁" data-paper="第六套" id="p56"><td>丁 考点撞车</td><td>第六套 第29题<span class="sub">多选</span></td><td>史纲·第六章中华民族的抗日战争 第13题<span class="sub">单选</span></td><td class="number">0.57</td><td class="number">0.32</td><td class="number">0/4</td><td>1945年包括台湾同胞在内的全体中华儿女前仆后继浴血奋战取得中国人民抗日战争暨世界反法西斯战…</td></tr>
+<tr data-cls="丁" data-paper="第三套" id="p57"><td>丁 考点撞车</td><td>第三套 第11题<span class="sub">单选</span></td><td>史纲·第四章中国共产党成立和中国革命新局面 第20题<span class="sub">多选</span></td><td class="number">0.56</td><td class="number">0.25</td><td class="number">0/4</td><td>1924年1月中国国民党第一次全国代表大会在广州召开大会通过的宣言对三民主义作出了新的解释新…</td></tr>
+<tr data-cls="丁" data-paper="第六套" id="p58"><td>丁 考点撞车</td><td>第六套 第11题<span class="sub">单选</span></td><td>史纲·第四章中国共产党成立和中国革命新局面 第9题<span class="sub">单选</span></td><td class="number">0.51</td><td class="number">0.50</td><td class="number">0/4</td><td>1921年中共一大确定党的名称为中国共产党大会通过了中国共产党第一个纲领大会在讨论实际工作计…</td></tr>
+<tr data-cls="丁" data-paper="第一套" id="p59"><td>丁 考点撞车</td><td>第一套 第14题<span class="sub">单选</span></td><td>思法·第六章学习法治思想提升法治素养 第20题<span class="sub">单选</span></td><td class="number">0.51</td><td class="number">0.82</td><td class="number">1/4</td><td>法治是中国式现代化的重要保障我们要始终坚持走中国特色社会主义法治道路坚持依法治国依法执政依法…</td></tr>
+<tr data-cls="丁" data-paper="第二套" id="p60"><td>丁 考点撞车</td><td>第二套 第11题<span class="sub">单选</span></td><td>史纲·第三章辛亥革命与君主专制制度的终结 第13题<span class="sub">多选</span></td><td class="number">0.49</td><td class="number">0.14</td><td class="number">0/4</td><td>毛泽东在谈到辛亥革命时指出辛亥革命有它胜利的地方也有它失败的地方辛亥革命把皇帝赶跑这不是胜利…</td></tr>
+<tr data-cls="丁" data-paper="第五套" id="p61"><td>丁 考点撞车</td><td>第五套 第28题<span class="sub">多选</span></td><td>毛中特·第一章毛泽东思想及其历史地位 第1题<span class="sub">单选</span></td><td class="number">0.49</td><td class="number">0.14</td><td class="number">0/4</td><td>中共六届六中全会是一次具有重大历史意义的会议毛泽东指出六中全会是决定中国之命运的在党的六届六…</td></tr>
+<tr data-cls="丁" data-paper="3套卷一" id="p62"><td>丁 考点撞车</td><td>3套卷一 第14题<span class="sub">单选</span></td><td>思法·第五章遵守道德规范锤炼道德品格 第3题<span class="sub">单选</span></td><td class="number">0.45</td><td class="number">0.50</td><td class="number">2/4</td><td>相传清朝康熙年间文华殿大学士兼礼部尚书张英在桐城的家人与邻居吴家发生宅基地纠纷张家人驰书京城…</td></tr>
+<tr data-cls="丁" data-paper="3套卷三" id="p63"><td>丁 考点撞车</td><td>3套卷三 第20题<span class="sub">多选</span></td><td>马原·第四章资本主义的本质及规律 第39题<span class="sub">多选</span></td><td class="number">0.44</td><td class="number">0.07</td><td class="number">0/4</td><td>马克思通过分析剩余价值的生产积累流通以及分配揭示了剩余价值的运动规律创立了剩余价值理论剩余价…</td></tr>
+<tr data-cls="丁" data-paper="第三套" id="p64"><td>丁 考点撞车</td><td>第三套 第30题<span class="sub">多选</span></td><td>思法·第五章遵守道德规范锤炼道德品格 第9题<span class="sub">单选</span></td><td class="number">0.43</td><td class="number">0.29</td><td class="number">0/4</td><td>习近平总书记指出人生天地间长路有险夷世界上没有哪个党像我们这样遭遇过如此多的艰难险阻经历过如…</td></tr>
+<tr data-cls="丁" data-paper="第六套" id="p65"><td>丁 考点撞车</td><td>第六套 第30题<span class="sub">多选</span></td><td>思法·第四章明确价值要求践行价值准则 第13题<span class="sub">多选</span></td><td class="number">0.43</td><td class="number">0.36</td><td class="number">0/4</td><td>二战以来西方总是极力标榜自己的价值观具有普遍性试图将自己的价值观提升为全人类的普世价值普世价…</td></tr></tbody></table></div>
+<div class="empty" id="empty" hidden>没有符合条件的题对。</div></div></div></section>
+
+<section id="pairs"><div class="wrap">
+<h2>甲、乙类逐题对照（27 组）</h2>
+<p class="intro">左边是 2026 卷原文，右边是 2027 版 720 题原文，选项后标注与对方最近选项的相似度（1.0 即一字不差）。点击展开。</p>
+<div class="reader-head"><div class="mode-bar"><button id="expand">全部展开</button><button id="collapse">全部收起</button></div></div>
+<details class="lesson" id="q1" data-cls="甲" data-paper="第三套">
+<summary><span class="lesson-code">甲</span>
+<span class="lesson-title">第三套 第7题 ＝ 720题 新思想·第六章推动高质量发展 第7题
+<span class="lesson-date">甲 完全同题｜题干 0.99·设问 1.00·选项 3/4·最长公共片段 94 字</span></span>
+<span class="summary-hook">发展社会主义市场经济是我们党的一个伟大创造党的二十届三中全会研究进一步全面深化改革推进中国式现代化问题依然把构建高水…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">发展社会主义市场经济是我们党的一个伟大创造党的二十届三中全会研究进一步全面深化改革推进中国式现代化问题依然把构建高水平社会主义市场经济体制摆在突出位置构建高水平社会主义市场经济体制的关键是</p><ul class="options"><li><b>A．</b>加快建设高效规范公平竞争充分开放的全国统一大市场<span class="sim">↔ 720 最近项 0.81</span></li><li><b>B．</b>使市场在资源配置中起决定性作用更好发挥政府作用<span class="sim">↔ 720 最近项 1.0</span></li><li><b>C．</b>建设体现效率促进公平的收入分配体系<span class="sim">↔ 720 最近项 1.0</span></li><li><b>D．</b>大力发展绿色经济促进经济社会发展全面绿色转型17<span class="sim">↔ 720 最近项 0.96</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">发展社会主义市场经济是我们党的一个伟大创造党的二十届三中全会研究进一步全面深化改革推进中国式现代化问题依然把构建高水平社会主义市场经济体制摆在突出位置构建高水平社会主义市场经济体制的关键是</p><ul class="options"><li><b>A．</b>处理好政府和市场的关系使市场在资源配置中起决定性作用更好发挥政府作用</li><li><b>B．</b>加快建设高效规范公平竞争充分开放的全国统一大市场</li><li><b>C．</b>建设体现效率促进公平的收入分配体系</li><li><b>D．</b>大力发展绿色经济促进经济社会发展全面绿色转型</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 79 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q2" data-cls="甲" data-paper="3套卷二">
+<summary><span class="lesson-code">甲</span>
+<span class="lesson-title">3套卷二 第27题 ＝ 720题 史纲·第四章中国共产党成立和中国革命新局面 第22题
+<span class="lesson-date">甲 完全同题｜题干 0.99·设问 1.00·选项 3/4·最长公共片段 147 字</span></span>
+<span class="summary-hook">1926年7月以推翻北洋军阀统治为目标的北伐战争开始国民革命军在工农群众的支援下采取各个击破的战略至同年11月基本摧…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">1926年7月以推翻北洋军阀统治为目标的北伐战争开始国民革命军在工农群众的支援下采取各个击破的战略至同年11月基本摧毁了北洋军阀吴佩孚孙传芳的主力革命势力发展到长江流域和黄河流域的大部分地区随着北伐的胜利进军中国历史上空前广大的人民解放运动得以形成帝国主义封建主义的统治受到严重打击这主要表现在</p><ul class="options"><li><b>A．</b>以湖南为中心广大农村掀起了大革命的风暴<span class="sim">↔ 720 最近项 1.0</span></li><li><b>B．</b>工人运动迅速走向高涨<span class="sim">↔ 720 最近项 1.0</span></li><li><b>C．</b>各根据地开展了热火朝天的打土豪分田地的斗争<span class="sim">↔ 720 最近项 0.2</span></li><li><b>D．</b>上海工人举行了三次武装起义<span class="sim">↔ 720 最近项 1.0</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">1926年7月以推翻北洋军阀统治为目标的北伐战争开始国民革命军在工农群众的支援下采取各个击破的战略至同年11月基本摧毁了北洋军阀吴佩孚孙传芳的主力革命势力发展到长江流域和黄河流域的大部分地区随着北伐的胜利进军中国历史上空前广大的人民解放运动得以形成帝国主义封建主义的统治受到严重打击这主要表现在</p><ul class="options"><li><b>A．</b>以湖南为中心广大农村掀起了大革命的风暴</li><li><b>B．</b>工人运动迅速走向高涨</li><li><b>C．</b>国民政府进行了收回汉口九江英租界的斗争</li><li><b>D．</b>上海工人举行了三次武装起义</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 121 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q3" data-cls="甲" data-paper="第五套">
+<summary><span class="lesson-code">甲</span>
+<span class="lesson-title">第五套 第14题 ＝ 720题 思法·第五章遵守道德规范锤炼道德品格 第10题
+<span class="lesson-date">甲 完全同题｜题干 0.99·设问 1.00·选项 4/4·最长公共片段 140 字</span></span>
+<span class="summary-hook">中华传统美德是中华文化的精髓是社会主义道德建设的源头活水儒家经典礼记中明确提出修身是齐家治国平天下的前提和基础孔子提…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">中华传统美德是中华文化的精髓是社会主义道德建设的源头活水儒家经典礼记中明确提出修身是齐家治国平天下的前提和基础孔子提倡修己克己和慎独提倡见贤思齐焉见不贤而内自省也孟子更主张善养吾浩然之气墨家也非常重视修身强调察色修身和以身戴行中国古代的思想家大都认为在修身养性的过程中最重要的就是</p><ul class="options"><li><b>A．</b>讲求和睦友善倡导团结互助追求和平共处<span class="sim">↔ 720 最近项 1.0</span></li><li><b>B．</b>每个人都必须根据规范的要求来尽自己应尽的义务<span class="sim">↔ 720 最近项 1.0</span></li><li><b>C．</b>能够明于庶物察于人伦遵循礼仪能本着仁义行事<span class="sim">↔ 720 最近项 1.0</span></li><li><b>D．</b>要使社会的道德原则和规范转换为自身的思想品德和行为实践<span class="sim">↔ 720 最近项 1.0</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">中华传统美德是中华文化的精髓是社会主义道德建设的源头活水儒家经典礼记中明确提出修身是齐家治国平天下的前提和基础孔子提倡修己克己和慎独提倡见贤思齐焉见不贤而内自省也孟子更主张善养吾浩然之气墨家也非常重视修身强调察色修身和以身戴行中国古代的思想家大都认为在修身养性的过程中最重要的就是</p><ul class="options"><li><b>A．</b>讲求和睦友善倡导团结互助追求和平共处</li><li><b>B．</b>每个人都必须根据规范的要求来尽自己应尽的义务</li><li><b>C．</b>能够明于庶物察于人伦遵循礼仪能本着仁义行事</li><li><b>D．</b>要使社会的道德原则和规范转换为自身的思想品德和行为实践</li></ul></div>
+</div><p class="source-note">这道题在 2026 版《仿真思维训练 720 题》里<b>找不到</b>，是 2027 版新收进来的。</p></div></details>
+<details class="lesson" id="q4" data-cls="甲" data-paper="第三套">
+<summary><span class="lesson-code">甲</span>
+<span class="lesson-title">第三套 第21题 ＝ 720题 马原·第六章社会主义的发展及其规律 第8题
+<span class="lesson-date">甲 完全同题｜题干 0.99·设问 1.00·选项 4/4·最长公共片段 201 字</span></span>
+<span class="summary-hook">1926~1927年初邓小平在莫斯科中山大学留学一年此时正值列宁的新经济政策在莫斯科和整个苏联燎原般发展国家经济全面…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">1926~1927年初邓小平在莫斯科中山大学留学一年此时正值列宁的新经济政策在莫斯科和整个苏联燎原般发展国家经济全面开花市场上商品丰富品类繁多商店饭馆咖啡馆随处可见邓小平到中山大学第一天就收到了一大堆日用品一日三餐也非常丰富在此期间邓小平还认真阅读和摘抄了苏联领导人关于新经济政策的许多论述这一段经历对邓小平后来思考建设有中国特色的社会主义具有一定的启示邓小平与列宁在如何建设社会主义的探索中有许多相通之处主要有</p><ul class="options"><li><b>A．</b>优先发展重工业快速实现从农业国到工业国的转变<span class="sim">↔ 720 最近项 1.0</span></li><li><b>B．</b>把大力发展生产力提高劳动生产率放在首要地位<span class="sim">↔ 720 最近项 1.0</span></li><li><b>C．</b>学习和利用资本主义的文明成果<span class="sim">↔ 720 最近项 1.0</span></li><li><b>D．</b>在多种经济成分并存的条件下利用商品货币和市场发展经济<span class="sim">↔ 720 最近项 1.0</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">19261927年初邓小平在莫斯科中山大学留学一年此时正值列宁的新经济政策在莫斯科和整个苏联燎原般发展国家经济全面开花市场上商品丰富品类繁多商店饭馆咖啡馆随处可见邓小平到中山大学第一天就收到了一大堆日用品一日三餐也非常丰富在此期间邓小平还认真阅读和摘抄了苏联领导人关于新经济政策的许多论述这一段经历对邓小平后来思考建设有中国特色的社会主义具有一定的启示邓小平与列宁在如何建设社会主义的探索中有许多相通之处主要有</p><ul class="options"><li><b>A．</b>优先发展重工业快速实现从农业国到工业国的转变</li><li><b>B．</b>把大力发展生产力提高劳动生产率放在首要地位</li><li><b>C．</b>学习和利用资本主义的文明成果</li><li><b>D．</b>在多种经济成分并存的条件下利用商品货币和市场发展经济</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 188 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q5" data-cls="甲" data-paper="第一套">
+<summary><span class="lesson-code">甲</span>
+<span class="lesson-title">第一套 第4题 ＝ 720题 马原·第五章资本主义的发展及其趋势 第6题
+<span class="lesson-date">甲 完全同题｜题干 0.99·设问 1.00·选项 4/4·最长公共片段 110 字</span></span>
+<span class="summary-hook">进入21世纪以来随着经济全球化的深入发展新一轮科技革命和产业变革进入空前密集活跃期社会化大生产在世界范围内更大规模更…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">进入21世纪以来随着经济全球化的深入发展新一轮科技革命和产业变革进入空前密集活跃期社会化大生产在世界范围内更大规模更广范围更深层次展开世界格局深度调整资本主义又呈现出一些新变化新特征当代资本主义最突出最鲜明最主要的特征是</p><ul class="options"><li><b>A．</b>科技创新加速资本主义生产方式变化<span class="sim">↔ 720 最近项 1.0</span></li><li><b>B．</b>社会阶级层级结构呈现复杂性多样化<span class="sim">↔ 720 最近项 1.0</span></li><li><b>C．</b>国际金融资本的垄断<span class="sim">↔ 720 最近项 1.0</span></li><li><b>D．</b>发达资本主义国家在世界范围内推行霸权主义和强权政治<span class="sim">↔ 720 最近项 0.86</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">进入21世纪以来随着经济全球化的深入发展新一轮科技革命和产业变革进入空前密集活跃期社会化大生产在世界范围内更大规模更广范围更深层次展开世界格局深度调整资本主义又呈现出一些新变化新特征当代资本主义最突出最鲜明最主要的特征是</p><ul class="options"><li><b>A．</b>科技创新加速资本主义生产方式变化</li><li><b>B．</b>国际金融资本的垄断</li><li><b>C．</b>社会阶级层级结构呈现复杂性多样化</li><li><b>D．</b>发达资本主义国家推行霸权主义和强权政治</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 97 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q6" data-cls="甲" data-paper="3套卷三">
+<summary><span class="lesson-code">甲</span>
+<span class="lesson-title">3套卷三 第22题 ＝ 720题 毛中特·第三章社会主义改造理论 第14题
+<span class="lesson-date">甲 完全同题｜题干 0.98·设问 1.00·选项 4/4·最长公共片段 134 字</span></span>
+<span class="summary-hook">毛泽东指出当人民推翻了帝国主义封建主义和官僚资本主义的统治之后中国要向哪里去？向资本主义还是向社会主义？事实已经回答…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">毛泽东指出当人民推翻了帝国主义封建主义和官僚资本主义的统治之后中国要向哪里去？向资本主义还是向社会主义？事实已经回答了这个问题只有社会主义能够救中国社会主义制度促进了我国生产力的突飞猛进的发展这一点甚至连国外的敌人也不能不承认了社会主义基本制度在中国确立的重大意义包括</p><ul class="options"><li><b>A．</b>极大地促进了我国社会生产力的发展使广大劳动人民真正成为国家的主人<span class="sim">↔ 720 最近项 1.0</span></li><li><b>B．</b>进一步改变了世界政治经济格局增强了社会主义的力量<span class="sim">↔ 720 最近项 1.0</span></li><li><b>C．</b>实现了党的历史上具有深远意义的伟大转折开启了社会主义现代化建设的伟大征程<span class="sim">↔ 720 最近项 1.0</span></li><li><b>D．</b>独创性的理论原则和经验总结丰富和发展了科学社会主义理论<span class="sim">↔ 720 最近项 1.0</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">毛泽东指出当人民推翻了帝国主义封建主义和官僚资本主义的统治之后中国要向哪里去？向资本主义还是向社会主义？事实已经回答了这个问题只有社会主义能够救中国社会主义制度促进了我国生产力的突飞猛进的发展这一点甚至连国外的敌人也不能不承认了社会主义基本制度在中国确立的重大意义包括</p><ul class="options"><li><b>A．</b>极大地促进了我国社会生产力的发展使广大劳动人民真正成为国家的主人</li><li><b>B．</b>进一步改变了世界政治经济格局增强了社会主义的力量</li><li><b>C．</b>实现了党的历史上具有深远意义的伟大转折开启了社会主义现代化建设的伟大征程</li><li><b>D．</b>独创性的理论原则和经验总结丰富和发展了科学社会主义理论</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 107 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q7" data-cls="甲" data-paper="第三套">
+<summary><span class="lesson-code">甲</span>
+<span class="lesson-title">第三套 第11题 ＝ 720题 史纲·第四章中国共产党成立和中国革命新局面 第11题
+<span class="lesson-date">甲 完全同题｜题干 0.98·设问 0.93·选项 4/4·最长公共片段 78 字</span></span>
+<span class="summary-hook">1924年1月中国国民党第一次全国代表大会在广州召开大会通过的宣言对三民主义作出了新的解释新三民主义成为第一次国共合…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">1924年1月中国国民党第一次全国代表大会在广州召开大会通过的宣言对三民主义作出了新的解释新三民主义成为第一次国共合作的政治基础究其原因是由于新三民主义的政治纲领</p><ul class="options"><li><b>A．</b>同中国共产党在民主革命阶段的纲领基本一致<span class="sim">↔ 720 最近项 1.0</span></li><li><b>B．</b>把斗争的矛头直接指向北洋军阀<span class="sim">↔ 720 最近项 1.0</span></li><li><b>C．</b>体现了联俄联共扶助农工三大革命政策<span class="sim">↔ 720 最近项 1.0</span></li><li><b>D．</b>把民主主义概括为平均地权<span class="sim">↔ 720 最近项 1.0</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">1924年1月中国国民党第一次全国代表大会在广州召开大会通过的宣言对三民主义作出了新的解释新三民主义成为第一次国共合作的政治基础究其原因是由于新三民主义的政纲</p><ul class="options"><li><b>A．</b>同中国共产党在民主革命阶段的纲领基本一致</li><li><b>B．</b>把斗争的矛头直接指向北洋军阀</li><li><b>C．</b>体现了联俄联共扶助农工三大革命政策</li><li><b>D．</b>把民主主义概括为平均地权</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 65 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q8" data-cls="甲" data-paper="第三套">
+<summary><span class="lesson-code">甲</span>
+<span class="lesson-title">第三套 第27题 ＝ 720题 史纲·第三章辛亥革命与君主专制制度的终结 第9题
+<span class="lesson-date">甲 完全同题｜题干 0.97·设问 1.00·选项 4/4·最长公共片段 79 字</span></span>
+<span class="summary-hook">1912年3月中华民国临时参议院颁布的中华民国临时约法是中国历史上第一部具有资产阶级共和国宪法性质的法典毛泽东曾称赞…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">1912年3月中华民国临时参议院颁布的中华民国临时约法是中国历史上第一部具有资产阶级共和国宪法性质的法典毛泽东曾称赞它带有革命性民主性其革命性民主性主要体现在</p><ul class="options"><li><b>A．</b>它不承认清政府与列强签订的一切不平等条约<span class="sim">↔ 720 最近项 1.0</span></li><li><b>B．</b>它规定中华民国国民一律平等<span class="sim">↔ 720 最近项 1.0</span></li><li><b>C．</b>它规定中华民国之主权属于国民全体<span class="sim">↔ 720 最近项 1.0</span></li><li><b>D．</b>它以根本大法的形式废除了封建君主专制制度<span class="sim">↔ 720 最近项 1.0</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">1912年3月中华民国临时参议院颁布的中华民国临时约法是中国历史上第一部具有资产阶级共和国宪法性质的法典毛泽东曾称赞它带有革命性民主性其革命性民主性主要体现在</p><ul class="options"><li><b>A．</b>它不承认清政府与列强签订的一切不平等条约</li><li><b>B．</b>它规定中华民国国民一律平等</li><li><b>C．</b>它规定中华民国之主权属于国民全体</li><li><b>D．</b>它以根本大法的形式废除了封建君主专制制度</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 66 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q9" data-cls="甲" data-paper="3套卷二">
+<summary><span class="lesson-code">甲</span>
+<span class="lesson-title">3套卷二 第5题 ＝ 720题 毛中特·第二章新民主主义革命理论 第7题
+<span class="lesson-date">甲 完全同题｜题干 0.97·设问 1.00·选项 4/4·最长公共片段 52 字</span></span>
+<span class="summary-hook">毛泽东在共产党人发刊词中指出为取得新民主主义革命社会主义革命和建设的伟大胜利必须推进的一项伟大的工程是指…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">毛泽东在共产党人发刊词中指出为取得新民主主义革命社会主义革命和建设的伟大胜利必须推进的一项伟大的工程是指</p><ul class="options"><li><b>A．</b>走农村包围城市的道路夺取全国胜利<span class="sim">↔ 720 最近项 1.0</span></li><li><b>B．</b>建立并巩固抗日民族统一战线<span class="sim">↔ 720 最近项 1.0</span></li><li><b>C．</b>建立新民主主义的新国家新社会<span class="sim">↔ 720 最近项 1.0</span></li><li><b>D．</b>建设广大群众性的马克思主义政党<span class="sim">↔ 720 最近项 1.0</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">毛泽东在共产党人发刊词中指出为取得新民主主义革命社会主义革命和建设的伟大胜利必须推进的一项伟大的工程是指</p><ul class="options"><li><b>A．</b>走农村包围城市的道路夺取全国胜利</li><li><b>B．</b>建立并巩固抗日民族统一战线</li><li><b>C．</b>建设广大群众性的马克思主义政党</li><li><b>D．</b>建立新民主主义的新国家新社会</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 38 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q10" data-cls="甲" data-paper="3套卷二">
+<summary><span class="lesson-code">甲</span>
+<span class="lesson-title">3套卷二 第30题 ＝ 720题 思法·第五章遵守道德规范锤炼道德品格 第28题
+<span class="lesson-date">甲 完全同题｜题干 0.97·设问 0.93·选项 3/4·最长公共片段 102 字</span></span>
+<span class="summary-hook">网络生活中的道德要求是人们为了维护正常的网络公共秩序而需要共同遵守的基本道德准则是社会公德规范在网络空间的运用和扩展…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">网络生活中的道德要求是人们为了维护正常的网络公共秩序而需要共同遵守的基本道德准则是社会公德规范在网络空间的运用和扩展每个网民应当坚持文明上网养成健康的上网习惯成为净化网络空间的积极力量网络空间道德建设需要12</p><ul class="options"><li><b>A．</b>尊重他人隐私<span class="sim">↔ 720 最近项 1.0</span></li><li><b>B．</b>抵制谣言传播<span class="sim">↔ 720 最近项 1.0</span></li><li><b>C．</b>维护网络秩序<span class="sim">↔ 720 最近项 1.0</span></li><li><b>D．</b>倡导自由表达<span class="sim">↔ 720 最近项 0.0</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">网络生活中的道德要求是人们为了维护正常的网络公共秩序而需要共同遵守的基本道德准则是社会公德规范在网络空间的运用和扩展每个网民应当坚持文明上网养成健康的上网习惯成为净化网络空间的积极力量网络空间道德建设需要</p><ul class="options"><li><b>A．</b>尊重他人隐私</li><li><b>B．</b>抵制谣言传播</li><li><b>C．</b>维护网络秩序</li><li><b>D．</b>培养平和心态</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 89 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q11" data-cls="甲" data-paper="第五套">
+<summary><span class="lesson-code">甲</span>
+<span class="lesson-title">第五套 第3题 ＝ 720题 马原·第四章资本主义的本质及规律 第6题
+<span class="lesson-date">甲 完全同题｜题干 0.97·设问 0.96·选项 4/4·最长公共片段 53 字</span></span>
+<span class="summary-hook">马克思把商品转换成货币称为商品的惊险的跳跃这个跳跃如果不成功摔坏的不是商品但一定是商品的占有者这是因为只有将商品变为…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">马克思把商品转换成货币称为商品的惊险的跳跃这个跳跃如果不成功摔坏的不是商品但一定是商品的占有者这是因为只有将商品变为货币</p><ul class="options"><li><b>A．</b>货币才能转化为资本<span class="sim">↔ 720 最近项 1.0</span></li><li><b>B．</b>价值才能转化为使用价值<span class="sim">↔ 720 最近项 1.0</span></li><li><b>C．</b>抽象劳动才能转化为具体劳动<span class="sim">↔ 720 最近项 1.0</span></li><li><b>D．</b>私人劳动才能转化为社会劳动<span class="sim">↔ 720 最近项 1.0</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">马克思把商品转换成货币称为商品的惊险的跳跃这个跳跃如果不成功摔坏的不是商品但一定是商品的占有者这是因为只有商品变为货币</p><ul class="options"><li><b>A．</b>货币才能转化为资本</li><li><b>B．</b>价值才能转化为使用价值</li><li><b>C．</b>抽象劳动才能转化为具体劳动</li><li><b>D．</b>私人劳动才能转化为社会劳动</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 40 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q12" data-cls="甲" data-paper="3套卷二">
+<summary><span class="lesson-code">甲</span>
+<span class="lesson-title">3套卷二 第4题 ＝ 720题 马原·第五章资本主义的发展及其趋势 第6题
+<span class="lesson-date">甲 完全同题｜题干 0.96·设问 1.00·选项 4/4·最长公共片段 76 字</span></span>
+<span class="summary-hook">进人21世纪以来随着经济全球化的深人发展新一轮科技革命和产业变革进人空前密集活跃期社会化大生产在世界范围内更大规模更…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">进人21世纪以来随着经济全球化的深人发展新一轮科技革命和产业变革进人空前密集活跃期社会化大生产在世界范围内更大规模更广范围更深层次展开世界格局深度调整资本主义又呈现出一些新变化新特征当代资本主义最突出最鲜明最主要的特征是</p><ul class="options"><li><b>A．</b>科技创新加速资本主义生产方式变化<span class="sim">↔ 720 最近项 1.0</span></li><li><b>B．</b>社会阶级层级结构呈现复杂性多样化<span class="sim">↔ 720 最近项 1.0</span></li><li><b>C．</b>国际金融资本的垄断<span class="sim">↔ 720 最近项 1.0</span></li><li><b>D．</b>发达资本主义国家在世界范围内推行霸权主义和强权政治<span class="sim">↔ 720 最近项 0.86</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">进入21世纪以来随着经济全球化的深入发展新一轮科技革命和产业变革进入空前密集活跃期社会化大生产在世界范围内更大规模更广范围更深层次展开世界格局深度调整资本主义又呈现出一些新变化新特征当代资本主义最突出最鲜明最主要的特征是</p><ul class="options"><li><b>A．</b>科技创新加速资本主义生产方式变化</li><li><b>B．</b>国际金融资本的垄断</li><li><b>C．</b>社会阶级层级结构呈现复杂性多样化</li><li><b>D．</b>发达资本主义国家推行霸权主义和强权政治</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 67 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q13" data-cls="甲" data-paper="第三套">
+<summary><span class="lesson-code">甲</span>
+<span class="lesson-title">第三套 第22题 ＝ 720题 毛中特·第四章社会主义建设道路初步探索的理论成果 第13题
+<span class="lesson-date">甲 完全同题｜题干 0.88·设问 0.29·选项 3/4·最长公共片段 94 字</span></span>
+<span class="summary-hook">在社会主义建设时期党领导人民探索社会主义建设道路历经艰辛和曲折在理论和实践上取得了一系列重要成果这些成果对于巩固我国…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">在社会主义建设时期党领导人民探索社会主义建设道路历经艰辛和曲折在理论和实践上取得了一系列重要成果这些成果对于巩固我国社会主义制度开创和发展中国特色社会主义促进世界社会主义的发展具有重要意义党领导人民探索社会主义建设道路的重要意义体现在</p><ul class="options"><li><b>A．</b>巩固和发展了社会主义制度<span class="sim">↔ 720 最近项 1.0</span></li><li><b>B．</b>完全摆脱了苏联模式的影响<span class="sim">↔ 720 最近项 1.0</span></li><li><b>C．</b>为开创中国特色社会主义提供了宝贵经验理论准备物质基础<span class="sim">↔ 720 最近项 1.0</span></li><li><b>D．</b>丰富了科学社会主义的理论和实践<span class="sim">↔ 720 最近项 0.26</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">在社会主义建设时期党领导人民探索社会主义建设道路历经艰辛和曲折在理论和实践上取得了一系列重要成果这些成果对于巩固我国社会主义制度开创和发展中国特色社会主义促进世界社会主义的发展具有重要意义这体现在</p><ul class="options"><li><b>A．</b>巩固和发展了社会主义制度</li><li><b>B．</b>为开创中国特色社会主义提供了宝贵经验理论准备物质基础</li><li><b>C．</b>丰富了科学社会主义的理论和实践</li><li><b>D．</b>完成了马克思主义与中国实际相结合</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 81 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q14" data-cls="甲" data-paper="第六套">
+<summary><span class="lesson-code">甲</span>
+<span class="lesson-title">第六套 第12题 ＝ 720题 史纲·第八章中华人民共和国的成立与中国社会主义 第10题
+<span class="lesson-date">甲 完全同题｜题干 0.84·设问 1.00·选项 4/4·最长公共片段 49 字</span></span>
+<span class="summary-hook">毛泽东曾在论十大关系中指出最近苏联方面暴露了他们在建设社会主义过程中的一些缺点和错误他们走过的弯路你还想走过去我们就…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">毛泽东曾在论十大关系中指出最近苏联方面暴露了他们在建设社会主义过程中的一些缺点和错误他们走过的弯路你还想走过去我们就是鉴于他们的经验教训少走了一些弯路现在当然更要引以为戒这表明以毛泽东为主要代表的中共党员</p><ul class="options"><li><b>A．</b>实现了马克思主义同中国实际的第二次结合<span class="sim">↔ 720 最近项 1.0</span></li><li><b>B．</b>开始探索自己的社会主义建设道路<span class="sim">↔ 720 最近项 1.0</span></li><li><b>C．</b>开始找到自己的一条适合中国的路线<span class="sim">↔ 720 最近项 0.9</span></li><li><b>D．</b>已经突破社会主义苏联模式的束缚<span class="sim">↔ 720 最近项 1.0</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">1956年45月毛泽东先后在中共中央政治局扩大会议和最高国务会议上作的论十大关系报告中指出最近苏联方面暴露了他们在建设社会主义过程中的一些缺点和错误他们走过的弯路你还想走？过去我们就是鉴于他们的经验教训少走了一些弯路现在当然更要引以为戒这表明以毛泽东为主要代表的中共党员</p><ul class="options"><li><b>A．</b>实现了马克思主义同中国实际的第二次结合</li><li><b>B．</b>开始探索自己的社会主义建设道路</li><li><b>C．</b>开始找到一条适合中国的路线</li><li><b>D．</b>已经突破社会主义苏联模式的束缚</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 66 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q15" data-cls="甲" data-paper="第二套">
+<summary><span class="lesson-code">甲</span>
+<span class="lesson-title">第二套 第5题 ＝ 720题 毛中特·第四章社会主义建设道路初步探索的理论成果 第4题
+<span class="lesson-date">甲 完全同题｜题干 0.84·设问 0.64·选项 4/4·最长公共片段 53 字</span></span>
+<span class="summary-hook">新中国的工业化是在苏联的影响下起步的走中国工业化道路是中国共产党初步探索我国社会主义建设道路的一个重要思想毛泽东在论…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">新中国的工业化是在苏联的影响下起步的走中国工业化道路是中国共产党初步探索我国社会主义建设道路的一个重要思想毛泽东在论十大关系中论述的第一大关系就是当时所讲的工业化道路问题这一问题主要是指</p><ul class="options"><li><b>A．</b>经济建设和国防建设的关系问题<span class="sim">↔ 720 最近项 1.0</span></li><li><b>B．</b>中央和地方的关系问题<span class="sim">↔ 720 最近项 1.0</span></li><li><b>C．</b>沿海工业和内地工业的关系问题<span class="sim">↔ 720 最近项 1.0</span></li><li><b>D．</b>重工业轻工业和农业的发展关系问题<span class="sim">↔ 720 最近项 1.0</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">新中国的工业化是在苏联的影响下起步的走中国工业化道路是中国共产党初步探索我国社会主义建设道路的一个重要思想当时所讲的工业化道路问题主要是指</p><ul class="options"><li><b>A．</b>经济建设和国防建设的关系问题</li><li><b>B．</b>中央和地方的关系问题</li><li><b>C．</b>沿海工业和内地工业的关系问题</li><li><b>D．</b>重工业轻工业和农业的发展关系问题</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 40 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q16" data-cls="甲" data-paper="3套卷一">
+<summary><span class="lesson-code">甲</span>
+<span class="lesson-title">3套卷一 第20题 ＝ 720题 马原·第五章资本主义的发展及其趋势 第6题
+<span class="lesson-date">甲 完全同题｜题干 0.83·设问 0.39·选项 3/4·最长公共片段 57 字</span></span>
+<span class="summary-hook">进人21世纪以来随着经济全球化的深人发展新一轮科技革命和产业变革进人空前密集活跃期社会化大生产在世界范围内更大规模更…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">进人21世纪以来随着经济全球化的深人发展新一轮科技革命和产业变革进人空前密集活跃期社会化大生产在世界范围内更大规模更广范围更深层次展开世界格局深度调整资本主义又呈现出一些新变化新特征这些新变化新特征表现为</p><ul class="options"><li><b>A．</b>科技创新加速资本主义生产方式变化<span class="sim">↔ 720 最近项 1.0</span></li><li><b>B．</b>社会阶级层级结构呈现复杂性多样化<span class="sim">↔ 720 最近项 1.0</span></li><li><b>C．</b>国际金融资本的垄断<span class="sim">↔ 720 最近项 1.0</span></li><li><b>D．</b>西方国家普遍走上强化市场调节弱化政府干预的道路<span class="sim">↔ 720 最近项 0.23</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">进入21世纪以来随着经济全球化的深入发展新一轮科技革命和产业变革进入空前密集活跃期社会化大生产在世界范围内更大规模更广范围更深层次展开世界格局深度调整资本主义又呈现出一些新变化新特征当代资本主义最突出最鲜明最主要的特征是</p><ul class="options"><li><b>A．</b>科技创新加速资本主义生产方式变化</li><li><b>B．</b>国际金融资本的垄断</li><li><b>C．</b>社会阶级层级结构呈现复杂性多样化</li><li><b>D．</b>发达资本主义国家推行霸权主义和强权政治</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 48 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q17" data-cls="乙" data-paper="3套卷一">
+<summary><span class="lesson-code">乙</span>
+<span class="lesson-title">3套卷一 第10题 ＝ 720题 史纲·第五章中国革命的新道路 第22题
+<span class="lesson-date">乙 同题改编｜题干 0.98·设问 1.00·选项 0/4·最长公共片段 109 字</span></span>
+<span class="summary-hook">1935年1月7日红军攻克黔北重镇遵义1月15日至17日中共中央在此召开政治局扩大会议即遵义会议遵义会议是党的历史上…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">1935年1月7日红军攻克黔北重镇遵义1月15日至17日中共中央在此召开政治局扩大会议即遵义会议遵义会议是党的历史上一个生死攸关的转折点开启了中国共产党独立自主解决中国革命实际问题的新阶段这是由于遵义会议的鲜明特点是</p><ul class="options"><li><b>A．</b>在思想理论上武装了全党从思想上政治上和组织上为全民族抗日战争奠定了坚实基础<span class="sim">↔ 720 最近项 0.46</span></li><li><b>B．</b>批评了党内长期存在的左倾冒险主义关门主义错误倾向使中国共产党在新的历史时期即将到来时掌握了政治主动权<span class="sim">↔ 720 最近项 0.62</span></li><li><b>C．</b>创造性的解决了如何保持党的无产阶级先锋队性质和建设党领导的新型人民军队的重大问题<span class="sim">↔ 720 最近项 0.71</span></li><li><b>D．</b>坚持真理修正错误确立党中央的正确领导创造性地制定和实施符合中国革命特点的战略策略<span class="sim">↔ 720 最近项 0.83</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">1935年1月7日红军攻克黔北重镇遵义1月15日至17日中共中央在此召开政治局扩大会议即遵义会议遵义会议是党的历史上一个生死攸关的转折点开启了中国共产党独立自主解决中国革命实际问题的新阶段这是由于遵义会议的鲜明特点是</p><ul class="options"><li><b>A．</b>在思想理论上武装了全党</li><li><b>B．</b>坚持真理修正错误确立党中央的正确领导</li><li><b>C．</b>创造性地制定和实施符合中国革命特点的战略策略</li><li><b>D．</b>从思想上政治上和组织上为全民族抗日战争奠定了坚实基础</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 96 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q18" data-cls="乙" data-paper="第六套">
+<summary><span class="lesson-code">乙</span>
+<span class="lesson-title">第六套 第22题 ＝ 720题 毛中特·第三章社会主义改造理论 第8题
+<span class="lesson-date">乙 同题改编｜题干 0.97·设问 1.00·选项 2/4·最长公共片段 74 字</span></span>
+<span class="summary-hook">1952年底党中央在酝酿过渡时期总路线时毛泽东把实现向社会主义转变的设想由建国之初的先搞工业化建设再一举过渡改变为建…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">1952年底党中央在酝酿过渡时期总路线时毛泽东把实现向社会主义转变的设想由建国之初的先搞工业化建设再一举过渡改变为建设和改造同时并举逐步过渡这一改变原因和条件是</p><ul class="options"><li><b>A．</b>国内阶级关系主要矛盾的变化<span class="sim">↔ 720 最近项 0.24</span></li><li><b>B．</b>国民经济的恢复初步发展及中国社会经济成分的变化43<span class="sim">↔ 720 最近项 0.44</span></li><li><b>C．</b>我国工业化建设取得了重大成就<span class="sim">↔ 720 最近项 1.0</span></li><li><b>D．</b>民主革命的遗留任务已经完成<span class="sim">↔ 720 最近项 1.0</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">1952年党中央在酝酿过渡时期总路线时毛泽东把实现向社会主义转变的设想由建国之初的先搞工业化建设再一举过渡改变为建设和改造同时并举逐步过渡这一改变原因和条件是</p><ul class="options"><li><b>A．</b>我国社会主义经济因素的不断增长和对资本主义经济的限制</li><li><b>B．</b>为了确定我国工业化建设的社会主义方向</li><li><b>C．</b>我国工业化建设取得了重大成就</li><li><b>D．</b>民主革命的遗留任务已经完成</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 61 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q19" data-cls="乙" data-paper="3套卷一">
+<summary><span class="lesson-code">乙</span>
+<span class="lesson-title">3套卷一 第11题 ＝ 720题 史纲·第六章中华民族的抗日战争 第11题
+<span class="lesson-date">乙 同题改编｜题干 0.96·设问 0.82·选项 0/4·最长公共片段 87 字</span></span>
+<span class="summary-hook">1941年5月毛泽东作了改造我们的学习的报告整风运动首先在党的高级干部中进行1942年2月毛泽东先后作了整顿党的作风…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">1941年5月毛泽东作了改造我们的学习的报告整风运动首先在党的高级干部中进行1942年2月毛泽东先后作了整顿党的作风和反对党八股的讲演整风运动在全党范围普遍展开整风运动的重点是</p><ul class="options"><li><b>A．</b>宗派主义<span class="sim">↔ 720 最近项 0.53</span></li><li><b>B．</b>党八股<span class="sim">↔ 720 最近项 0.27</span></li><li><b>C．</b>教条主义<span class="sim">↔ 720 最近项 0.53</span></li><li><b>D．</b>官僚主义<span class="sim">↔ 720 最近项 0.46</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">1941年5月毛泽东作了改造我们的学习的报告整风运动首先在党的高级干部中进行1942年2月毛泽东先后作了整顿党的作风和反对党八股的讲演整风运动在全党范围普遍展开整风运动最主要的任务是</p><ul class="options"><li><b>A．</b>反对宗派主义以整顿党风</li><li><b>B．</b>反对主观主义以整顿学风</li><li><b>C．</b>反对官僚主义以整顿党风</li><li><b>D．</b>反对党八股以整顿文风</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 74 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q20" data-cls="乙" data-paper="第四套">
+<summary><span class="lesson-code">乙</span>
+<span class="lesson-title">第四套 第22题 ＝ 720题 毛中特·第三章社会主义改造理论 第14题
+<span class="lesson-date">乙 同题改编｜题干 0.93·设问 0.64·选项 0/4·最长公共片段 70 字</span></span>
+<span class="summary-hook">毛泽东指出当人民推翻了帝国主义封建主义和官僚资本主义的统治之后中国要向哪里去向资本主义还是向社会主义事实已经回答了这…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">毛泽东指出当人民推翻了帝国主义封建主义和官僚资本主义的统治之后中国要向哪里去向资本主义还是向社会主义事实已经回答了这个问题只有社会主义能够救中国社会主义制度促进了我国生产力的突飞猛进的发展这一点甚至连国外的敌人也不能不承认了社会主义基本制度的确立</p><ul class="options"><li><b>A．</b>为当代中国一切发展进步奠定了制度基础<span class="sim">↔ 720 最近项 0.67</span></li><li><b>B．</b>完成了中国由落后的农业国向先进的工业国的转变<span class="sim">↔ 720 最近项 0.25</span></li><li><b>C．</b>极大地促进了我国社会生产力的发展<span class="sim">↔ 720 最近项 0.17</span></li><li><b>D．</b>实现了中华民族由近代不断衰落到根本扭转命运持续走向繁荣富强的伟大飞跃<span class="sim">↔ 720 最近项 0.14</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">毛泽东指出当人民推翻了帝国主义封建主义和官僚资本主义的统治之后中国要向哪里去？向资本主义还是向社会主义？事实已经回答了这个问题只有社会主义能够救中国社会主义制度促进了我国生产力的突飞猛进的发展这一点甚至连国外的敌人也不能不承认了社会主义基本制度在中国确立的重大意义包括</p><ul class="options"><li><b>A．</b>极大地促进了我国社会生产力的发展使广大劳动人民真正成为国家的主人</li><li><b>B．</b>进一步改变了世界政治经济格局增强了社会主义的力量</li><li><b>C．</b>实现了党的历史上具有深远意义的伟大转折开启了社会主义现代化建设的伟大征程</li><li><b>D．</b>独创性的理论原则和经验总结丰富和发展了科学社会主义理论</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 68 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q21" data-cls="乙" data-paper="第四套">
+<summary><span class="lesson-code">乙</span>
+<span class="lesson-title">第四套 第31题 ＝ 720题 思法·第六章学习法治思想提升法治素养 第8题
+<span class="lesson-date">乙 同题改编｜题干 0.81·设问 0.61·选项 0/4·最长公共片段 58 字</span></span>
+<span class="summary-hook">习近平总书记强调全面推进依法治国涉及很多方面在实际工作中必须有一个总揽全局牵引各方的总抓手这个总抓手就是建设中国特色…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">习近平总书记强调全面推进依法治国涉及很多方面在实际工作中必须有一个总揽全局牵引各方的总抓手这个总抓手就是建设中国特色社会主义法治体系与法律体系不同法治体系是</p><ul class="options"><li><b>A．</b>法律制定和法治实施监督保障各方面的有机统一<span class="sim">↔ 720 最近项 0.2</span></li><li><b>B．</b>立法执法司法守法各环节的有机统一<span class="sim">↔ 720 最近项 0.3</span></li><li><b>C．</b>国家治理体系的骨干工程<span class="sim">↔ 720 最近项 0.3</span></li><li><b>D．</b>我国法治同西方资本主义国家法治最大的区别<span class="sim">↔ 720 最近项 0.3</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">全面推进依法治国涉及很多方面在实际工作中必须有一个总揽全局牵引各方的总抓手这个总抓手就是建设中国特色社会主义法治体系中国特色社会主义法治体系的重点是</p><ul class="options"><li><b>A．</b>完备的法律规范体系</li><li><b>B．</b>高效的法治实施体系</li><li><b>C．</b>严密的法治监督体系</li><li><b>D．</b>有力的法治保障体系</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 45 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q22" data-cls="乙" data-paper="第三套">
+<summary><span class="lesson-code">乙</span>
+<span class="lesson-title">第三套 第3题 ＝ 720题 马原·第四章资本主义的本质及规律 第27题
+<span class="lesson-date">乙 同题改编｜题干 0.79·设问 0.82·选项 4/4·最长公共片段 36 字</span></span>
+<span class="summary-hook">马克思指出资本来到世间从头到脚每个毛孔都滴着血和肮脏的东西所谓资本原始积累只不过是生产者和生产资料分离的历史过程这个…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">马克思指出资本来到世间从头到脚每个毛孔都滴着血和肮脏的东西所谓资本原始积累只不过是生产者和生产资料分离的历史过程这个过程所以表现为原始的因为它是形成资本及与之相适应的生产方式的前史资本原始积累过程的基础是</p><ul class="options"><li><b>A．</b>用暴力手段剥夺农民土地<span class="sim">↔ 720 最近项 1.0</span></li><li><b>B．</b>用剥削手段榨取剩余价值<span class="sim">↔ 720 最近项 1.0</span></li><li><b>C．</b>用野蛮手段进行殖民掠夺<span class="sim">↔ 720 最近项 1.0</span></li><li><b>D．</b>用资本手段获取市场暴利<span class="sim">↔ 720 最近项 1.0</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">马克思指出所谓资本原始积累只不过是生产者和生产资料分离的历史过程这个过程之所以表现为原始的因为它是形成资本及与之相适应的生产方式的前史资本原始积累的主要途径有</p><ul class="options"><li><b>A．</b>用暴力手段剥夺农民土地</li><li><b>B．</b>用剥削手段榨取剩余价值</li><li><b>C．</b>用野蛮手段进行殖民掠夺</li><li><b>D．</b>用资本手段获取市场暴利</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 41 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q23" data-cls="乙" data-paper="第二套">
+<summary><span class="lesson-code">乙</span>
+<span class="lesson-title">第二套 第21题 ＝ 720题 马原·第六章社会主义的发展及其规律 第11题
+<span class="lesson-date">乙 同题改编｜题干 0.77·设问 0.07·选项 3/4·最长公共片段 103 字</span></span>
+<span class="summary-hook">马克思恩格斯创立了科学社会主义理论并提出了正确对待科学社会主义基本原则的科学态度他们在共产党宣言1872年德文版序言…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">马克思恩格斯创立了科学社会主义理论并提出了正确对待科学社会主义基本原则的科学态度他们在共产党宣言1872年德文版序言中指出不管最近25年来的情况发生了多大的变化这个宣言中所阐述的一般原理整个说来直到现在还是完全正确的这些原理的实际运用正如宣言中所说的随时随地都要以当时的历史条件为转移这一论述为无产阶级政党正确认识和对待科学社会主义基本原则提供了科学的方法指导具体体现为11</p><ul class="options"><li><b>A．</b>必须始终坚持科学社会主义基本原则反对任何背离科学社会主义基本原则的错误倾向<span class="sim">↔ 720 最近项 1.0</span></li><li><b>B．</b>要善于把科学社会主义基本原则与本国实际相结合创造性地回答和解决社会主义革命建设改革中的重大问题<span class="sim">↔ 720 最近项 0.67</span></li><li><b>C．</b>紧跟时代和实践的发展在不断总结新鲜经验中进一步丰富和发展科学社会主义基本原则<span class="sim">↔ 720 最近项 0.91</span></li><li><b>D．</b>必须不断修正科学社会主义原则努力向人们提供解决特殊问题的具体方案<span class="sim">↔ 720 最近项 1.0</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">马克思恩格斯创立了科学社会主义理论并提出了正确对待科学社会主义基本原则的科学态度他们一方面强调这些原则的正确性另一方面又反对将这些原则当作一成不变的教条他们在共产党宣言1872年德文版序言中指出不管最近25年来的情况发生了多大的变化这个宣言中所阐述的一般原理整个说来直到现在还是完全正确的这些原理的实际运用正如宣言中所说的随时随地都要以当时的历史条件为转移这启示我们</p><ul class="options"><li><b>A．</b>必须始终坚持科学社会主义基本原则反对任何背离科学社会主义基本原则的错误倾向</li><li><b>B．</b>坚持科学社会主义基本原则不能动摇它提供了解决特殊问题的具体方案</li><li><b>C．</b>要善于把科学社会主义基本原则与本国实际和时代特征相结合创造性地回答和解决革命建设改革中的重大问题</li><li><b>D．</b>紧跟时代和实践的发展在不断总结新鲜经验中进一步丰富和发展科学社会主义基本原则</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 119 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q24" data-cls="乙" data-paper="第一套">
+<summary><span class="lesson-code">乙</span>
+<span class="lesson-title">第一套 第20题 ＝ 720题 马原·第四章资本主义的本质及规律 第32题
+<span class="lesson-date">乙 同题改编｜题干 0.75·设问 0.36·选项 3/4·最长公共片段 67 字</span></span>
+<span class="summary-hook">把剩余价值转化为资本就是资本积累马克思形容资本积累在一极是财富的积累同时在另一极即在把自己的产品作为资本来生产的阶级…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">把剩余价值转化为资本就是资本积累马克思形容资本积累在一极是财富的积累同时在另一极即在把自己的产品作为资本来生产的阶级方面是贫困劳动折磨受奴役无知粗野和道德堕落的积累马克思关于资本积累的学说是剩余价值理论的重要组成部分这一理论</p><ul class="options"><li><b>A．</b>揭露了资本主义制度下贫富两极分化的原因<span class="sim">↔ 720 最近项 0.07</span></li><li><b>B．</b>揭示了资本主义失业现象的本质<span class="sim">↔ 720 最近项 1.0</span></li><li><b>C．</b>深刻地阐明了资本主义制度必然灭亡的历史命运<span class="sim">↔ 720 最近项 1.0</span></li><li><b>D．</b>揭示了私有制条件下商品经济的基本矛盾<span class="sim">↔ 720 最近项 0.95</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">马克思在资本论第一卷论述道在一极是财富的积累同时在另一极即在把自己的产品作为资本来生产的阶级方面是贫困劳动折磨受奴役无知粗野和道德堕落的积累马克思关于资本积累的理论</p><ul class="options"><li><b>A．</b>是剩余价值学说的重要组成部分</li><li><b>B．</b>揭露了资本主义制度下贫富两极分化的原因</li><li><b>C．</b>揭示了资本主义失业现象的本质</li><li><b>D．</b>深刻地阐明了资本主义制度必然走向灭亡的历史命运</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 54 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q25" data-cls="乙" data-paper="第四套">
+<summary><span class="lesson-code">乙</span>
+<span class="lesson-title">第四套 第20题 ＝ 720题 马原·第五章资本主义的发展及其趋势 第19题
+<span class="lesson-date">乙 同题改编｜题干 0.58·设问 0.50·选项 3/4·最长公共片段 29 字</span></span>
+<span class="summary-hook">信息数字技术人工智能技术生物技术空间工程技术新材料和新能源在内的新一轮科技革命极大地提高了劳动生产率开辟了生产力发展…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">信息数字技术人工智能技术生物技术空间工程技术新材料和新能源在内的新一轮科技革命极大地提高了劳动生产率开辟了生产力发展新空间也推动资本主义生产方式出现了新的变化这表现在</p><ul class="options"><li><b>A．</b>推动资本积累方式从国际金融垄断资本积累向产业资本积累转变<span class="sim">↔ 720 最近项 1.0</span></li><li><b>B．</b>形成了以去工业化经济虚拟化金融化为主要特征的产业结构模式<span class="sim">↔ 720 最近项 1.0</span></li><li><b>C．</b>以数据的生产管理服务等在线化和智能化为主的数字劳动在生产中的地位愈加突出<span class="sim">↔ 720 最近项 0.59</span></li><li><b>D．</b>数字经济智能经济共享经济已成为经济发展的新形态<span class="sim">↔ 720 最近项 0.88</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">新一轮科技革命极大地提高了劳动生产率开辟了生产力发展新空间推动资本主义生产方式向数字化智能化方向发展其具体表现是</p><ul class="options"><li><b>A．</b>推动资本积累方式从国际金融垄断资本积累向产业资本积累转变</li><li><b>B．</b>形成了以去工业化经济虚拟化金融化为主要特征的产业结构模式</li><li><b>C．</b>数字劳动在生产中的地位愈加突出</li><li><b>D．</b>数字经济智能经济共享经济成为近年来全球经济发展的新形态</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 16 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q26" data-cls="乙" data-paper="3套卷一">
+<summary><span class="lesson-code">乙</span>
+<span class="lesson-title">3套卷一 第22题 ＝ 720题 毛中特·第四章社会主义建设道路初步探索的理论成果 第12题
+<span class="lesson-date">乙 同题改编｜题干 0.52·设问 0.29·选项 4/4·最长公共片段 43 字</span></span>
+<span class="summary-hook">实现工业化是中国近代以来历史发展的必然要求也是国家独立和富强的必要条件新中国成立初期我化道路必须…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">实现工业化是中国近代以来历史发展的必然要求也是国家独立和富强的必要条件新中国成立初期我化道路必须</p><ul class="options"><li><b>A．</b>采取正确的经济建设方针<span class="sim">↔ 720 最近项 1.0</span></li><li><b>B．</b>保护民族工商业<span class="sim">↔ 720 最近项 1.0</span></li><li><b>C．</b>调整和完善所有制结构<span class="sim">↔ 720 最近项 1.0</span></li><li><b>D．</b>积极探索适合我国情况的经济体制和运行机制13<span class="sim">↔ 720 最近项 0.95</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">实现工业化是中国近代以来历史发展的必然要求也是国家独立和富强的必要条件新中国成立初期我国曾一度过多强调重工业和基础设施的发展影响了农业和轻工业的发展造成了一定程度的比例失调这就促使毛泽东和党的其他领导人思考如何走出一条适合中国国情的工业化道路的问题走中国工业化道路必须</p><ul class="options"><li><b>A．</b>采取正确的经济建设方针</li><li><b>B．</b>保护民族工商业</li><li><b>C．</b>调整和完善所有制结构</li><li><b>D．</b>积极探索适合我国情况的经济体制和运行机制</li></ul></div>
+</div><p class="source-note">这道题在 <b>2026 版《仿真思维训练 720 题》</b>里也已经存在（14 字窗口命中 30 处）——三本书共用同一套题池。</p></div></details>
+<details class="lesson" id="q27" data-cls="乙" data-paper="第六套">
+<summary><span class="lesson-code">乙</span>
+<span class="lesson-title">第六套 第26题 ＝ 720题 新思想·第七章社会主义现代化建设的教育、科技、人才战略 第9题
+<span class="lesson-date">乙 同题改编｜题干 0.49·设问 0.43·选项 4/4·最长公共片段 51 字</span></span>
+<span class="summary-hook">习近平总书记强调人工智能作为引领新一轮科技革命和产业变革的战略性技术深刻改变人类生产生活方式党的二十届三中全会明确将…</span></summary>
+<div class="lesson-body"><div class="pair-grid">
+<div class="pair-col"><h4>2026 卷原文</h4><p class="stem">习近平总书记强调人工智能作为引领新一轮科技革命和产业变革的战略性技术深刻改变人类生产生活方式党的二十届三中全会明确将人工智能作为战略性产业推动实现各行业的数智化转型为经济高质量发展注入新动力国务院日前印发关于深入实施人工智能+行动的意见从国家层面对各行业各领域人工智能应用发展提出指导意见明确时间表路线图深入实施人工智能+行动</p><ul class="options"><li><b>A．</b>是抢抓新一轮科技革命和产业变革机遇的战略选择<span class="sim">↔ 720 最近项 1.0</span></li><li><b>B．</b>是培育发展新质生产力的内在要求<span class="sim">↔ 720 最近项 1.0</span></li><li><b>C．</b>是满足人民美好生活需要的重要途径<span class="sim">↔ 720 最近项 1.0</span></li><li><b>D．</b>是助力全球平等参与智能化发展进程的积极举措<span class="sim">↔ 720 最近项 1.0</span></li></ul></div>
+<div class="pair-col alt"><h4>2027 版 720 题</h4><p class="stem">习近平总书记强调人工智能作为引领新一轮科技革命和产业变革的战略性技术深刻改变人类生产生活方式党的二十届四中全会明确全面实施人工智能+行动以人工智能引领科研范式变革加强人工智能同产业发展文化建设民生保障社会治理相结合抢占人工智能产业应用制高点全方位赋能千行百业深入实施人工智能+行动</p><ul class="options"><li><b>A．</b>是抢抓新一轮科技革命和产业变革机遇的战略选择</li><li><b>B．</b>是培育发展新质生产力的内在要求</li><li><b>C．</b>是满足人民美好生活需要的重要途径</li><li><b>D．</b>是助力全球平等参与智能化发展进程的积极举措</li></ul></div>
+</div><p class="source-note">这道题在 2026 版《仿真思维训练 720 题》里<b>找不到</b>，是 2027 版新收进来的。</p></div></details>
+<div class="empty" id="readerEmpty" hidden>当前筛选下没有可展开的题对。</div>
+</div></section>
+
+<section id="chain"><div class="wrap">
+<h2>这些重复是从哪来的：三本书共用一个题池</h2>
+<p class="intro">把上面 27 组甲/乙类重复题再拿去和 <b>2026 版《仿真思维训练 720 题》</b>（同一作者、2025 年 7 月出的旧版）比对，25 组在旧版 720 题里就已经存在，而且多数连章节和题号都没变。</p>
+<div class="callout"><p>所以真实链条不是"2027 版 720 题抄了 2026 冲刺卷"，而是<b>同一套题池同时供给《仿真思维训练 720 题》《冲刺 6 套卷》《考前冲刺 3 套卷》三本书</b>，2027 版 720 题只是把这个池子重新装订了一遍。</p></div>
+<div class="compare-panel"><h3>顺手把两版 720 题整本对照了一下</h3>
+<div class="table-scroll"><table><thead><tr><th>对比</th><th>结果</th></tr></thead><tbody>
+<tr><td>2027 版 776 题中，在 2026 版已有同题的</td><td class="number"><b>656 题（84%）</b></td></tr>
+<tr><td>其中章节和题号都完全没变的</td><td class="number">650 题</td></tr>
+<tr><td>2026 版 776 题中，2027 版已删除/更换的</td><td class="number">119 题（16%）</td></tr>
+<tr><td>2027 版真正的新题</td><td class="number">120 题（16%）</td></tr>
+</tbody></table></div>
+<p class="source-note">2027 版新增的 120 题集中在时政接口强的章节（下表），材料里能直接看到"2026 年全国两会""十五五规划纲要""党的二十届四中全会""2026 年 1 月 20 日省部级主要领导干部专题研讨班"这类 2025 年 10 月之后的新提法——<b>这部分才是 2027 版相对旧版的实际增量。</b></p>
+<h3>2027 版新题的章节分布（前列）</h3>
+<div class="table-scroll"><table><thead><tr><th>章节</th><th>新题数</th></tr></thead><tbody><tr><td>第六章推动高质量发展</td><td class="number">15</td></tr><tr><td>第一章世界的物质性及发展规律</td><td class="number">12</td></tr><tr><td>第二章实践与认识及其发展规律</td><td class="number">9</td></tr><tr><td>第十二章建设社会主义生态文明</td><td class="number">8</td></tr><tr><td>第十六章中国特色大国外交和推动构建人类命运共同体</td><td class="number">7</td></tr><tr><td>第三章人类社会及其发展规律</td><td class="number">6</td></tr><tr><td>第五章全面深化改革开放</td><td class="number">6</td></tr></tbody></table></div>
+<h3>720 题里被 2026 卷搬得最多的章节</h3>
+<div class="table-scroll"><table><thead><tr><th>720题章节</th><th>甲/乙组数</th></tr></thead><tbody><tr><td>马原·第五章资本主义的发展及其趋势</td><td class="number">4</td></tr><tr><td>毛中特·第三章社会主义改造理论</td><td class="number">3</td></tr><tr><td>马原·第四章资本主义的本质及规律</td><td class="number">3</td></tr><tr><td>毛中特·第四章社会主义建设道路初步探索的理论成果</td><td class="number">3</td></tr><tr><td>史纲·第四章中国共产党成立和中国革命新局面</td><td class="number">2</td></tr><tr><td>思法·第五章遵守道德规范锤炼道德品格</td><td class="number">2</td></tr><tr><td>马原·第六章社会主义的发展及其规律</td><td class="number">2</td></tr><tr><td>新思想·第六章推动高质量发展</td><td class="number">1</td></tr></tbody></table></div>
+</div></div></section>
+
+<section id="advice"><div class="wrap">
+<h2>怎么用这份对照</h2>
+<div class="routes">
+<div class="route"><h3>已刷过 2026 卷</h3><p>甲、乙两类共 27 题在 720 题里可直接跳过或只做快速验证，把时间留给没见过的题。</p></div>
+<div class="route"><h3>两版 720 题都有</h3><p>不必两本都刷。两本 84% 是同一批题、同一批答案，只刷 2027 版，再把那 120 道新题挑出来重点做。</p></div>
+<div class="route"><h3>还没做 2026 卷</h3><p>不用为"避开重复"调整顺序。720 题里只有约 3% 是 2026 卷老题，且多是高频考点，两边各做一遍是自然的二次巩固。</p></div>
+</div>
+<div class="callout"><p><b>对"全新创作"这类宣传打折看待。</b>同一作者三本书之间稳定互相复用（本次实测 16 组完全同题、11 组同题改编），后续 2027 的 6+3 套卷大概率还会从这批题池出题。不必为"两边都刷到"焦虑，也不要把"押到原题"当成复习质量的证据。</p></div>
+<p class="source-note">分析题（34–38）不在本次对照的有效范围内：六套卷/三套卷的分析题是整段时政材料，720 题本身是纯选择题题库，没有可比性。</p>
+</div></section>
+
+<section id="sources"><div class="wrap">
+<h2>口径与来源</h2>
+<div class="method-panel">
+<details open><summary>比对怎么做的</summary><div class="prose"><ul>
+<li>2027 版 720 题试题册、2026《冲刺模拟 6 套卷》用已有 MD 文本；《考前冲刺 3 套卷》一/二/三原文件是扫描件（无文字层），本次识别 24 页后逐题拆分。</li>
+<li>题号切分采用"顺序锚定＋容错跳号"：从 1 开始找下一个题号标记，允许有限跳号，避免把年份"2025."误判为题号。</li>
+<li>选项定位从右往左找 D→C→B→A，再切干与项；标点只在切分之后才删除，否则"A．"会被抹平导致选项丢失。</li>
+<li>相似度为去标点空格后的字符级序列比对；候选先经 14 字连续片段索引召回。</li></ul></div></details>
+<details><summary>已识别题量</summary><div class="prose"><ul>
+<li>2027 版 720 题：776 题（含两个"导论"；模块三第九章原书注明"本章内容一般在思想道德与法治课中设题，这里不再重复编题"），比书名标称的 720 多，属原书题量。</li>
+<li>六套卷：226 题（应有 228，第四套缺 9、10 题）；三套卷：101 题（应有 114）。</li></ul></div></details>
+<details><summary>局限与误差</summary><div class="prose"><ul>
+<li>三套卷识别存在少量字符错误（如"进入"识别为"进人"）和 13 处题号行整行漏识；漏识内容仍并入相邻题块参与比对，不影响命中，但个别相似度会被低估。</li>
+<li>另做了一次反向校验：改用不要求连续 14 字相同的三元组包含度（≥0.45）重扫，只多找出 1 组（3套卷二 第10题 ↔ 720题 史纲·第一章 第5题，题干 0.62、选项零重合），说明改写型重复基本没有漏网。</li>
+<li>类别阈值（0.80 / 0.62 / 40 字）为人为分档，甲乙、乙丙之间存在灰带。</li></ul></div></details>
+
+</div></div></section>
+</main>
+
+<footer class="footer"><div class="wrap">观澜丨考研政治资料对照 · 数据为逐题比对结果，题目原文版权归原书作者所有，本页仅供个人复习使用。</div></footer>
+<button class="back-top" id="backTop" type="button">回到顶部</button>
+
+<script>
+const $=s=>document.querySelector(s);
+const lessons=[...document.querySelectorAll('.lesson')];
+const rowsAll=[...document.querySelectorAll('#tbody tr')];
+function ok(node){
+ const query=$('#query').value.trim().toLowerCase();
+ const cls=$('#cls').value, paper=$('#paper').value;
+ return (!query||node.textContent.toLowerCase().includes(query))
+   &&(cls==='all'||node.dataset.cls===cls)&&(paper==='all'||node.dataset.paper===paper);
+}
+function filter(){
+ let count=0;
+ rowsAll.forEach(tr=>{const m=ok(tr);tr.hidden=!m;if(m)count++;});
+ lessons.forEach(l=>{l.hidden=!ok(l);});
+ const shown=lessons.filter(l=>!l.hidden).length;
+ $('#resultCount').textContent='清单 '+count+' / '+rowsAll.length+' 组　·　逐题对照 '+shown+' / '+lessons.length+' 组';
+ $('#empty').hidden=count!==0; $('#readerEmpty').hidden=shown!==0;
+ const q=$('#query').value.trim(), c=$('#cls').value, p=$('#paper').value;
+ $('#filterDescription').textContent=(q?'搜索“'+q+'”；':'')+(c==='all'?'':'类别'+c+'；')+(p==='all'?'':p+'；')+'筛选仅改变显示，收录总量不变。';
+}
+['query','cls','paper'].forEach(id=>$('#'+id).addEventListener(id==='query'?'input':'change',filter));
+$('#reset').addEventListener('click',()=>{$('#query').value='';$('#cls').value='all';$('#paper').value='all';filter();$('#query').focus()});
+$('#expand').addEventListener('click',()=>lessons.forEach(l=>{if(!l.hidden)l.open=true}));
+$('#collapse').addEventListener('click',()=>lessons.forEach(l=>l.open=false));
+function revealHash(){const el=document.getElementById(decodeURIComponent(location.hash.slice(1)));if(!el)return;const d=el.closest('details.lesson');if(d)d.open=true;}
+window.addEventListener('hashchange',revealHash);revealHash();
+let printState=null;
+window.addEventListener('beforeprint',()=>{printState=[...document.querySelectorAll('details')].map(d=>[d,d.open]);document.querySelectorAll('details').forEach(d=>d.open=true);});
+window.addEventListener('afterprint',()=>{if(printState)printState.forEach(([d,o])=>d.open=o);printState=null;});
+$('#print').addEventListener('click',()=>window.print());
+const bt=$('#backTop');bt.addEventListener('click',()=>scrollTo({top:0,behavior:'smooth'}));
+filter();
+</script></body></html>
