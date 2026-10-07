@@ -6,4 +6,5 @@ await useAuth().restore()
 
 <template>
   <NuxtPage />
+  <PwaUpdatePrompt />
 </template>
