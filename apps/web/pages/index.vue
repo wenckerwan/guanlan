@@ -79,6 +79,7 @@ function submitSearch() {
           <span>试试</span>
           <button v-for="hint in ['遵义会议', '实践与认识', '十五五']" :key="hint" @click="router.push({ path: '/search', query: { q: hint } })">{{ hint }}</button>
         </div>
+        <VisitStatistics />
       </section>
 
       <section class="subject-section">

@@ -10,6 +10,7 @@ export default defineNuxtConfig({
     head: {
       title: "马原知识宇宙 · 知识探索",
       htmlAttrs: { lang: "zh-CN" },
+      script: process.env.NODE_ENV === "production" ? [{ src: "/visit-tracker.js", defer: true }] : [],
       meta: [
         { name: "viewport", content: "width=device-width, initial-scale=1" },
       ],
