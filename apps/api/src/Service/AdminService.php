@@ -125,20 +125,32 @@ class AdminService
         ];
     }
 
-    /** @return array<int, User> */
-    public function users(string $keyword = '', int $limit = 50): array
+    /** @return array{items: array, total: int, page: int, perPage: int} */
+    public function users(string $keyword = '', int $page = 1, int $perPage = 20, string $role = '', string $status = '', string $userGroup = ''): array
     {
-        return User::query()
-            ->when($keyword !== '', function ($q) use ($keyword) {
-                $like = "%{$keyword}%";
-                $q->where(fn ($inner) => $inner
-                    ->where('email', 'like', $like)
-                    ->orWhere('display_name', 'like', $like));
-            })
-            ->orderByDesc('id')
-            ->limit($limit)
-            ->get()
-            ->all();
+        foreach ([[$role, ['user', 'admin']], [$status, ['active', 'disabled']], [$userGroup, UserGroup::ALL]] as [$value, $allowed]) {
+            if ($value !== '' && !in_array($value, $allowed, true)) throw new \RuntimeException('无效的用户筛选条件');
+        }
+        $keyword = trim($keyword);
+        $perPage = min(100, max(1, $perPage));
+        return Db::transaction(function () use ($keyword, $page, $perPage, $role, $status, $userGroup) {
+            $query = User::query();
+            if ($keyword !== '') {
+                $like = '%' . strtr($keyword, ['=' => '==', '%' => '=%', '_' => '=_']) . '%';
+                $query->whereRaw("(email LIKE ? ESCAPE '=' OR display_name LIKE ? ESCAPE '=')", [$like, $like]);
+            }
+            if ($role !== '') $query->where('role', $role);
+            if ($status !== '') $query->where('status', $status);
+            if ($userGroup === UserGroup::USER) {
+                $query->where(function ($q) {
+                    $q->where('user_group', UserGroup::USER)->orWhereNull('user_group')->orWhereNotIn('user_group', UserGroup::ALL);
+                });
+            } elseif ($userGroup !== '') { $query->where('user_group', $userGroup); }
+            $total = (int)(clone $query)->count();
+            $page = min(max(1, $page), max(1, (int)ceil($total / $perPage)));
+            $items = $query->orderByDesc('id')->forPage($page, $perPage)->get()->all();
+            return compact('items', 'total', 'page', 'perPage');
+        });
     }
 
     public function updateUser(int $id, string $role = '', string $status = '', ?string $mistakeCode = null, string $userGroup = ''): ?User

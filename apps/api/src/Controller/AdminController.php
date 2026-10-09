@@ -119,8 +119,19 @@ class AdminController
 
     public function users(): ResponseInterface
     {
-        $users = $this->service->users(trim((string) $this->request->input('q', '')));
-        return ApiResponse::data(UserResource::collection($users));
+        try {
+            $result = $this->service->users(
+                trim((string)$this->request->input('q', '')), $this->page(), $this->perPage(),
+                (string)$this->request->input('role', ''), (string)$this->request->input('status', ''),
+                (string)$this->request->input('userGroup', '')
+            );
+        } catch (\RuntimeException $exception) {
+            return ApiResponse::message($exception->getMessage(), 422);
+        }
+        return ApiResponse::data([
+            'items' => UserResource::collection($result['items']), 'total' => $result['total'],
+            'page' => $result['page'], 'perPage' => $result['perPage'],
+        ]);
     }
 
     public function updateUser(int $id): ResponseInterface

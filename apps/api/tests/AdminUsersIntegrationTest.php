@@ -1,0 +1,32 @@
+<?php
+declare(strict_types=1);
+if (!str_ends_with((string)getenv('DB_DATABASE'), '_admin_test')) throw new RuntimeException('Disposable admin test database required');
+define('BASE_PATH', dirname(__DIR__));
+require BASE_PATH . '/vendor/autoload.php';
+$container = require BASE_PATH . '/config/container.php';
+Hyperf\Database\Model\Register::setConnectionResolver($container->get(Hyperf\Database\ConnectionResolverInterface::class));
+$failed = false;
+Swoole\Coroutine\run(function () use (&$failed): void {
+    $pdo = new PDO('mysql:host='.getenv('DB_HOST').';dbname='.getenv('DB_DATABASE'),getenv('DB_USERNAME'),getenv('DB_PASSWORD'),[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
+    $pdo->exec('DROP TABLE IF EXISTS users');
+    $pdo->exec('CREATE TABLE users (id BIGINT UNSIGNED PRIMARY KEY, email VARCHAR(191), display_name VARCHAR(191), role VARCHAR(16), status VARCHAR(16), user_group VARCHAR(16), created_at DATETIME NULL, updated_at DATETIME NULL) ENGINE=InnoDB');
+    $insert = $pdo->prepare('INSERT INTO users (id,email,display_name,role,status,user_group) VALUES (?,?,?,?,?,?)');
+    for ($id=1;$id<=65;++$id) $insert->execute([$id,"person{$id}@example.test","考生{$id}",$id%10===0?'admin':'user',$id%3===0?'disabled':'active',$id%2===0?'vip':'user']);
+    $insert->execute([66,'literal%_@example.test','符号账号','user','active',null]);
+    $service = (new ReflectionClass(App\Service\AdminService::class))->newInstanceWithoutConstructor();
+    $passed=0; $failures=[];
+    $assert=static function(bool $ok,string $message):void {if(!$ok)throw new RuntimeException($message);};
+    $check=static function(string $name,callable $test)use(&$passed,&$failures):void{try{$test();++$passed;echo "PASS $name\n";}catch(Throwable $e){$failures[]=$name.': '.$e->getMessage();echo 'FAIL '.end($failures)."\n";}};
+    $check('default list exposes total beyond old limit',function()use($service,$assert){$r=$service->users();$assert(isset($r['items'])&&$r['total']===66&&count($r['items'])===20&&$r['page']===1&&$r['perPage']===20,'incorrect default envelope');});
+    $check('all users reachable without duplicate pages',function()use($service,$assert){$ids=[];for($page=1;$page<=4;++$page){$r=$service->users('', $page,20);foreach($r['items'] as $u)$ids[]=$u->id;}$assert($ids===range(66,1),'missing, duplicated or unstable order');});
+    $check('nickname keyword trims whitespace',function()use($service,$assert){$r=$service->users(' 考生65 ');$assert($r['total']===1&&$r['items'][0]->id===65,'nickname search failed');});
+    $check('keyword metacharacters are literal',function()use($service,$assert){$r=$service->users('%_');$assert($r['total']===1&&$r['items'][0]->id===66,'wildcard broadened search');});
+    $check('role status group filters compose',function()use($service,$assert){$r=$service->users('',1,20,'admin','disabled','vip');$assert($r['total']===2&&array_map(fn($u)=>$u->id,$r['items'])===[60,30],'combined filters wrong');});
+    $check('normal user group includes legacy null',function()use($service,$assert){$r=$service->users('',1,100,'','','user');$assert($r['total']===34&&$r['items'][0]->id===66,'legacy normal group excluded');});
+    $check('empty filter result remains distinct',function()use($service,$assert){$r=$service->users('not-present',99,20);$assert($r['total']===0&&$r['items']===[]&&$r['page']===1,'empty result not canonical');});
+    $check('out-of-range page clamps to last page',function()use($service,$assert){$r=$service->users('',999,20);$assert($r['page']===4&&count($r['items'])===6,'last page inaccessible');});
+    $check('page and page size bounded',function()use($service,$assert){$r=$service->users('',-3,1000);$assert($r['page']===1&&$r['perPage']===100&&count($r['items'])===66,'unbounded pagination');});
+    foreach([['invalid','',''],['','invalid',''],['','','guest']] as [$role,$status,$group])$check("invalid enum $role$status$group rejected",function()use($service,$role,$status,$group){try{$service->users('',1,20,$role,$status,$group);}catch(RuntimeException $e){return;}throw new RuntimeException('invalid enum accepted');});
+    echo "RESULT $passed passed, ".count($failures)." failed\n";$failed=$failures!==[];
+});
+exit($failed?1:0);
