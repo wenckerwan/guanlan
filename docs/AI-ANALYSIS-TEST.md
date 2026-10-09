@@ -208,7 +208,7 @@ AI 分析服务已与 skills 目录对接，系统提示词包含以下关键要
 
 ### 提示词来源
 
-系统提示词位于 [AIAnalysisService.php:151](apps/api/src/Service/AIAnalysisService.php:151)，基于以下文档编写：
+系统提示词位于 [AIAnalysisService.php:151](../apps/api/src/Service/AIAnalysisService.php)，基于以下文档编写：
 
 - `/d/code_files/kaoyan-politics-mistake-analysis/kaoyan-politics-mistake-analysis/SKILL.md`
 - `/d/code_files/kaoyan-politics-mistake-analysis/README.md`
@@ -292,8 +292,8 @@ AI 分析请求失败: maximum context length exceeded
 
 ## 相关文件
 
-- [AIAnalysisService.php](apps/api/src/Service/AIAnalysisService.php) - AI 分析服务
-- [AIAnalysisTest.php](apps/api/tests/AIAnalysisTest.php) - 单元测试
-- [test-ai-analysis.php](apps/api/test-ai-analysis.php) - 命令行测试脚本
-- [MistakeController.php:139](apps/api/src/Controller/MistakeController.php:139) - AI 分析 API 接口
-- [SKILL.md](/d/code_files/kaoyan-politics-mistake-analysis/kaoyan-politics-mistake-analysis/SKILL.md) - Skills 文档
+- [AIAnalysisService.php](../apps/api/src/Service/AIAnalysisService.php) - AI 分析服务
+- [AIAnalysisTest.php](../apps/api/tests/AIAnalysisTest.php) - 单元测试
+- [test-ai-analysis.php](../apps/api/test-ai-analysis.php) - 命令行测试脚本
+- [MistakeController.php:139](../apps/api/src/Controller/MistakeController.php) - AI 分析 API 接口
+- 本地 kaoyan-politics-mistake-analysis Skill（未随本仓库发布） - Skills 文档

@@ -198,17 +198,7 @@ class AdminService
 
     public function createUser(string $email, string $password, string $displayName, string $role): array
     {
-        $result = $this->authService->register($email, $password, $displayName);
-        if (isset($result['error'])) {
-            return $result;
-        }
-        $user = $result['user'];
-        if (in_array($role, ['user', 'admin'], true) && $role !== 'user') {
-            $user->role = $role;
-            $user->save();
-        }
-
-        return ['user' => $user];
+        return $this->authService->createByAdmin($email, $password, $displayName, $role);
     }
 
     public function resetPassword(int $id, string $password): ?User

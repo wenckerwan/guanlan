@@ -175,7 +175,12 @@ class AdminController
             return ApiResponse::message('请求校验失败', 422, ['email' => '邮箱与密码不能为空']);
         }
 
-        $result = $this->service->createUser($email, $password, $displayName, $role);
+        try {
+            $result = $this->service->createUser($email, $password, $displayName, $role);
+        } catch (\RuntimeException $exception) {
+            if (!in_array($exception->getCode(), [403, 422], true)) throw $exception;
+            return ApiResponse::message($exception->getMessage(), $exception->getCode());
+        }
         if (isset($result['error'])) {
             return ApiResponse::message($result['error'], 409);
         }

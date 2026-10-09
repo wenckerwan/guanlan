@@ -10,6 +10,7 @@ use App\Model\Hotspot;
 use App\Model\Prediction;
 use App\Model\User;
 use App\Support\UserGroup;
+use App\Support\ContentMaintenance;
 use Hyperf\Database\Model\Builder;
 
 /**
@@ -41,15 +42,15 @@ class CommentService
         if (! in_array($mode, self::MODES, true)) {
             return false;
         }
-        $article = $this->article($articleType, $slug);
-        if (! $article) {
-            return false;
-        }
-
-        $article->comment_mode = $mode;
-        $article->save();
-
-        return true;
+        $table = ['analysis' => 'analysis_articles', 'hotspot' => 'hotspots', 'prediction' => 'predictions'][$articleType] ?? null;
+        if ($table === null) return false;
+        return ContentMaintenance::write($table, function () use ($articleType, $slug, $mode): bool {
+            $article = $this->article($articleType, $slug);
+            if (!$article) return false;
+            $article->comment_mode = $mode;
+            $article->save();
+            return true;
+        });
     }
 
     /**

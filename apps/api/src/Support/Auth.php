@@ -6,6 +6,7 @@ namespace App\Support;
 
 use App\Model\User;
 use App\Model\UserToken;
+use Hyperf\DbConnection\Db;
 use Hyperf\Context\Context;
 use Hyperf\HttpServer\Contract\RequestInterface;
 
@@ -19,16 +20,21 @@ class Auth
 
     public static function issue(User $user, string $userAgent = ''): string
     {
-        $token = bin2hex(random_bytes(32));
-
-        UserToken::create([
-            'user_id' => $user->id,
-            'token_hash' => hash('sha256', $token),
-            'user_agent' => mb_substr($userAgent, 0, 191),
-            'expires_at' => date('Y-m-d H:i:s', time() + 60 * 60 * 24 * 30),
-        ]);
-
-        return $token;
+        return Db::transaction(function () use ($user, $userAgent): string {
+            $current = User::query()->where('id', $user->id)->lockForUpdate()->first();
+            if (!$current || !$current->isActive() || !hash_equals((string)$current->password_hash, (string)$user->password_hash)) {
+                throw new \RuntimeException('认证状态已变化，请重新登录', 401);
+            }
+            $token = bin2hex(random_bytes(32));
+            UserToken::create([
+                'user_id' => $current->id,
+                'token_hash' => hash('sha256', $token),
+                'user_agent' => mb_substr($userAgent, 0, 191),
+                'expires_at' => date('Y-m-d H:i:s', time() + 60 * 60 * 24 * 30),
+            ]);
+            $user->setRawAttributes($current->getAttributes(), true);
+            return $token;
+        }, 3);
     }
 
     public static function tokenFrom(RequestInterface $request): string

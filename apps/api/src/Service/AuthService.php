@@ -7,6 +7,7 @@ namespace App\Service;
 use App\Model\EmailVerification;
 use App\Model\User;
 use App\Support\Mailer;
+use App\Support\Auth;
 use Hyperf\DbConnection\Db;
 use Throwable;
 
@@ -31,17 +32,34 @@ class AuthService
             }
         }
 
+        return $this->createAccount($email, $password, $displayName);
+    }
+
+    public function createByAdmin(string $email, string $password, string $displayName, string $role): array
+    {
+        $actor = Auth::user();
+        if (!$actor || !$actor->isAdmin() || !$actor->isActive()) throw new \RuntimeException('需要管理员权限', 403);
+        $email = mb_strtolower(trim($email));
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || mb_strlen($email) > 191) throw new \RuntimeException('邮箱格式不正确', 422);
+        if (mb_strlen($password) < 6) throw new \RuntimeException('密码至少 6 位', 422);
+        if (mb_strlen($displayName) > 191) throw new \RuntimeException('昵称最多 191 个字符', 422);
+        if (!in_array($role, ['user', 'admin'], true)) throw new \RuntimeException('无效的角色', 422);
+        return $this->createAccount($email, $password, $displayName, $role);
+    }
+
+    private function createAccount(string $email, string $password, string $displayName, string $role = 'user'): array
+    {
         if (User::query()->where('email', $email)->exists()) {
             return ['error' => '该邮箱已注册'];
         }
 
         try {
-            $user = Db::transaction(function () use ($email, $password, $displayName): User {
+            $user = Db::transaction(function () use ($email, $password, $displayName, $role): User {
                 $user = User::create([
                     'email' => $email,
                     'password_hash' => password_hash($password, PASSWORD_DEFAULT),
                     'display_name' => $displayName !== '' ? $displayName : mb_substr($email, 0, strpos($email, '@') ?: 8),
-                    'role' => 'user',
+                    'role' => $role,
                     'status' => 'active',
                 ]);
                 $this->mistakeAccounts->provision($user);

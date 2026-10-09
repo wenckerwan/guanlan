@@ -71,8 +71,15 @@ class AuthController
 
         $user = $result['user'];
 
+        try {
+            $token = Auth::issue($user, $this->request->getHeaderLine('User-Agent'));
+        } catch (\RuntimeException $exception) {
+            if ($exception->getCode() !== 401) throw $exception;
+            return ApiResponse::message($exception->getMessage(), 401);
+        }
+
         return ApiResponse::data([
-            'token' => Auth::issue($user, $this->request->getHeaderLine('User-Agent')),
+            'token' => $token,
             'user' => UserResource::make($user),
         ], 201);
     }
@@ -96,8 +103,15 @@ class AuthController
             return ApiResponse::message('邮箱或密码不正确', 401);
         }
 
+        try {
+            $token = Auth::issue($user, $this->request->getHeaderLine('User-Agent'));
+        } catch (\RuntimeException $exception) {
+            if ($exception->getCode() !== 401) throw $exception;
+            return ApiResponse::message($exception->getMessage(), 401);
+        }
+
         return ApiResponse::data([
-            'token' => Auth::issue($user, $this->request->getHeaderLine('User-Agent')),
+            'token' => $token,
             'user' => UserResource::make($user),
         ]);
     }

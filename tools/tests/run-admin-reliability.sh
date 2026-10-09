@@ -19,7 +19,7 @@ for attempt in $(seq 1 45); do
   sleep 1
 done
 if [ "$ready" != true ]; then docker logs "$database"; exit 1; fi
-for test_file in AdminReliabilityIntegrationTest.php AdminUsersIntegrationTest.php; do
+for test_file in AdminReliabilityIntegrationTest.php AdminUsersIntegrationTest.php AdminReviewFixesIntegrationTest.php; do
 docker run --rm --network "$network" \
   -e DB_HOST="$database" -e DB_DATABASE=guanlan_admin_test -e DB_USERNAME=root -e DB_PASSWORD=admin-test-only \
   -v "$repo/apps/api/src:/opt/guanlan/src:ro" \
