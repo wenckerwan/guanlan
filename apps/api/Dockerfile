@@ -32,4 +32,5 @@ COPY VERSION ./
 RUN mkdir -p runtime
 
 EXPOSE 9501
-CMD ["sh", "-c", "php bin/verify-dataset.php && until php bin/hyperf.php migrate --force; do echo 'waiting for mysql...'; sleep 3; done && php bin/hyperf.php db:seed --force && php bin/hyperf.php start"]
+# Dataset imports are explicit maintenance operations, never repeated on restart.
+CMD ["sh", "-c", "php bin/verify-dataset.php && until php bin/hyperf.php migrate --force; do echo 'waiting for mysql...'; sleep 3; done && php bin/hyperf.php start"]
