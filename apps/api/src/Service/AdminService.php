@@ -17,6 +17,8 @@ use App\Model\Paper;
 use App\Model\Prediction;
 use App\Model\Question;
 use App\Model\User;
+use App\Model\UserToken;
+use App\Support\ContentMaintenance;
 use App\Support\ContentStatus;
 use App\Support\UserGroup;
 use Hyperf\DbConnection\Db;
@@ -141,38 +143,45 @@ class AdminService
 
     public function updateUser(int $id, string $role = '', string $status = '', ?string $mistakeCode = null, string $userGroup = ''): ?User
     {
-        $user = User::find($id);
-        if (! $user) {
-            return null;
-        }
-        if (in_array($role, ['user', 'admin'], true)) {
-            $user->role = $role;
-        }
-        if (in_array($status, ['active', 'disabled'], true)) {
-            $user->status = $status;
-        }
-        if ($userGroup !== '') {
-            if (! in_array($userGroup, UserGroup::ALL, true)) {
-                throw new \RuntimeException('无效的用户组');
+        return Db::transaction(function () use ($id, $role, $status, $mistakeCode, $userGroup) {
+            $admins = User::query()->where('role', 'admin')->where('status', 'active')->orderBy('id')->lockForUpdate()->get();
+            $user = User::query()->where('id', $id)->lockForUpdate()->first();
+            if (!$user) return null;
+            if ($role !== '' && !in_array($role, ['user', 'admin'], true)) throw new \RuntimeException('无效的角色');
+            if ($status !== '' && !in_array($status, ['active', 'disabled'], true)) throw new \RuntimeException('无效的账号状态');
+            if ($user->isAdmin() && $user->isActive() && ($role === 'user' || $status === 'disabled') && $admins->count() <= 1) {
+                throw new \RuntimeException('不能禁用或降级最后一个有效管理员');
             }
-            $user->user_group = $userGroup;
-        }
-        if ($mistakeCode !== null) {
-            $code = trim($mistakeCode);
-            if ($code !== '' && $code !== $user->mistake_code) {
-                $taken = User::query()
-                    ->where('mistake_code', $code)
-                    ->where('id', '!=', (int) $user->id)
-                    ->exists();
-                if ($taken) {
-                    throw new \RuntimeException('该考生编号已被其他账号绑定');
+            if (in_array($role, ['user', 'admin'], true)) {
+                $user->role = $role;
+            }
+            if (in_array($status, ['active', 'disabled'], true)) {
+                $user->status = $status;
+            }
+            if ($userGroup !== '') {
+                if (! in_array($userGroup, UserGroup::ALL, true)) {
+                    throw new \RuntimeException('无效的用户组');
                 }
+                $user->user_group = $userGroup;
             }
-            $user->mistake_code = $code === '' ? null : $code;
-        }
-        $user->save();
+            if ($mistakeCode !== null) {
+                $code = trim($mistakeCode);
+                if ($code !== '' && $code !== $user->mistake_code) {
+                    $taken = User::query()
+                        ->where('mistake_code', $code)
+                        ->where('id', '!=', (int) $user->id)
+                        ->exists();
+                    if ($taken) {
+                        throw new \RuntimeException('该考生编号已被其他账号绑定');
+                    }
+                }
+                $user->mistake_code = $code === '' ? null : $code;
+            }
+            $user->save();
 
-        return $user;
+            return $user;
+
+        });
     }
 
     public function createUser(string $email, string $password, string $displayName, string $role): array
@@ -192,17 +201,21 @@ class AdminService
 
     public function resetPassword(int $id, string $password): ?User
     {
-        if (mb_strlen($password) < 6) {
-            throw new \RuntimeException('密码至少 6 位');
-        }
-        $user = User::find($id);
-        if (! $user) {
-            return null;
-        }
-        $user->password_hash = password_hash($password, PASSWORD_DEFAULT);
-        $user->save();
+        return Db::transaction(function () use ($id, $password) {
+            if (mb_strlen($password) < 6) {
+                throw new \RuntimeException('密码至少 6 位');
+            }
+            $user = User::query()->where('id', $id)->lockForUpdate()->first();
+            if (! $user) {
+                return null;
+            }
+            $user->password_hash = password_hash($password, PASSWORD_DEFAULT);
+            $user->save();
+            UserToken::query()->where('user_id', $id)->delete();
 
-        return $user;
+            return $user;
+
+        });
     }
 
     /** 审计日志分页（含操作人邮箱） */
@@ -249,76 +262,85 @@ class AdminService
 
     public function savePaper(array $data, ?int $id = null): Paper
     {
-        $paper = $id ? Paper::find($id) : null;
-        if ($id !== null && ! $paper) {
-            throw new \RuntimeException('试卷不存在');
-        }
+        return ContentMaintenance::write('papers',function () use ($data, $id) {
+            $paper = $id ? Paper::find($id) : null;
+            if ($id !== null && ! $paper) {
+                throw new \RuntimeException('试卷不存在');
+            }
 
-        $year = (int) ($data['year'] ?? $paper->year ?? (int) date('Y'));
-        $pid = trim((string) ($data['pid'] ?? $paper->pid ?? ''));
-        if ($pid === '') {
-            $pid = sprintf('p-%d-%s', $year, bin2hex(random_bytes(4)));
-        }
-        $taken = Paper::query()->where('pid', $pid)->when($paper, fn ($q) => $q->where('id', '!=', $paper->id))->exists();
-        if ($taken) {
-            throw new \RuntimeException('试卷编号已存在');
-        }
+            $year = (int) ($data['year'] ?? $paper->year ?? (int) date('Y'));
+            $pid = trim((string) ($data['pid'] ?? $paper->pid ?? ''));
+            if ($pid === '') {
+                $pid = sprintf('p-%d-%s', $year, bin2hex(random_bytes(4)));
+            }
+            $taken = Paper::query()->where('pid', $pid)->when($paper, fn ($q) => $q->where('id', '!=', $paper->id))->exists();
+            if ($taken) {
+                throw new \RuntimeException('试卷编号已存在');
+            }
 
-        $paper ??= new Paper();
-        $paper->fill([
-            'pid' => $pid,
-            'year' => $year,
-            'label' => mb_substr((string) ($data['label'] ?? $paper->label ?? ''), 0, 32),
-            'kind' => mb_substr((string) ($data['kind'] ?? $paper->kind ?? ''), 0, 16),
-            'total_score' => max(0, (int) ($data['totalScore'] ?? $paper->total_score ?? 0)),
-            'sort_order' => (int) ($data['sortOrder'] ?? $paper->sort_order ?? 0),
-            'sections' => is_array($data['sections'] ?? null) ? $data['sections'] : ($paper->sections ?? null),
-        ]);
-        $paper->save();
-        $paper->question_count = (int) Question::query()->where('pid', $paper->pid)->count();
-        $paper->save();
+            $paper ??= new Paper();
+            $paper->fill([
+                'pid' => $pid,
+                'year' => $year,
+                'label' => mb_substr((string) ($data['label'] ?? $paper->label ?? ''), 0, 32),
+                'kind' => mb_substr((string) ($data['kind'] ?? $paper->kind ?? ''), 0, 16),
+                'total_score' => max(0, (int) ($data['totalScore'] ?? $paper->total_score ?? 0)),
+                'sort_order' => (int) ($data['sortOrder'] ?? $paper->sort_order ?? 0),
+                'sections' => is_array($data['sections'] ?? null) ? $data['sections'] : ($paper->sections ?? null),
+            ]);
+            $paper->save();
+            $paper->question_count = (int) Question::query()->where('pid', $paper->pid)->count();
+            $paper->save();
 
-        return $paper;
+            return $paper;
+
+        });
     }
 
     /** @return array{blocked?: bool, questions?: int, deleted?: bool} */
     public function deletePaper(int $id, bool $force = false): array
     {
-        $paper = Paper::find($id);
-        if (! $paper) {
-            throw new \RuntimeException('试卷不存在');
-        }
-        $questionCount = (int) Question::query()->where('pid', $paper->pid)->count();
-        if ($questionCount > 0 && ! $force) {
-            return ['blocked' => true, 'questions' => $questionCount];
-        }
-        Question::query()->where('pid', $paper->pid)->delete();
-        $paper->delete();
+        return ContentMaintenance::write('papers',function () use ($id, $force) {
+            $paper = Paper::find($id);
+            if (! $paper) {
+                throw new \RuntimeException('试卷不存在');
+            }
+            $questionCount = (int) Question::query()->where('pid', $paper->pid)->count();
+            if ($questionCount > 0 && ! $force) {
+                return ['blocked' => true, 'questions' => $questionCount];
+            }
+            Question::query()->where('pid', $paper->pid)->delete();
+            $paper->delete();
 
-        return ['deleted' => true, 'questions' => $questionCount];
+            return ['deleted' => true, 'questions' => $questionCount];
+
+        });
     }
 
     public function updateQuestion(int $id, array $data): ?Question
     {
-        $question = Question::find($id);
-        if (! $question) {
-            return null;
-        }
-        $question->fill([
-            'stem' => (string) ($data['stem'] ?? $question->stem),
-            'material' => (string) ($data['material'] ?? $question->material),
-            'options' => is_array($data['options'] ?? null) ? array_values($data['options']) : $question->options,
-            'answer' => mb_substr((string) ($data['answer'] ?? $question->answer), 0, 16),
-            'answer_text' => (string) ($data['answerText'] ?? $question->answer_text),
-            'analysis' => (string) ($data['analysis'] ?? $question->analysis),
-            'kaodian' => mb_substr((string) ($data['kaodian'] ?? $question->kaodian), 0, 191),
-            'module' => mb_substr((string) ($data['module'] ?? $question->module), 0, 16),
-            'module_name' => mb_substr((string) ($data['moduleName'] ?? $question->module_name), 0, 64),
-            'score' => (float) ($data['score'] ?? $question->score),
-        ]);
-        $question->save();
+        return ContentMaintenance::write('questions',function () use ($id, $data) {
+            $question = Question::find($id);
+            if (! $question) {
+                return null;
+            }
+            $question->fill([
+                'stem' => (string) ($data['stem'] ?? $question->stem),
+                'material' => (string) ($data['material'] ?? $question->material),
+                'options' => is_array($data['options'] ?? null) ? array_values($data['options']) : $question->options,
+                'answer' => mb_substr((string) ($data['answer'] ?? $question->answer), 0, 16),
+                'answer_text' => (string) ($data['answerText'] ?? $question->answer_text),
+                'analysis' => (string) ($data['analysis'] ?? $question->analysis),
+                'kaodian' => mb_substr((string) ($data['kaodian'] ?? $question->kaodian), 0, 191),
+                'module' => mb_substr((string) ($data['module'] ?? $question->module), 0, 16),
+                'module_name' => mb_substr((string) ($data['moduleName'] ?? $question->module_name), 0, 64),
+                'score' => (float) ($data['score'] ?? $question->score),
+            ]);
+            $question->save();
 
-        return $question;
+            return $question;
+
+        });
     }
 
     /** @return array<int, Attempt> */
@@ -350,36 +372,40 @@ class AdminService
 
     public function saveHotspot(array $data, ?int $id = null): Hotspot
     {
-        $hotspot = $id ? Hotspot::find($id) : new Hotspot();
-        if (! $hotspot) {
-            $hotspot = new Hotspot();
-        }
+        return ContentMaintenance::write('hotspots',function () use ($data, $id) {
+            $hotspot = $id !== null ? Hotspot::find($id) : new Hotspot();
+            if (!$hotspot) throw new \RuntimeException('记录不存在', 404);
 
-        $hotspot->fill([
-            'title' => (string) ($data['title'] ?? $hotspot->title ?? ''),
-            'level' => (string) ($data['level'] ?? $hotspot->level ?? 'A'),
-            'priority' => (string) ($data['priority'] ?? $hotspot->priority ?? 'A'),
-            'summary' => (string) ($data['summary'] ?? $hotspot->summary ?? ''),
-            'type' => (string) ($data['type'] ?? $hotspot->type ?? ''),
-            'tag' => (string) ($data['tag'] ?? $hotspot->tag ?? ''),
-            'period' => (string) ($data['period'] ?? $hotspot->period ?? ''),
-            'html' => (string) ($data['html'] ?? $hotspot->html ?? ''),
-            'subject_id' => (int) ($data['subjectId'] ?? $hotspot->subject_id ?? 1),
-            'status' => ContentStatus::normalize(isset($data['status']) ? (string) $data['status'] : null),
-        ]);
+            $hotspot->fill([
+                'title' => (string) ($data['title'] ?? $hotspot->title ?? ''),
+                'level' => (string) ($data['level'] ?? $hotspot->level ?? 'A'),
+                'priority' => (string) ($data['priority'] ?? $hotspot->priority ?? 'A'),
+                'summary' => (string) ($data['summary'] ?? $hotspot->summary ?? ''),
+                'type' => (string) ($data['type'] ?? $hotspot->type ?? ''),
+                'tag' => (string) ($data['tag'] ?? $hotspot->tag ?? ''),
+                'period' => (string) ($data['period'] ?? $hotspot->period ?? ''),
+                'html' => (string) ($data['html'] ?? $hotspot->html ?? ''),
+                'subject_id' => (int) ($data['subjectId'] ?? $hotspot->subject_id ?? 1),
+                'status' => ContentStatus::forWrite($data, $hotspot->status ?? null),
+            ]);
 
-        if (! $hotspot->slug) {
-            $hotspot->slug = 'admin-' . bin2hex(random_bytes(6));
-        }
+            if (! $hotspot->slug) {
+                $hotspot->slug = 'admin-' . bin2hex(random_bytes(6));
+            }
 
-        $hotspot->save();
+            $hotspot->save();
 
-        return $hotspot;
+            return $hotspot;
+
+        });
     }
 
     public function deleteHotspot(int $id): bool
     {
-        return (bool) Hotspot::query()->where('id', $id)->delete();
+        return ContentMaintenance::write('hotspots',function () use ($id) {
+            return (bool) Hotspot::query()->where('id', $id)->delete();
+
+        });
     }
 
     /** @return array<int, AnalysisArticle> */
@@ -390,31 +416,35 @@ class AdminService
 
     public function saveAnalysis(array $data, ?int $id = null): AnalysisArticle
     {
-        $article = $id ? AnalysisArticle::find($id) : null;
-        if (! $article) {
-            $article = new AnalysisArticle();
-        }
+        return ContentMaintenance::write('analysis_articles',function () use ($data, $id) {
+            $article = $id !== null ? AnalysisArticle::find($id) : new AnalysisArticle();
+            if (!$article) throw new \RuntimeException('记录不存在', 404);
 
-        $article->fill([
-            'title' => (string) ($data['title'] ?? $article->title ?? ''),
-            'category' => (string) ($data['category'] ?? $article->category ?? ''),
-            'summary' => (string) ($data['summary'] ?? $article->summary ?? ''),
-            'html' => (string) ($data['html'] ?? $article->html ?? ''),
-            'status' => ContentStatus::normalize(isset($data['status']) ? (string) $data['status'] : null),
-        ]);
+            $article->fill([
+                'title' => (string) ($data['title'] ?? $article->title ?? ''),
+                'category' => (string) ($data['category'] ?? $article->category ?? ''),
+                'summary' => (string) ($data['summary'] ?? $article->summary ?? ''),
+                'html' => (string) ($data['html'] ?? $article->html ?? ''),
+                'status' => ContentStatus::forWrite($data, $article->status ?? null),
+            ]);
 
-        if (! $article->slug) {
-            $article->slug = 'admin-' . bin2hex(random_bytes(6));
-        }
+            if (! $article->slug) {
+                $article->slug = 'admin-' . bin2hex(random_bytes(6));
+            }
 
-        $article->save();
+            $article->save();
 
-        return $article;
+            return $article;
+
+        });
     }
 
     public function deleteAnalysis(int $id): bool
     {
-        return (bool) AnalysisArticle::query()->where('id', $id)->delete();
+        return ContentMaintenance::write('analysis_articles',function () use ($id) {
+            return (bool) AnalysisArticle::query()->where('id', $id)->delete();
+
+        });
     }
 
     /** 后台只读：试卷分页 */
@@ -449,19 +479,20 @@ class AdminService
 
     public function savePrediction(array $data, int $id): ?Prediction
     {
-        $prediction = Prediction::find($id);
-        if (! $prediction) {
-            return null;
-        }
-        if (isset($data['status'])) {
-            $prediction->status = ContentStatus::normalize((string) $data['status']);
-        }
-        if (isset($data['sortOrder'])) {
-            $prediction->sort_order = (int) $data['sortOrder'];
-        }
-        $prediction->save();
+        return ContentMaintenance::write('predictions',function () use ($data, $id) {
+            $prediction = Prediction::find($id);
+            if (! $prediction) {
+                return null;
+            }
+            $prediction->status = ContentStatus::forWrite($data, $prediction->status ?? null);
+            if (isset($data['sortOrder'])) {
+                $prediction->sort_order = (int) $data['sortOrder'];
+            }
+            $prediction->save();
 
-        return $prediction;
+            return $prediction;
+
+        });
     }
 
     /** 后台只读：时政预测分页 */

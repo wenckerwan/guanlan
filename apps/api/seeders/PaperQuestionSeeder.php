@@ -18,6 +18,11 @@ class PaperQuestionSeeder extends Seeder
 
     public function run(): void
     {
+        \App\Support\ContentMaintenance::import(['papers', 'questions'], function () { $this->importDataset(); });
+    }
+
+    private function importDataset(): void
+    {
         (new DatasetManifestVerifier())->verify();
         $papers = $this->read('papers.json');
         $questions = $this->read('questions.json');

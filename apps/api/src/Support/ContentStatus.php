@@ -15,6 +15,15 @@ class ContentStatus
 
     public const ALL = [self::PUBLISHED, self::HIDDEN];
 
+    public static function forWrite(array $data, ?string $current): string
+    {
+        if (!array_key_exists('status', $data)) return self::normalize($current);
+        if (!is_string($data['status']) || !in_array($data['status'], self::ALL, true)) {
+            throw new \RuntimeException('无效的发布状态');
+        }
+        return $data['status'];
+    }
+
     /**
      * 归一化后台传入的状态：非法或空值回退 published，避免把内容意外藏掉。
      */

@@ -8,6 +8,7 @@ type AdminArticle = ArticleSummary & { id: number }
 const { request, restore } = useAuth()
 const items = ref<AdminArticle[]>([])
 const message = ref('')
+const deleting = ref<number | null>(null)
 const form = reactive({ title: '', category: '选择题规律', summary: '', html: '' })
 
 async function load() {
@@ -15,8 +16,8 @@ async function load() {
 }
 
 onMounted(async () => {
-  restore()
-  await load()
+  await restore()
+  try { await load() } catch { message.value = '加载失败，请刷新重试' }
 })
 
 async function create() {
@@ -34,8 +35,16 @@ async function create() {
 }
 
 async function remove(id: number) {
-  await request(`/admin/analysis/${id}`, { method: 'DELETE' })
-  await load()
+  if (deleting.value !== null || !window.confirm('确定删除这篇内容？删除后无法撤销。')) return
+  deleting.value = id
+  message.value = ''
+  try {
+    await request(`/admin/analysis/${id}`, { method: 'DELETE' })
+    await load()
+    message.value = '已删除'
+  } catch (exception) {
+    message.value = (exception as { data?: { message?: string } })?.data?.message || '删除失败'
+  } finally { deleting.value = null }
 }
 
 async function toggleStatus(item: AdminArticle) {
@@ -86,7 +95,7 @@ async function setCommentMode(item: AdminArticle, event: Event) {
           <option value="review">评论·审核后发布</option>
           <option value="closed">禁止评论</option>
         </select>
-        <button type="button" class="icon-button" aria-label="删除" @click="remove(item.id)"><Trash2 :size="14" /></button>
+        <button type="button" class="icon-button" aria-label="删除" :disabled="deleting !== null" @click="remove(item.id)"><Trash2 :size="14" /></button>
       </li>
     </ul>
   </section>

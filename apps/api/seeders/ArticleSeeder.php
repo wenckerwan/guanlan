@@ -29,6 +29,11 @@ class ArticleSeeder extends Seeder
 
     public function run(): void
     {
+        \App\Support\ContentMaintenance::import(['analysis_articles', 'hotspots', 'predictions'], function () { $this->importDataset(); });
+    }
+
+    private function importDataset(): void
+    {
         (new DatasetManifestVerifier())->verify();
         // 顺序保护：db:seed 按类名字母序执行，ArticleSeeder 早于 SubjectSeeder，
         // 而 hotspots.subject_id / predictions.subject_id 有外键约束，必须先确保学科存在。

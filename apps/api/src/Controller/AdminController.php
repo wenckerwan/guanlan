@@ -99,7 +99,11 @@ class AdminController
 
     public function updatePrediction(int $id): ResponseInterface
     {
-        $prediction = $this->service->savePrediction($this->request->all(), $id);
+        try {
+            $prediction = $this->service->savePrediction($this->request->all(), $id);
+        } catch (\RuntimeException $exception) {
+            return ApiResponse::message($exception->getMessage(), $exception->getCode() === 404 ? 404 : 422);
+        }
         if (! $prediction) {
             return ApiResponse::message('记录不存在', 404);
         }
@@ -347,14 +351,22 @@ class AdminController
             return ApiResponse::message('请求校验失败', 422, ['title' => '标题不能为空']);
         }
 
-        $hotspot = $this->service->saveHotspot($this->request->all());
+        try {
+            $hotspot = $this->service->saveHotspot($this->request->all());
+        } catch (\RuntimeException $exception) {
+            return ApiResponse::message($exception->getMessage(), $exception->getCode() === 404 ? 404 : 422);
+        }
         $this->audit->log($this->user(), 'hotspot.create', 'hotspot', (string) $hotspot->id, ['title' => (string) $hotspot->title]);
         return ApiResponse::data(ArticleResource::detail($hotspot), 201);
     }
 
     public function updateHotspot(int $id): ResponseInterface
     {
-        $hotspot = $this->service->saveHotspot($this->request->all(), $id);
+        try {
+            $hotspot = $this->service->saveHotspot($this->request->all(), $id);
+        } catch (\RuntimeException $exception) {
+            return ApiResponse::message($exception->getMessage(), $exception->getCode() === 404 ? 404 : 422);
+        }
         $this->audit->log($this->user(), 'hotspot.update', 'hotspot', (string) $id, ['title' => (string) $hotspot->title]);
         return ApiResponse::data(ArticleResource::detail($hotspot));
     }
@@ -381,14 +393,22 @@ class AdminController
             return ApiResponse::message('请求校验失败', 422, ['title' => '标题不能为空']);
         }
 
-        $article = $this->service->saveAnalysis($this->request->all());
+        try {
+            $article = $this->service->saveAnalysis($this->request->all());
+        } catch (\RuntimeException $exception) {
+            return ApiResponse::message($exception->getMessage(), $exception->getCode() === 404 ? 404 : 422);
+        }
         $this->audit->log($this->user(), 'analysis.create', 'analysis_article', (string) $article->id, ['title' => (string) $article->title]);
         return ApiResponse::data(ArticleResource::detail($article), 201);
     }
 
     public function updateAnalysis(int $id): ResponseInterface
     {
-        $article = $this->service->saveAnalysis($this->request->all(), $id);
+        try {
+            $article = $this->service->saveAnalysis($this->request->all(), $id);
+        } catch (\RuntimeException $exception) {
+            return ApiResponse::message($exception->getMessage(), $exception->getCode() === 404 ? 404 : 422);
+        }
         $this->audit->log($this->user(), 'analysis.update', 'analysis_article', (string) $id, ['title' => (string) $article->title]);
         return ApiResponse::data(ArticleResource::detail($article));
     }
