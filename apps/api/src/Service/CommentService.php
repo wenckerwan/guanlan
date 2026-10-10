@@ -181,16 +181,45 @@ class CommentService
     }
 
     /** 后台列表（可按状态/栏目筛选），含全部待审与他人评论。 */
-    public function adminList(string $status = '', string $articleType = '', int $page = 1, int $perPage = 20): array
+    public function adminList(string $status = '', string $articleType = '', int $page = 1, int $perPage = 20, array $filters = []): array
     {
+        AdminDashboardService::authorize();
+        if (!in_array($status, ['', 'pending', 'approved'], true) || !in_array($articleType, ['', ...self::ARTICLE_TYPES], true)) {
+            throw new \RuntimeException('评论筛选条件无效', 422);
+        }
+        foreach (['q', 'articleSlug', 'userQ'] as $field) {
+            if (array_key_exists($field, $filters) && !is_string($filters[$field])) throw new \RuntimeException('评论筛选条件无效', 422);
+        }
+        $userId = array_key_exists('userId', $filters) ? $filters['userId'] : '';
+        if ($userId !== '' && ((!is_int($userId) && !is_string($userId)) || !preg_match('/^[1-9][0-9]*$/D', (string) $userId) || filter_var($userId, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false)) {
+            throw new \RuntimeException('用户ID必须为正整数', 422);
+        }
         $perPage = max(1, min(100, $perPage));
-        $page = max(1, $page);
 
         $query = Comment::query()->with('user')
             ->when($status !== '', fn (Builder $q) => $q->where('status', $status))
             ->when($articleType !== '', fn (Builder $q) => $q->where('article_type', $articleType));
 
+        $keyword = trim($filters['q'] ?? '');
+        if ($keyword !== '') {
+            $like = '%' . strtr($keyword, ['=' => '==', '%' => '=%', '_' => '=_']) . '%';
+            $query->whereRaw("content LIKE ? ESCAPE '='", [$like]);
+        }
+        $slug = trim($filters['articleSlug'] ?? '');
+        if ($slug !== '') $query->where('article_slug', $slug);
+        if ($userId !== '') $query->where('user_id', (int) $userId);
+        $userQ = trim($filters['userQ'] ?? '');
+        if ($userQ !== '') {
+            $like = '%' . strtr($userQ, ['=' => '==', '%' => '=%', '_' => '=_']) . '%';
+            $query->whereHas('user', function (Builder $user) use ($like) {
+                $user->where(function (Builder $user) use ($like) {
+                    $user->whereRaw("display_name LIKE ? ESCAPE '='", [$like])->orWhereRaw("email LIKE ? ESCAPE '='", [$like]);
+                });
+            });
+        }
+
         $total = (int) (clone $query)->count();
+        $page = min(max(1, $page), max(1, (int) ceil($total / $perPage)));
         $rows = $query->orderByDesc('id')
             ->forPage($page, $perPage)
             ->get()

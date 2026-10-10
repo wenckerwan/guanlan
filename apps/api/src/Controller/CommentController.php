@@ -108,12 +108,24 @@ class CommentController
     /** 后台：评论列表（status=pending 过滤待审） */
     public function adminIndex(): ResponseInterface
     {
-        return ApiResponse::data($this->service->adminList(
-            trim((string) $this->request->input('status', '')),
-            trim((string) $this->request->input('articleType', '')),
-            (int) $this->request->input('page', 1),
-            (int) $this->request->input('perPage', 20)
-        ));
+        try {
+            $params = [];
+            foreach (['status', 'articleType', 'q', 'articleSlug', 'userQ'] as $field) {
+                $value = $this->request->input($field, '');
+                if (!is_string($value)) throw new \RuntimeException('评论筛选条件无效', 422);
+                $params[$field] = trim($value);
+            }
+            foreach (['page' => 1, 'perPage' => 20] as $field => $default) {
+                $value = $this->request->input($field, $default);
+                if ((!is_int($value) && !is_string($value)) || !preg_match('/^-?[0-9]+$/D', (string) $value)) throw new \RuntimeException('分页参数无效', 422);
+                $params[$field] = (int) $value;
+            }
+            $params['userId'] = $this->request->input('userId', '');
+            return ApiResponse::data($this->service->adminList($params['status'], $params['articleType'], $params['page'], $params['perPage'], $params));
+        } catch (\RuntimeException $e) {
+            if (!in_array($e->getCode(), [403, 422], true)) throw $e;
+            return ApiResponse::message($e->getMessage(), $e->getCode());
+        }
     }
 
     /** 后台：置顶 / 取消置顶 / 审核通过 */

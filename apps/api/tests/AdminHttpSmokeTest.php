@@ -22,6 +22,17 @@ try {
  $http('/admin/articles/hotspot/source-diff',200);
  $http('/admin/overview?from=2026-10-10&to=2026-10-10',200);
  $http('/admin/audit-logs',200);
+ $students=$http('/admin/mistakes/students?q=S125&page=999',200);
+ if($students['data']['total']!==1||$students['data']['page']!==1)throw new RuntimeException('Runtime student filters not wired');
+ $items=$http('/admin/mistakes/students/S001/items?module='.rawurlencode('马原').'&errorType='.rawurlencode('审题失误'),200);
+ if($items['data']['total']!==20||count($items['data']['filters']['modules'])!==3)throw new RuntimeException('Runtime item filters not wired');
+ $http('/admin/mistakes/students/missing/items',404);
+ $http('/admin/mistakes/students?q%5B%5D=bad',422);
+ $comments=$http('/admin/comments?q='.rawurlencode('评论31').'&userId=2&articleSlug=article-1',200);
+ if($comments['data']['total']!==1||$comments['data']['items'][0]['id']!==31)throw new RuntimeException('Runtime comment filters not wired');
+ $http('/admin/comments?userId=0',422);
+ $http('/admin/comments?status=unknown',422);
+ $http('/admin/comments',401,'GET',null,false);
  $http('/admin/articles/hotspot/status-batch',422,'POST',['status'=>'draft','items'=>[]]);
  $http('/admin/articles/preview',401,'POST',['format'=>'markdown','body'=>'denied'],false);
  echo "LOCAL_RUNTIME_HTTP_SMOKE_COMPLETE\n";
