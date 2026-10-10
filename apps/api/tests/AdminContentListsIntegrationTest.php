@@ -9,7 +9,7 @@ Swoole\Coroutine\run(function()use(&$failed){
  foreach(['hotspots','analysis_articles','mocks','questions','papers']as$t){$pdo->exec("DROP TABLE IF EXISTS $t");}
  foreach(['hotspots','analysis_articles']as$t){$pdo->exec("CREATE TABLE $t (id INT PRIMARY KEY,slug VARCHAR(191),title VARCHAR(191),summary TEXT,status VARCHAR(16),period VARCHAR(32),category VARCHAR(32),priority VARCHAR(8)) ENGINE=InnoDB");$q=$pdo->prepare("INSERT INTO $t VALUES (?,?,?,?,?,?,?,?)");for($i=1;$i<=125;$i++)$q->execute([$i,'s'.$i,'文章'.$i,$i===1?'literal%_':'Summary',$i%2?'published':'hidden',$i%3?'2026年10月':'2026年9月',$i%3?'选择题':'分析题','A']);}
  $pdo->exec('CREATE TABLE mocks (id INT PRIMARY KEY) ENGINE=InnoDB');for($i=1;$i<=45;$i++)$pdo->exec("INSERT INTO mocks VALUES ($i)");
- $pdo->exec('CREATE TABLE questions (id INT PRIMARY KEY,pid VARCHAR(32),no INT) ENGINE=InnoDB');for($i=1;$i<=125;$i++)$pdo->exec("INSERT INTO questions VALUES ($i,'paper',$i)");
+ $pdo->exec('CREATE TABLE questions (id INT PRIMARY KEY,pid VARCHAR(32),no INT,sort_order INT DEFAULT 0,revision INT DEFAULT 1) ENGINE=InnoDB');for($i=1;$i<=125;$i++)$pdo->exec("INSERT INTO questions (id,pid,no) VALUES ($i,'paper',$i)");
  $pdo->exec('CREATE TABLE papers (id INT PRIMARY KEY,sort_order INT) ENGINE=InnoDB');for($i=1;$i<=35;$i++)$pdo->exec("INSERT INTO papers VALUES ($i,0)");
  $s=(new ReflectionClass(App\Service\AdminService::class))->newInstanceWithoutConstructor();$n=0;$errors=[];
  $assert=fn($ok,$m)=>$ok?:throw new RuntimeException($m);

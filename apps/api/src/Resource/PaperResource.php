@@ -13,6 +13,7 @@ class PaperResource
         return [
             'id' => (int) $paper->id,
             'pid' => (string) $paper->pid,
+            'sortOrder' => (int) $paper->sort_order,
             'year' => (int) $paper->year,
             'label' => (string) $paper->label,
             'kind' => (string) $paper->kind,

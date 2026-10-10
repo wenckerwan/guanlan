@@ -37,7 +37,7 @@ class QuestionService
     /** @return array<int, Question> */
     public function paperQuestions(string $pid): array
     {
-        return Question::query()->where('pid', $pid)->orderBy('no')->get()->all();
+        return Question::query()->where('pid', $pid)->orderBy('sort_order')->orderBy('no')->orderBy('id')->get()->all();
     }
 
     /**

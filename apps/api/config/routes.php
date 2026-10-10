@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Controller\AdminController;
+use App\Controller\AdminQuestionController;
 use App\Controller\ArticleController;
 use App\Controller\AuthController;
 use App\Controller\CommentController;
@@ -120,7 +121,10 @@ Router::addGroup('/api/v1/admin', function () {
     Router::get('/overview', [AdminController::class, 'overview']);
     Router::get('/papers', [AdminController::class, 'papers']);
     Router::get('/papers/{pid}/questions', [AdminController::class, 'paperQuestions']);
+    Router::post('/papers/{pid}/questions', [AdminQuestionController::class, 'create']);
+    Router::get('/questions/{id:\\d+}', [AdminQuestionController::class, 'show']);
     Router::get('/mocks', [AdminController::class, 'mocks']);
+    Router::get('/mocks/{slug}', [AdminController::class, 'mockDetail']);
     Router::get('/predictions', [AdminController::class, 'predictions']);
     Router::get('/users', [AdminController::class, 'users']);
     Router::post('/users', [AdminController::class, 'createUser']);
@@ -130,7 +134,7 @@ Router::addGroup('/api/v1/admin', function () {
     Router::post('/papers', [AdminController::class, 'createPaper']);
     Router::patch('/papers/{id:\d+}', [AdminController::class, 'updatePaper']);
     Router::delete('/papers/{id:\d+}', [AdminController::class, 'deletePaper']);
-    Router::patch('/questions/{id:\d+}', [AdminController::class, 'updateQuestion']);
+    Router::patch('/questions/{id:\d+}', [AdminQuestionController::class, 'update']);
     Router::patch('/predictions/{id:\d+}', [AdminController::class, 'updatePrediction']);
     Router::get('/attempts', [AdminController::class, 'attempts']);
     Router::get('/mistakes', [AdminController::class, 'mistakes']);

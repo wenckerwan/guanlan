@@ -256,11 +256,12 @@ class AdminService
     public function savePaper(array $data, ?int $id = null): Paper
     {
         return ContentMaintenance::write('papers',function () use ($data, $id) {
-            $paper = $id ? Paper::find($id) : null;
+            $paper = $id ? Paper::query()->where('id', $id)->lockForUpdate()->first() : null;
             if ($id !== null && ! $paper) {
                 throw new \RuntimeException('试卷不存在');
             }
 
+            if ($paper && array_key_exists('pid', $data) && $data['pid'] !== (string)$paper->pid) throw new \RuntimeException('试卷编号不可改变', 422);
             $year = (int) ($data['year'] ?? $paper->year ?? (int) date('Y'));
             $pid = trim((string) ($data['pid'] ?? $paper->pid ?? ''));
             if ($pid === '') {
@@ -294,7 +295,7 @@ class AdminService
     public function deletePaper(int $id, bool $force = false): array
     {
         return ContentMaintenance::write('papers',function () use ($id, $force) {
-            $paper = Paper::find($id);
+            $paper = Paper::query()->where('id', $id)->lockForUpdate()->first();
             if (! $paper) {
                 throw new \RuntimeException('试卷不存在');
             }
@@ -312,28 +313,7 @@ class AdminService
 
     public function updateQuestion(int $id, array $data): ?Question
     {
-        return ContentMaintenance::write('questions',function () use ($id, $data) {
-            $question = Question::find($id);
-            if (! $question) {
-                return null;
-            }
-            $question->fill([
-                'stem' => (string) ($data['stem'] ?? $question->stem),
-                'material' => (string) ($data['material'] ?? $question->material),
-                'options' => is_array($data['options'] ?? null) ? array_values($data['options']) : $question->options,
-                'answer' => mb_substr((string) ($data['answer'] ?? $question->answer), 0, 16),
-                'answer_text' => (string) ($data['answerText'] ?? $question->answer_text),
-                'analysis' => (string) ($data['analysis'] ?? $question->analysis),
-                'kaodian' => mb_substr((string) ($data['kaodian'] ?? $question->kaodian), 0, 191),
-                'module' => mb_substr((string) ($data['module'] ?? $question->module), 0, 16),
-                'module_name' => mb_substr((string) ($data['moduleName'] ?? $question->module_name), 0, 64),
-                'score' => (float) ($data['score'] ?? $question->score),
-            ]);
-            $question->save();
-
-            return $question;
-
-        });
+        return (new AdminQuestionService(new AdminAuditService()))->update($id, $data);
     }
 
     /** @return array<int, Attempt> */
@@ -476,8 +456,12 @@ class AdminService
     /** 后台只读：某卷题目分页 */
     public function paperQuestions(string $pid, int $page = 1, int $perPage = 20): array
     {
-        $query = Question::query()->where('pid', $pid)->orderBy('no');
-        return Db::transaction(fn () => $this->pageResult($query, $page, $perPage));
+        $query = Question::query()->where('pid', $pid)->orderBy('sort_order')->orderBy('no')->orderBy('id');
+        return Db::transaction(function () use ($query, $page, $perPage) {
+            // Read before pagination mutates the query's limit/offset, within the same snapshot.
+            $nextNo = (int)(clone $query)->max('no') + 1;
+            return $this->pageResult($query, $page, $perPage) + ['nextNo' => $nextNo];
+        });
     }
 
     /** 后台只读：模拟押题分页 */
@@ -489,30 +473,25 @@ class AdminService
 
     public function savePrediction(array $data, int $id): ?Prediction
     {
-        return ContentMaintenance::write('predictions',function () use ($data, $id) {
-            $prediction = Prediction::find($id);
-            if (! $prediction) {
-                return null;
-            }
-            $prediction->status = ContentStatus::forWrite($data, $prediction->status ?? null);
-            if (isset($data['sortOrder'])) {
-                $prediction->sort_order = (int) $data['sortOrder'];
-            }
+        AdminDashboardService::authorize();
+        if (array_key_exists('sortOrder', $data) && (!is_int($data['sortOrder']) || $data['sortOrder'] < -2147483648 || $data['sortOrder'] > 2147483647)) throw new \RuntimeException('排序必须为32位整数', 422);
+        return ContentMaintenance::write('predictions', function () use ($data, $id) {
+            AdminDashboardService::authorize();
+            $prediction = Prediction::query()->where('id', $id)->lockForUpdate()->first();
+            if (!$prediction) return null;
+            if (array_key_exists('status', $data)) $prediction->status = ContentStatus::forWrite($data, $prediction->status ?? null);
+            if (array_key_exists('sortOrder', $data)) $prediction->sort_order = $data['sortOrder'];
             $prediction->save();
-
             return $prediction;
-
         });
     }
 
     /** 后台只读：时政预测分页 */
     public function predictions(int $page = 1, int $perPage = 20): array
     {
+        AdminDashboardService::authorize();
         $query = Prediction::query()->orderBy('sort_order')->orderBy('id');
-        $total = (int) (clone $query)->count();
-        $items = $query->forPage(max(1, $page), max(1, min(100, $perPage)))->get()->all();
-
-        return ['items' => $items, 'total' => $total, 'page' => max(1, $page), 'perPage' => max(1, min(100, $perPage))];
+        return Db::transaction(fn () => $this->pageResult($query, $page, $perPage));
     }
 
     /* ---------- 错题后台（阶段 B1） ---------- */
