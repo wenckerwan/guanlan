@@ -14,6 +14,7 @@ use App\Resource\UserResource;
 use App\Service\AdminAuditService;
 use App\Service\AdminService;
 use App\Service\AdminArticleService;
+use App\Service\AdminArticleHistoryService;
 use App\Support\ApiResponse;
 use App\Support\Auth;
 use App\Support\Validator;
@@ -26,7 +27,8 @@ class AdminController
         private AdminService $service,
         private AdminAuditService $audit,
         private RequestInterface $request,
-        private AdminArticleService $articles
+        private AdminArticleService $articles,
+        private AdminArticleHistoryService $articleHistory
     ) {
     }
 
@@ -401,6 +403,52 @@ class AdminController
         catch (\RuntimeException $exception) {
             return ApiResponse::message($exception->getMessage(), in_array($exception->getCode(), [403,404,422], true) ? $exception->getCode() : 422);
         }
+    }
+
+    private function articleHistoryResponse(callable $operation): ResponseInterface
+    {
+        try { return ApiResponse::data($operation()); }
+        catch (\RuntimeException $exception) {
+            $code=$exception->getCode();
+            // Manifest/infrastructure failures must not disclose local filesystem paths.
+            return ApiResponse::message(in_array($code,[403,404,409,422],true)?$exception->getMessage():'文章来源读取失败', in_array($code,[403,404,409,422],true)?$code:500);
+        }
+    }
+
+    public function articleRevisions(string $kind,int $id): ResponseInterface
+    {
+        return $this->articleHistoryResponse(fn()=>$this->articleHistory->revisions($kind,$id,$this->page(),(int)$this->request->input('perPage',20)));
+    }
+    public function articleRevision(string $kind,int $id,int $revision): ResponseInterface
+    {
+        return $this->articleHistoryResponse(fn()=>$this->articleHistory->revision($kind,$id,$revision));
+    }
+    public function restoreArticle(string $kind,int $id): ResponseInterface
+    {
+        return $this->articleHistoryResponse(function () use ($kind,$id) {
+            $data=$this->request->all();$result=$this->articleHistory->restore($kind,$id,$data);
+            $this->audit->log($this->user(),'article.restore',$kind,(string)$id,['restoredRevision'=>$data['revision'],'revision'=>$result['revision']]);
+            return $result;
+        });
+    }
+    public function articleSourceDiff(string $kind,int $id): ResponseInterface
+    {
+        return $this->articleHistoryResponse(fn()=>$this->articleHistory->sourceDiff($kind,$id));
+    }
+    public function articleSourceDiffIndex(string $kind): ResponseInterface
+    {
+        return $this->articleHistoryResponse(fn()=>$this->articleHistory->sourceDiffIndex($kind,$this->page(),(int)$this->request->input('perPage',20)));
+    }
+    public function exportArticle(string $kind,int $id): ResponseInterface
+    {
+        return $this->articleHistoryResponse(function () use ($kind,$id) {
+            $raw=$this->request->input('revision');$revision=null;
+            if ($raw!==null) {
+                if (!is_scalar($raw)||!preg_match('/^[1-9][0-9]*$/',(string)$raw)||(float)$raw>PHP_INT_MAX) throw new \RuntimeException('版本号无效',422);
+                $revision=(int)$raw;
+            }
+            return $this->articleHistory->export($kind,$id,$revision);
+        });
     }
 
     public function previewArticle(): ResponseInterface

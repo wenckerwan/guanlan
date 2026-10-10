@@ -15,6 +15,9 @@ Swoole\Coroutine\run(function () use (&$failed) {
     }
     require BASE_PATH.'/migrations/2026_10_10_000001_add_article_editor_metadata.php';
     (new AddArticleEditorMetadata())->up();
+    $pdo->exec('DROP TABLE IF EXISTS article_revisions');
+    require BASE_PATH.'/migrations/2026_10_10_000002_create_article_revisions.php';
+    (new CreateArticleRevisions())->up();
     $pdo->exec("UPDATE content_maintenance SET maintained=0 WHERE table_name IN ('hotspots','analysis_articles')");
     $admin = App\Model\User::where('role','admin')->where('status','active')->first();
     App\Support\Auth::setUser($admin);

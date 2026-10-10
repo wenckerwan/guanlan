@@ -16,7 +16,7 @@ class AdminArticleService
     {
     }
 
-    private function authorize(): void
+    public function authorize(): void
     {
         $snapshot = Auth::user();
         $user = $snapshot ? User::find($snapshot->id) : null;
@@ -25,7 +25,7 @@ class AdminArticleService
         }
     }
 
-    private function model(string $kind): string
+    public function model(string $kind): string
     {
         return match ($kind) {
             'hotspot' => Hotspot::class,
@@ -74,6 +74,7 @@ class AdminArticleService
                     throw new \RuntimeException('文章已被修改，请重新读取后合并', 409);
                 }
             }
+            if ($id !== null) AdminArticleHistoryService::captureBaseline($kind, $model);
             $title = $data['title'] ?? $model->title ?? '';
             if (!is_string($title) || trim($title) === '' || mb_strlen($title) > 191) {
                 throw new \RuntimeException('标题不能为空或超过191字', 422);
@@ -83,12 +84,20 @@ class AdminArticleService
             } catch (\RuntimeException $e) {
                 throw new \RuntimeException($e->getMessage(), 422);
             }
-            $fields = $kind === 'hotspot' ? ['summary','level','priority','type','tag','period'] : ['summary','category'];
+            $fields = $kind === 'hotspot' ? ['summary','level','priority','type','tag','period'] : ['summary','category','priority'];
             foreach ($fields as $field) {
                 if (array_key_exists($field, $data)) {
                     if (!is_string($data[$field])) throw new \RuntimeException('文章元数据无效', 422);
                     $model->$field = $data[$field];
                 }
+            }
+            if ($kind === 'analysis' && array_key_exists('sourceFile', $data)) {
+                if (!is_string($data['sourceFile'])) throw new \RuntimeException('文章元数据无效', 422);
+                $model->source_file = $data['sourceFile'];
+            }
+            if ($kind === 'analysis' && array_key_exists('release', $data)) {
+                if (!is_bool($data['release'])) throw new \RuntimeException('文章元数据无效', 422);
+                $model->release = $data['release'];
             }
             if ($kind === 'hotspot' && array_key_exists('subjectId', $data)) $model->subject_id = (int) $data['subjectId'];
             if (!$model->exists && $kind === 'hotspot' && !$model->subject_id) $model->subject_id = 1;
@@ -112,6 +121,9 @@ class AdminArticleService
             $model->revision = $id !== null ? $revision + 1 : 1;
             $model->content_source = 'admin';
             $model->save();
+            // Load database defaults before immutable snapshots and the create response.
+            $model->refresh();
+            AdminArticleHistoryService::capture($kind, $model, (int) Auth::user()->id);
             return $model;
         });
     }

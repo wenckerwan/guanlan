@@ -13,6 +13,7 @@ const buffers = reactive({ html: '', markdown: '' })
 const body = computed({ get: () => buffers[form.format], set: value => { buffers[form.format] = value } })
 const revision = ref(0), contentSource = ref('admin')
 const loading = ref(false), saving = ref(false), previewing = ref(false)
+const historyBusy = ref(false)
 const detailReady = ref(false)
 const error = ref(''), feedback = ref(''), conflict = ref(false)
 const rendered = ref<Rendered | null>(null), latest = ref<Detail | null>(null)
@@ -52,7 +53,7 @@ function populate(detail: Detail) {
   baseline.value = snapshot()
 }
 async function loadDetail(keepDraft = false) {
-  if (saving.value) return
+  if (saving.value || historyBusy.value) return
   const active = ++session
   ++previewSequence
   previewing.value = false
@@ -71,17 +72,18 @@ async function loadDetail(keepDraft = false) {
   } finally { if (active === session) loading.value = false }
 }
 function confirmLeave() {
-  if (saving.value) { feedback.value = '正在保存，请等待保存结果。'; return false }
+  if (saving.value || historyBusy.value) { feedback.value = '正在保存或恢复，请等待操作结果。'; return false }
   return !dirty.value || window.confirm('有未保存的修改，确定放弃并离开？')
 }
 function close() { if (confirmLeave()) emit('close') }
 function adoptLatest() {
+  if (saving.value || loading.value || historyBusy.value) return
   if (latest.value && window.confirm('确定用最新版本替换当前草稿？当前输入将被放弃。')) {
     populate(latest.value); latest.value = null; conflict.value = false; feedback.value = '已采用最新版本'; error.value = ''
   }
 }
 async function preview() {
-  if (loading.value || saving.value) return
+  if (loading.value || saving.value || historyBusy.value) return
   const active = session, sequence = ++previewSequence
   const input = { format: form.format, body: body.value }
   previewing.value = true; error.value = ''; feedback.value = ''
@@ -96,7 +98,7 @@ async function preview() {
   } finally { if (active === session && sequence === previewSequence) previewing.value = false }
 }
 async function save() {
-  if (saving.value || loading.value || !detailReady.value || conflict.value || !form.title.trim()) return
+  if (saving.value || loading.value || historyBusy.value || !detailReady.value || conflict.value || !form.title.trim()) return
   const active = session
   saving.value = true; error.value = ''; feedback.value = ''
   ++previewSequence; previewing.value = false
@@ -125,9 +127,25 @@ async function save() {
     error.value = conflict.value ? '此文章已被其他修改更新。你的输入已保留，请读取最新版本后处理冲突。' : exceptionMessage(exception, '保存失败或响应格式无效，输入已保留，请重试。')
   } finally { if (active === session) saving.value = false }
 }
+function applyHistory(value: unknown) {
+  if (!validDetail(value)) return
+  ++previewSequence; previewing.value = false
+  populate(value); detailReady.value = true; latest.value = null; conflict.value = false; error.value = ''; feedback.value = '已恢复为新修订'
+  emit('saved')
+}
+function confirmDiscardHistory() {
+  return !saving.value && !loading.value && (!dirty.value || window.confirm('恢复历史版本将替换未保存的修改。确定放弃当前草稿？'))
+}
+function adoptSource(fields: Record<string, string>) {
+  if (saving.value || loading.value || historyBusy.value) return
+  if (!window.confirm('将所选来源字段放入草稿，替换这些字段的当前输入；正文来源使用 HTML 格式。只有点击保存文章才写入新修订。确认采用？')) return
+  for (const key of ['title', 'summary', 'period', 'category'] as const) if (typeof fields[key] === 'string') form[key] = fields[key]
+  if (typeof fields.html === 'string') { buffers.html = fields.html; form.format = 'html' }
+  feedback.value = '所选来源字段已放入草稿；请检查后保存文章。'
+}
 watch(() => [props.kind, props.articleId], () => {
   ++session; ++previewSequence
-  loading.value = false; previewing.value = false; saving.value = false; detailReady.value = props.articleId === null
+  loading.value = false; previewing.value = false; saving.value = false; historyBusy.value = false; detailReady.value = props.articleId === null
   error.value = ''; feedback.value = ''; conflict.value = false; latest.value = null; rendered.value = null; persistedContent.value = null
   Object.assign(form, { title: '', summary: '', status: 'published', period: '', priority: 'A', level: 'S', type: '形势与政策', tag: '', category: '选择题规律', format: 'markdown' })
   buffers.html = ''; buffers.markdown = ''; revision.value = 0; contentSource.value = 'admin'
@@ -137,7 +155,7 @@ watch(() => [props.kind, props.articleId], () => {
 watch(() => [form.format, body.value], () => {
   ++previewSequence; previewing.value = false; rendered.value = null
 }, { flush: 'sync' })
-const beforeUnload = (event: BeforeUnloadEvent) => { if (dirty.value || saving.value) { event.preventDefault(); event.returnValue = '' } }
+const beforeUnload = (event: BeforeUnloadEvent) => { if (dirty.value || saving.value || historyBusy.value) { event.preventDefault(); event.returnValue = '' } }
 onMounted(() => window.addEventListener('beforeunload', beforeUnload))
 onBeforeUnmount(() => { ++session; ++previewSequence; window.removeEventListener('beforeunload', beforeUnload) })
 onBeforeRouteLeave(() => confirmLeave())
@@ -154,7 +172,7 @@ defineExpose({ confirmLeave })
     <div v-if="conflict"><button class="ghost-button" type="button" :disabled="loading || saving" @click="loadDetail(true)">读取最新版本（保留草稿）</button><div v-if="latest"><p>最新版本 {{ latest.revision }}：{{ latest.title }}</p><button class="ghost-button" type="button" @click="adoptLatest">采用最新版本</button></div></div>
     <p v-if="feedback" role="status">{{ feedback }}</p>
     <form class="admin-form" @submit.prevent="save">
-      <fieldset :disabled="loading || saving || !detailReady">
+      <fieldset :disabled="loading || saving || historyBusy || !detailReady">
         <label><span>标题</span><input v-model="form.title" required aria-label="文章标题" /></label>
         <label><span>状态</span><select v-model="form.status" aria-label="文章状态"><option value="published">已发布</option><option value="hidden">已隐藏</option></select></label>
         <template v-if="kind === 'hotspots'">
@@ -172,6 +190,7 @@ defineExpose({ confirmLeave })
         <div class="wide editor-actions"><button class="ghost-button" type="button" @click="preview">{{ previewing ? '更新预览…' : '预览正文' }}</button><button class="primary-button" type="submit" :disabled="conflict || !form.title.trim()">{{ saving ? '保存中…' : '保存文章' }}</button><span class="admin-meta">{{ dirty ? '有未保存修改' : '无未保存修改' }} · 修订 {{ revision }} · 来源 {{ contentSource }}</span></div>
       </fieldset>
     </form>
+    <AdminArticleHistory v-if="articleId !== null && detailReady" :kind="kind" :article-id="articleId" :revision="revision" :busy="loading || saving || previewing" :confirm-discard="confirmDiscardHistory" :validate-detail="validDetail" @applied="applyHistory" @conflict="conflict = true" @restoring="historyBusy = $event" @adopt-source="adoptSource" />
     <div v-if="rendered" class="article-preview"><h4>正文预览 · {{ rendered.wordCount }} 字 · {{ rendered.outline.length }} 个标题</h4><iframe title="安全正文预览" sandbox="" :srcdoc="previewDocument" /></div>
   </section>
 </template>

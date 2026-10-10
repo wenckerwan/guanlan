@@ -141,6 +141,12 @@ Router::addGroup('/api/v1/admin', function () {
     Router::get('/mistakes/review-stats', [AdminController::class, 'mistakeReviewStats']);
     Router::get('/hotspots', [AdminController::class, 'hotspots']);
     Router::get('/hotspots/{id:\d+}', [AdminController::class, 'hotspotDetail']);
+    Router::get('/articles/{kind}/source-diff', [AdminController::class, 'articleSourceDiffIndex']);
+    Router::get('/articles/{kind}/{id:\d+}/revisions', [AdminController::class, 'articleRevisions']);
+    Router::get('/articles/{kind}/{id:\d+}/revisions/{revision:\d+}', [AdminController::class, 'articleRevision']);
+    Router::post('/articles/{kind}/{id:\d+}/restore', [AdminController::class, 'restoreArticle']);
+    Router::get('/articles/{kind}/{id:\d+}/source-diff', [AdminController::class, 'articleSourceDiff']);
+    Router::get('/articles/{kind}/{id:\d+}/export', [AdminController::class, 'exportArticle']);
     Router::post('/articles/preview', [AdminController::class, 'previewArticle']);
     Router::post('/hotspots', [AdminController::class, 'createHotspot']);
     Router::patch('/hotspots/{id:\d+}', [AdminController::class, 'updateHotspot']);
