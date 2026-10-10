@@ -18,7 +18,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       else if (path.endsWith('/admin/users/1') && request.method() === 'PATCH') { changed++; data = { ...user, ...request.postDataJSON() }; }
       else if (path.endsWith('/admin/users')) data = { items: [user], total: 1, page: 1, perPage: 20 };
       else if (/\/admin\/(hotspots|analysis)\/1$/.test(path) && request.method() === 'DELETE') { deleted++; articles = []; data = { ok: true }; }
-      else if (/\/admin\/(hotspots|analysis)$/.test(path)) data = articles;
+      else if (/\/admin\/(hotspots|analysis)$/.test(path)) data = { items: articles, total: articles.length, page: 1, perPage: 20, filters: { periods: [], categories: [] } };
       await route.fulfill({ json: { data } });
     });
     const page = await context.newPage();

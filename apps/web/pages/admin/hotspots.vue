@@ -1,24 +1,15 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { reactive, ref } from 'vue'
 import { Plus, Trash2 } from 'lucide-vue-next'
 import type { ArticleSummary } from '~/types/api'
 
 type AdminArticle = ArticleSummary & { id: number }
 
-const { request, restore } = useAuth()
-const items = ref<AdminArticle[]>([])
+const { request } = useAuth()
+const { items, total, filters, draft, sizes, options, loading, loaded, loadError, visible, load, search, resetFilters, go } = useAdminList<AdminArticle>('/admin/hotspots', ['q', 'status', 'period'])
 const message = ref('')
 const deleting = ref<number | null>(null)
 const form = reactive({ title: '', summary: '', period: '', priority: 'A', level: 'S', type: '形势与政策', tag: '', html: '' })
-
-async function load() {
-  items.value = await request<AdminArticle[]>('/admin/hotspots')
-}
-
-onMounted(async () => {
-  await restore()
-  try { await load() } catch { message.value = '加载失败，请刷新重试' }
-})
 
 async function create() {
   message.value = ''
@@ -74,7 +65,15 @@ async function setCommentMode(item: AdminArticle, event: Event) {
 
 <template>
   <section class="admin-section">
-    <div class="section-heading"><div><span class="section-kicker">时政管理</span><h2>共 {{ items.length }} 条</h2></div></div>
+    <div class="section-heading"><div><span class="section-kicker">时政管理</span><h2><span v-if="visible">共 {{ total }} 条</span></h2></div></div>
+
+    <form class="admin-form content-filters" role="search" @submit.prevent="search">
+      <label><span>标题或摘要</span><input v-model="draft.q" type="search" aria-label="标题或摘要" /></label>
+      <label><span>状态筛选</span><select v-model="draft.status" aria-label="状态筛选"><option value="">全部状态</option><option value="published">已发布</option><option value="hidden">已隐藏</option></select></label>
+      <label><span>期次筛选</span><select v-model="draft.period" aria-label="期次筛选"><option value="">全部期次</option><option v-if="draft.period && !options.periods.includes(draft.period)" :value="draft.period">{{ draft.period }}</option><option v-for="option in options.periods" :key="option" :value="option">{{ option }}</option></select></label>
+      <label><span>每页条数</span><select v-model.number="draft.perPage" aria-label="每页条数"><option v-for="size in sizes" :key="size" :value="size">{{ size }} 条</option></select></label>
+      <button class="primary-button" type="submit">筛选</button><button class="ghost-button" type="button" @click="resetFilters">重置筛选</button>
+    </form>
 
     <form class="admin-form" @submit.prevent="create">
       <label><span>标题</span><input v-model="form.title" required /></label>
@@ -89,7 +88,8 @@ async function setCommentMode(item: AdminArticle, event: Event) {
     </form>
     <p v-if="message" class="admin-meta">{{ message }}</p>
 
-    <ul class="record-list">
+    <AdminListState :loading="loading" :error="loadError" :empty="loaded && !items.length" @retry="load">没有匹配的内容。</AdminListState>
+    <ul v-if="visible && items.length" class="record-list">
       <li v-for="item in items" :key="item.id">
         <span class="record-type">{{ item.priority || 'A' }}</span>
         <span class="record-title">{{ item.title }}</span>
@@ -103,6 +103,7 @@ async function setCommentMode(item: AdminArticle, event: Event) {
         <button type="button" class="icon-button" aria-label="删除" :disabled="deleting !== null" @click="remove(item.id)"><Trash2 :size="14" /></button>
       </li>
     </ul>
+    <AdminPagination v-if="visible" :page="filters.page" :per-page="filters.perPage" :total="total" :busy="loading" @change="go" />
   </section>
 </template>
 <style scoped>

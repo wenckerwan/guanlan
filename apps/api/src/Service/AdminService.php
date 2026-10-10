@@ -366,10 +366,37 @@ class AdminService
         return $out;
     }
 
-    /** @return array<int, Hotspot> */
-    public function hotspots(int $limit = 100): array
+    public function hotspots(int $page = 1, int $perPage = 20, array $filters = []): array
     {
-        return Hotspot::query()->orderByDesc('id')->limit($limit)->get()->all();
+        return $this->articleList(Hotspot::class, $page, $perPage, $filters, 'period');
+    }
+
+    private function pageResult(object $query, int $page, int $perPage): array
+    {
+        $perPage = max(1, min(100, $perPage));
+        $total = (int)(clone $query)->count();
+        $page = min(max(1, $page), max(1, (int)ceil($total / $perPage)));
+        return ['items' => $query->forPage($page, $perPage)->get()->all(), 'total' => $total, 'page' => $page, 'perPage' => $perPage];
+    }
+
+    private function articleList(string $model, int $page, int $perPage, array $filters, string $facet): array
+    {
+        $status = (string)($filters['status'] ?? '');
+        if ($status !== '' && !in_array($status, ContentStatus::ALL, true)) throw new \RuntimeException('无效的发布状态', 422);
+        return Db::transaction(function () use ($model, $page, $perPage, $filters, $status, $facet) {
+            $query = $model::query()->orderByDesc('id');
+            $keyword = trim((string)($filters['q'] ?? ''));
+            if ($keyword !== '') {
+                $like = '%' . strtr($keyword, ['=' => '==', '%' => '=%', '_' => '=_']) . '%';
+                $query->whereRaw("(title LIKE ? ESCAPE '=' OR summary LIKE ? ESCAPE '=')", [$like, $like]);
+            }
+            if ($status !== '') $query->where('status', $status);
+            if (trim((string)($filters[$facet] ?? '')) !== '') $query->where($facet, trim((string)$filters[$facet]));
+            $result = $this->pageResult($query, $page, $perPage);
+            $options = $model::query()->whereNotNull($facet)->where($facet, '!=', '')->distinct()->orderBy($facet)->pluck($facet)->all();
+            $result['filters'] = ['periods' => $facet === 'period' ? $options : [], 'categories' => $facet === 'category' ? $options : []];
+            return $result;
+        });
     }
 
     public function saveHotspot(array $data, ?int $id = null): Hotspot
@@ -410,10 +437,9 @@ class AdminService
         });
     }
 
-    /** @return array<int, AnalysisArticle> */
-    public function analysis(int $limit = 100): array
+    public function analysis(int $page = 1, int $perPage = 20, array $filters = []): array
     {
-        return AnalysisArticle::query()->orderByDesc('id')->limit($limit)->get()->all();
+        return $this->articleList(AnalysisArticle::class, $page, $perPage, $filters, 'category');
     }
 
     public function saveAnalysis(array $data, ?int $id = null): AnalysisArticle
@@ -453,30 +479,21 @@ class AdminService
     public function papers(int $page = 1, int $perPage = 20): array
     {
         $query = Paper::query()->orderBy('sort_order')->orderBy('id');
-        $total = (int) (clone $query)->count();
-        $items = $query->forPage(max(1, $page), max(1, min(100, $perPage)))->get()->all();
-
-        return ['items' => $items, 'total' => $total, 'page' => max(1, $page), 'perPage' => max(1, min(100, $perPage))];
+        return Db::transaction(fn () => $this->pageResult($query, $page, $perPage));
     }
 
     /** 后台只读：某卷题目分页 */
     public function paperQuestions(string $pid, int $page = 1, int $perPage = 20): array
     {
         $query = Question::query()->where('pid', $pid)->orderBy('no');
-        $total = (int) (clone $query)->count();
-        $items = $query->forPage(max(1, $page), max(1, min(100, $perPage)))->get()->all();
-
-        return ['items' => $items, 'total' => $total, 'page' => max(1, $page), 'perPage' => max(1, min(100, $perPage))];
+        return Db::transaction(fn () => $this->pageResult($query, $page, $perPage));
     }
 
     /** 后台只读：模拟押题分页 */
     public function mocks(int $page = 1, int $perPage = 20): array
     {
         $query = Mock::query()->orderBy('id');
-        $total = (int) (clone $query)->count();
-        $items = $query->forPage(max(1, $page), max(1, min(100, $perPage)))->get()->all();
-
-        return ['items' => $items, 'total' => $total, 'page' => max(1, $page), 'perPage' => max(1, min(100, $perPage))];
+        return Db::transaction(fn () => $this->pageResult($query, $page, $perPage));
     }
 
     public function savePrediction(array $data, int $id): ?Prediction

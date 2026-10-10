@@ -358,7 +358,14 @@ class AdminController
 
     public function hotspots(): ResponseInterface
     {
-        return ApiResponse::data(ArticleResource::collection($this->service->hotspots()));
+        try {
+            $result = $this->service->hotspots($this->page(), $this->perPage(), [
+                'q' => $this->request->input('q', ''), 'status' => $this->request->input('status', ''),
+                'period' => $this->request->input('period', ''), 'category' => $this->request->input('category', ''),
+            ]);
+        } catch (\RuntimeException $exception) { return ApiResponse::message($exception->getMessage(), 422); }
+        $result['items'] = ArticleResource::collection($result['items']);
+        return ApiResponse::data($result);
     }
 
     public function createHotspot(): ResponseInterface
@@ -400,7 +407,14 @@ class AdminController
 
     public function analysis(): ResponseInterface
     {
-        return ApiResponse::data(ArticleResource::collection($this->service->analysis()));
+        try {
+            $result = $this->service->analysis($this->page(), $this->perPage(), [
+                'q' => $this->request->input('q', ''), 'status' => $this->request->input('status', ''),
+                'period' => $this->request->input('period', ''), 'category' => $this->request->input('category', ''),
+            ]);
+        } catch (\RuntimeException $exception) { return ApiResponse::message($exception->getMessage(), 422); }
+        $result['items'] = ArticleResource::collection($result['items']);
+        return ApiResponse::data($result);
     }
 
     public function createAnalysis(): ResponseInterface

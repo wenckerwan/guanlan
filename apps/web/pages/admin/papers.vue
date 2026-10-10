@@ -1,63 +1,49 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { onBeforeUnmount, reactive, ref, watch } from 'vue'
 import type { AdminListPayload, Paper, Question } from '~/types/api'
 
-const { request, restore } = useAuth()
-restore()
-
-const perPage = 20
-const page = ref(1)
-const total = ref(0)
-const papers = ref<Paper[]>([])
+const { request } = useAuth()
+const { items: papers, total, filters, loading, loaded, loadError, visible, load, go } = useAdminList<Paper>('/admin/papers')
 const message = ref('')
-
 const expandedPid = ref<number | null>(null)
 const questions = ref<Question[]>([])
 const questionsLoading = ref(false)
-
-async function load() {
-  try {
-    const data = await request<AdminListPayload<Paper>>(`/admin/papers?page=${page.value}&perPage=${perPage}`)
-    papers.value = data.items
-    total.value = data.total
-  } catch (exception) {
-    message.value = (exception as { data?: { message?: string } })?.data?.message || '加载失败'
-  }
-}
-
-onMounted(load)
-
-const totalPages = computed(() => Math.max(1, Math.ceil(total.value / perPage)))
-
-function go(next: number) {
-  page.value = Math.min(Math.max(1, next), totalPages.value)
-}
-
-watch(page, load)
+const questionsLoaded = ref(false)
+const questionsError = ref('')
+const questionPage = ref(1)
+const questionTotal = ref(0)
+const questionPerPage = 20
+let questionSequence = 0
 
 async function loadQuestions(paper: Paper) {
-  questionsLoading.value = true
+  const version = ++questionSequence
+  const selectedPage = questionPage.value
+  questionsLoading.value = true; questionsLoaded.value = false; questionsError.value = ''
   try {
-    const data = await request<AdminListPayload<Question>>(
-      `/admin/papers/${encodeURIComponent(paper.pid)}/questions?page=1&perPage=100`
-    )
-    questions.value = data.items
+    const data = await request<AdminListPayload<Question>>(`/admin/papers/${encodeURIComponent(paper.pid)}/questions?page=${selectedPage}&perPage=${questionPerPage}`)
+    if (version !== questionSequence || expandedPid.value !== paper.id) return
+    if (!Array.isArray(data.items) || !Number.isInteger(data.total) || !Number.isInteger(data.page) || data.page < 1) throw new Error('Invalid question response')
+    questions.value = data.items; questionTotal.value = data.total; questionPage.value = data.page; questionsLoaded.value = true
   } catch {
-    questions.value = []
-  } finally {
-    questionsLoading.value = false
-  }
+    if (version === questionSequence && expandedPid.value === paper.id) questionsError.value = '题目加载失败，请重试。'
+  } finally { if (version === questionSequence) questionsLoading.value = false }
 }
-
+function retryQuestions() {
+  const paper = papers.value.find(item => item.id === expandedPid.value)
+  if (paper) return loadQuestions(paper)
+}
+function goQuestions(page: number) { questionPage.value = page; return retryQuestions() }
+function closeQuestions() {
+  ++questionSequence; expandedPid.value = null; questions.value = []; questionsLoading.value = false; questionsLoaded.value = false; questionsError.value = ''; editingQuestion.value = null
+}
 async function toggle(paper: Paper) {
-  if (expandedPid.value === paper.id) {
-    expandedPid.value = null
-    questions.value = []
-    return
-  }
-  expandedPid.value = paper.id
+  if (expandedPid.value === paper.id) { closeQuestions(); return }
+  ++questionSequence; expandedPid.value = paper.id; questions.value = []; questionPage.value = 1; questionTotal.value = 0; editingQuestion.value = null
   await loadQuestions(paper)
 }
+watch(() => filters.value.page, closeQuestions)
+watch(papers, () => { if (expandedPid.value !== null && !papers.value.some(item => item.id === expandedPid.value)) closeQuestions() })
+onBeforeUnmount(() => { ++questionSequence })
 
 /* ---------- 试卷增删改 ---------- */
 
@@ -184,7 +170,7 @@ async function saveQuestion() {
 <template>
   <section class="admin-section">
     <div class="section-heading">
-      <div><span class="section-kicker">真题管理</span><h2>真题库（{{ total }} 卷）</h2></div>
+      <div><span class="section-kicker">真题管理</span><h2>真题库<span v-if="visible">（{{ total }} 卷）</span></h2></div>
       <button type="button" class="primary-button" @click="openCreatePaper">新建试卷</button>
     </div>
 
@@ -202,7 +188,8 @@ async function saveQuestion() {
       <button class="ghost-button" type="button" @click="paperDraftOpen = false">取消</button>
     </form>
 
-    <table class="admin-table">
+    <AdminListState :loading="loading" :error="loadError" :empty="loaded && !papers.length" @retry="load">暂无试卷。</AdminListState>
+    <table v-if="visible && papers.length" class="admin-table">
       <thead><tr><th>年份</th><th>卷名</th><th>类型</th><th>题数</th><th>满分</th><th>操作</th></tr></thead>
       <tbody>
         <tr v-for="paper in papers" :key="paper.pid">
@@ -223,8 +210,9 @@ async function saveQuestion() {
     </table>
 
     <div v-if="expandedPid" class="admin-detail-panel">
-      <p v-if="questionsLoading" class="admin-meta">题目加载中…</p>
-      <table v-else class="admin-table">
+      <p v-if="questionsLoaded && !questionsLoading && !questionsError" class="admin-meta">共 {{ questionTotal }} 道题</p>
+      <AdminListState :loading="questionsLoading" :error="questionsError" :empty="questionsLoaded && !questions.length" @retry="retryQuestions">暂无题目。</AdminListState>
+      <table v-if="questionsLoaded && !questionsLoading && !questionsError && questions.length" class="admin-table">
         <thead><tr><th>#</th><th>模块</th><th>题干</th><th>答案</th><th>操作</th></tr></thead>
         <tbody>
           <tr v-for="question in questions" :key="question.id">
@@ -238,6 +226,7 @@ async function saveQuestion() {
           </tr>
         </tbody>
       </table>
+      <AdminPagination v-if="questionsLoaded && !questionsLoading && !questionsError" :page="questionPage" :per-page="questionPerPage" :total="questionTotal" :busy="questionsLoading" @change="goQuestions" />
     </div>
 
     <form v-if="editingQuestion" class="admin-form question-editor" @submit.prevent="saveQuestion">
@@ -255,11 +244,7 @@ async function saveQuestion() {
       <button class="ghost-button" type="button" @click="editingQuestion = null">取消</button>
     </form>
 
-    <div class="pagination-row">
-      <button type="button" class="ghost-button small" :disabled="page <= 1" @click="go(page - 1)">上一页</button>
-      <span class="admin-meta">第 {{ page }} / {{ totalPages }} 页</span>
-      <button type="button" class="ghost-button small" :disabled="page >= totalPages" @click="go(page + 1)">下一页</button>
-    </div>
+    <AdminPagination v-if="visible" :page="filters.page" :per-page="filters.perPage" :total="total" :busy="loading" @change="go" />
   </section>
 </template>
 
