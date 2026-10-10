@@ -13,6 +13,7 @@ use App\Resource\QuestionResource;
 use App\Resource\UserResource;
 use App\Service\AdminAuditService;
 use App\Service\AdminService;
+use App\Service\AdminArticleService;
 use App\Support\ApiResponse;
 use App\Support\Auth;
 use App\Support\Validator;
@@ -24,7 +25,8 @@ class AdminController
     public function __construct(
         private AdminService $service,
         private AdminAuditService $audit,
-        private RequestInterface $request
+        private RequestInterface $request,
+        private AdminArticleService $articles
     ) {
     }
 
@@ -375,23 +377,49 @@ class AdminController
         }
 
         try {
-            $hotspot = $this->service->saveHotspot($this->request->all());
+            $hotspot = $this->articles->save('hotspot', $this->request->all());
         } catch (\RuntimeException $exception) {
-            return ApiResponse::message($exception->getMessage(), $exception->getCode() === 404 ? 404 : 422);
+            return ApiResponse::message($exception->getMessage(), in_array($exception->getCode(), [403, 404, 409, 422], true) ? $exception->getCode() : 422);
         }
         $this->audit->log($this->user(), 'hotspot.create', 'hotspot', (string) $hotspot->id, ['title' => (string) $hotspot->title]);
-        return ApiResponse::data(ArticleResource::detail($hotspot), 201);
+        return ApiResponse::data(ArticleResource::adminDetail($hotspot), 201);
+    }
+
+    public function hotspotDetail(int $id): ResponseInterface
+    {
+        return $this->articleDetail('hotspot', $id);
+    }
+
+    public function analysisDetail(int $id): ResponseInterface
+    {
+        return $this->articleDetail('analysis', $id);
+    }
+
+    private function articleDetail(string $kind, int $id): ResponseInterface
+    {
+        try { return ApiResponse::data($this->articles->detail($kind, $id)); }
+        catch (\RuntimeException $exception) {
+            return ApiResponse::message($exception->getMessage(), in_array($exception->getCode(), [403,404,422], true) ? $exception->getCode() : 422);
+        }
+    }
+
+    public function previewArticle(): ResponseInterface
+    {
+        try { return ApiResponse::data($this->articles->preview($this->request->all())); }
+        catch (\RuntimeException $exception) {
+            return ApiResponse::message($exception->getMessage(), $exception->getCode() === 403 ? 403 : 422);
+        }
     }
 
     public function updateHotspot(int $id): ResponseInterface
     {
         try {
-            $hotspot = $this->service->saveHotspot($this->request->all(), $id);
+            $hotspot = $this->articles->save('hotspot', $this->request->all(), $id);
         } catch (\RuntimeException $exception) {
-            return ApiResponse::message($exception->getMessage(), $exception->getCode() === 404 ? 404 : 422);
+            return ApiResponse::message($exception->getMessage(), in_array($exception->getCode(), [403, 404, 409, 422], true) ? $exception->getCode() : 422);
         }
         $this->audit->log($this->user(), 'hotspot.update', 'hotspot', (string) $id, ['title' => (string) $hotspot->title]);
-        return ApiResponse::data(ArticleResource::detail($hotspot));
+        return ApiResponse::data(ArticleResource::adminDetail($hotspot));
     }
 
     public function deleteHotspot(int $id): ResponseInterface
@@ -424,23 +452,23 @@ class AdminController
         }
 
         try {
-            $article = $this->service->saveAnalysis($this->request->all());
+            $article = $this->articles->save('analysis', $this->request->all());
         } catch (\RuntimeException $exception) {
-            return ApiResponse::message($exception->getMessage(), $exception->getCode() === 404 ? 404 : 422);
+            return ApiResponse::message($exception->getMessage(), in_array($exception->getCode(), [403, 404, 409, 422], true) ? $exception->getCode() : 422);
         }
         $this->audit->log($this->user(), 'analysis.create', 'analysis_article', (string) $article->id, ['title' => (string) $article->title]);
-        return ApiResponse::data(ArticleResource::detail($article), 201);
+        return ApiResponse::data(ArticleResource::adminDetail($article), 201);
     }
 
     public function updateAnalysis(int $id): ResponseInterface
     {
         try {
-            $article = $this->service->saveAnalysis($this->request->all(), $id);
+            $article = $this->articles->save('analysis', $this->request->all(), $id);
         } catch (\RuntimeException $exception) {
-            return ApiResponse::message($exception->getMessage(), $exception->getCode() === 404 ? 404 : 422);
+            return ApiResponse::message($exception->getMessage(), in_array($exception->getCode(), [403, 404, 409, 422], true) ? $exception->getCode() : 422);
         }
         $this->audit->log($this->user(), 'analysis.update', 'analysis_article', (string) $id, ['title' => (string) $article->title]);
-        return ApiResponse::data(ArticleResource::detail($article));
+        return ApiResponse::data(ArticleResource::adminDetail($article));
     }
 
     public function deleteAnalysis(int $id): ResponseInterface

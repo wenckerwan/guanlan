@@ -7,3 +7,5 @@
 - 2B前端分派给 content_lists_ui，root负责API与MySQL测试；接口契约 items/total/page/perPage/filters。
 
 - 2B完成：MySQL新12+既有45通过；浏览器四组通过，55前端测试和构建通过；独立复核试卷超大页码问题已修正并测试。
+
+- 3A完成：CommonMark2.10.3安全渲染与正文详情/编辑；77项MySQL、浏览器4组、55前端测试与构建通过。独立复核元数据重复正文问题已修正；生产dom/mbstring实测具备。下一阶段3B历史、恢复与只读对账。

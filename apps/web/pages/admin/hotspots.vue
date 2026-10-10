@@ -1,28 +1,27 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { ref } from 'vue'
 import { Plus, Trash2 } from 'lucide-vue-next'
 import type { ArticleSummary } from '~/types/api'
 
-type AdminArticle = ArticleSummary & { id: number }
+type AdminArticle = ArticleSummary & { id: number; revision?: number }
 
 const { request } = useAuth()
 const { items, total, filters, draft, sizes, options, loading, loaded, loadError, visible, load, search, resetFilters, go } = useAdminList<AdminArticle>('/admin/hotspots', ['q', 'status', 'period'])
 const message = ref('')
 const deleting = ref<number | null>(null)
-const form = reactive({ title: '', summary: '', period: '', priority: 'A', level: 'S', type: '形势与政策', tag: '', html: '' })
-
-async function create() {
-  message.value = ''
-  try {
-    await request('/admin/hotspots', { method: 'POST', body: { ...form } })
-    form.title = ''
-    form.summary = ''
-    form.html = ''
-    message.value = '已新增'
-    await load()
-  } catch (exception) {
-    message.value = (exception as { data?: { message?: string } })?.data?.message || '新增失败'
-  }
+const editor = ref<{ confirmLeave: () => boolean } | null>(null)
+const editorOpen = ref(false)
+const editorSession = ref(0)
+const articleId = ref<number | null>(null)
+function openEditor(id: number | null = null) {
+  if (editorOpen.value && !editor.value?.confirmLeave()) return
+  editorSession.value++
+  articleId.value = id
+  editorOpen.value = true
+}
+async function articleSaved() {
+  message.value = '已保存文章'
+  await load()
 }
 
 async function remove(id: number) {
@@ -41,7 +40,7 @@ async function remove(id: number) {
 async function toggleStatus(item: AdminArticle) {
   const status = item.status === 'hidden' ? 'published' : 'hidden'
   try {
-    await request(`/admin/hotspots/${item.id}`, { method: 'PATCH', body: { status } })
+    await request(`/admin/hotspots/${item.id}`, { method: 'PATCH', body: { status, expectedRevision: item.revision ?? 1 } })
     await load()
     message.value = status === 'hidden' ? '已隐藏' : '已发布'
   } catch (exception) {
@@ -75,17 +74,8 @@ async function setCommentMode(item: AdminArticle, event: Event) {
       <button class="primary-button" type="submit">筛选</button><button class="ghost-button" type="button" @click="resetFilters">重置筛选</button>
     </form>
 
-    <form class="admin-form" @submit.prevent="create">
-      <label><span>标题</span><input v-model="form.title" required /></label>
-      <label><span>期次</span><input v-model="form.period" placeholder="2026年10月" /></label>
-      <label><span>优先级</span><select v-model="form.priority"><option>S</option><option>A</option><option>B</option><option>C</option></select></label>
-      <label><span>等级</span><select v-model="form.level"><option>S</option><option>A</option><option>B</option></select></label>
-      <label><span>类型</span><input v-model="form.type" /></label>
-      <label><span>标签</span><input v-model="form.tag" /></label>
-      <label class="wide"><span>摘要</span><input v-model="form.summary" /></label>
-      <label class="wide"><span>正文 HTML</span><textarea v-model="form.html" rows="4"></textarea></label>
-      <button class="primary-button" type="submit"><Plus :size="15" />新增热点</button>
-    </form>
+    <button class="primary-button" type="button" @click="openEditor()"><Plus :size="15" />新增热点</button>
+    <AdminArticleEditor v-if="editorOpen" :key="editorSession" ref="editor" kind="hotspots" :article-id="articleId" @close="editorOpen = false" @saved="articleSaved" />
     <p v-if="message" class="admin-meta">{{ message }}</p>
 
     <AdminListState :loading="loading" :error="loadError" :empty="loaded && !items.length" @retry="load">没有匹配的内容。</AdminListState>
@@ -100,6 +90,7 @@ async function setCommentMode(item: AdminArticle, event: Event) {
           <option value="review">评论·审核后发布</option>
           <option value="closed">禁止评论</option>
         </select>
+        <button type="button" class="ghost-button small" @click="openEditor(item.id)">编辑</button>
         <button type="button" class="icon-button" aria-label="删除" :disabled="deleting !== null" @click="remove(item.id)"><Trash2 :size="14" /></button>
       </li>
     </ul>

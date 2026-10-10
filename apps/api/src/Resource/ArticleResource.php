@@ -43,6 +43,10 @@ class ArticleResource
             $base['wordCount'] = (int) $model->word_count;
         }
 
+        if ($model instanceof AnalysisArticle || $model instanceof Hotspot) {
+            $base['revision'] = max(1, (int) ($model->revision ?? 1));
+            $base['contentSource'] = (string) ($model->content_source ?? 'dataset');
+        }
         return $base;
     }
 
@@ -50,6 +54,18 @@ class ArticleResource
     {
         $item = self::listItem($model);
         $item['html'] = (string) $model->html;
+        return $item;
+    }
+
+    public static function adminDetail(AnalysisArticle|Hotspot $model): array
+    {
+        $item = self::detail($model);
+        $item['wordCount'] = (int) ($model->word_count ?? 0);
+        $item['format'] = $model->markdown !== null ? 'markdown' : 'html';
+        $item['body'] = $model->markdown !== null ? (string) $model->markdown : (string) $model->html;
+        $item['revision'] = (int) ($model->revision ?? 1);
+        $item['contentSource'] = (string) ($model->content_source ?? 'dataset');
+        $item['subjectId'] = (int) ($model->subject_id ?? 1);
         return $item;
     }
 

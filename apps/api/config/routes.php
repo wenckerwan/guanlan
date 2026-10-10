@@ -140,10 +140,13 @@ Router::addGroup('/api/v1/admin', function () {
     Router::patch('/mistakes/items/{id:\d+}', [AdminController::class, 'updateMistakeItem']);
     Router::get('/mistakes/review-stats', [AdminController::class, 'mistakeReviewStats']);
     Router::get('/hotspots', [AdminController::class, 'hotspots']);
+    Router::get('/hotspots/{id:\d+}', [AdminController::class, 'hotspotDetail']);
+    Router::post('/articles/preview', [AdminController::class, 'previewArticle']);
     Router::post('/hotspots', [AdminController::class, 'createHotspot']);
     Router::patch('/hotspots/{id:\d+}', [AdminController::class, 'updateHotspot']);
     Router::delete('/hotspots/{id:\d+}', [AdminController::class, 'deleteHotspot']);
     Router::get('/analysis', [AdminController::class, 'analysis']);
+    Router::get('/analysis/{id:\d+}', [AdminController::class, 'analysisDetail']);
     Router::post('/analysis', [AdminController::class, 'createAnalysis']);
     Router::patch('/analysis/{id:\d+}', [AdminController::class, 'updateAnalysis']);
     Router::delete('/analysis/{id:\d+}', [AdminController::class, 'deleteAnalysis']);

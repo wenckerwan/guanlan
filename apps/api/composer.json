@@ -14,7 +14,8 @@
     "hyperf/guzzle": "^3.1",
     "hyperf/http-server": "^3.1",
     "hyperf/logger": "^3.1",
-    "hyperf/memory": "^3.1"
+    "hyperf/memory": "^3.1",
+    "league/commonmark": "^2.10.3"
   },
   "autoload": {
     "psr-4": {

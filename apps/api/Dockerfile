@@ -8,8 +8,8 @@ RUN if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
       sed -i 's|deb.debian.org|mirrors.aliyun.com|g; s|security.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list; \
     fi
 
-RUN apt-get update && apt-get install -y git unzip libzip-dev libssl-dev libbrotli-dev \
-    && docker-php-ext-install zip pdo_mysql \
+RUN apt-get update && apt-get install -y git unzip libzip-dev libssl-dev libbrotli-dev libxml2-dev libonig-dev \
+    && docker-php-ext-install zip pdo_mysql dom mbstring \
     && pecl install swoole \
     && docker-php-ext-enable swoole \
     && rm -rf /var/lib/apt/lists/*
@@ -18,8 +18,8 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /opt/guanlan
 
-# 境内加速：使用 Aliyun packagist 镜像
-RUN composer config -g repo.packagist composer https://mirrors.aliyun.com/composer/
+# Composer 官方源包含当前稳定依赖；旧镜像可能缺少稳定版本。
+RUN composer config -g repo.packagist composer https://repo.packagist.org
 
 COPY apps/api/composer.json apps/api/composer.lock ./
 RUN composer install --no-dev --prefer-dist --no-interaction --no-progress
