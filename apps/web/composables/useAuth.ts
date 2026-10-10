@@ -126,8 +126,14 @@ export function useAuth() {
     persist('', null)
   }
 
+  function invalidateToken(expectedToken: string) {
+    if (token.value !== expectedToken) return false
+    persist('', null)
+    return true
+  }
+
   const isLoggedIn = computed(() => token.value !== '')
   const isAdmin = computed(() => user.value?.role === 'admin')
 
-  return { token, user, ready, isLoggedIn, isAdmin, restore, login, register, logout, request }
+  return { token, user, ready, isLoggedIn, isAdmin, restore, login, register, logout, request, invalidateToken }
 }

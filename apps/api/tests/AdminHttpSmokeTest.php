@@ -1,0 +1,28 @@
+<?php
+declare(strict_types=1);
+if(!str_ends_with((string)getenv('DB_DATABASE'),'_admin_test'))throw new RuntimeException('Disposable test database required');
+$pdo=new PDO('mysql:host='.getenv('DB_HOST').';dbname='.getenv('DB_DATABASE'),getenv('DB_USERNAME'),getenv('DB_PASSWORD'),[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
+$token=bin2hex(random_bytes(32));$hash=hash('sha256',$token);
+$pdo->prepare("INSERT INTO user_tokens (user_id,token_hash,user_agent,expires_at,created_at,updated_at) VALUES (1,?,'local-runtime-test',DATE_ADD(NOW(),INTERVAL 10 MINUTE),NOW(),NOW())")->execute([$hash]);
+$http=function($path,$expected,$method='GET',$body=null,$authenticated=true)use($token){
+ $context=stream_context_create(['http'=>['method'=>$method,'timeout'=>10,'ignore_errors'=>true,'header'=>"Content-Type: application/json\r\nConnection: close\r\n".($authenticated?"Authorization: Bearer $token\r\n":''),'content'=>$body===null?'':json_encode($body)]]);
+ $raw=file_get_contents('http://127.0.0.1:9501/api/v1'.$path,false,$context);preg_match('/HTTP\/\S+ (\d+)/',$http_response_header[0]??'',$matches);$status=(int)($matches[1]??0);
+ if($status!==$expected)throw new RuntimeException("$method $path expected $expected got $status: $raw");
+ $result=json_decode($raw,true);if(!is_array($result))throw new RuntimeException('Invalid runtime JSON');echo "PASS HTTP $method $path $status\n";return$result;
+};
+try {
+ $http('/auth/me',200);
+ $http('/admin/hotspots',200);
+ $http('/admin/hotspots/1',200);
+ $preview=$http('/admin/articles/preview',200,'POST',['format'=>'markdown','body'=>"# HTTP标题\n\n**安全正文**"]);
+ if(!str_contains($preview['data']['html'],'toc-0'))throw new RuntimeException('Runtime renderer not wired');
+ $http('/admin/articles/hotspot/1/revisions',200);
+ $http('/admin/articles/hotspot/1/export',200);
+ $http('/admin/articles/hotspot/1/source-diff',200);
+ $http('/admin/articles/hotspot/source-diff',200);
+ $http('/admin/overview?from=2026-10-10&to=2026-10-10',200);
+ $http('/admin/audit-logs',200);
+ $http('/admin/articles/hotspot/status-batch',422,'POST',['status'=>'draft','items'=>[]]);
+ $http('/admin/articles/preview',401,'POST',['format'=>'markdown','body'=>'denied'],false);
+ echo "LOCAL_RUNTIME_HTTP_SMOKE_COMPLETE\n";
+} finally {$pdo->prepare('DELETE FROM user_tokens WHERE token_hash=?')->execute([$hash]);}

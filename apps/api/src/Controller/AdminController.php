@@ -118,7 +118,15 @@ class AdminController
 
     public function overview(): ResponseInterface
     {
-        return ApiResponse::data($this->service->overview());
+        try {
+            $from = $this->request->input('from', '');
+            $to = $this->request->input('to', '');
+            if (!is_string($from) || !is_string($to)) throw new \RuntimeException('日期必须为有效的YYYY-MM-DD', 422);
+            return ApiResponse::data($this->service->overview($from, $to));
+        } catch (\RuntimeException $e) {
+            if (!in_array($e->getCode(), [403, 422], true)) throw $e;
+            return ApiResponse::message($e->getMessage(), $e->getCode());
+        }
     }
 
     public function users(): ResponseInterface
@@ -211,9 +219,23 @@ class AdminController
 
     public function auditLogs(): ResponseInterface
     {
-        $action = trim((string) $this->request->input('action', ''));
-        $adminId = (int) $this->request->input('adminId', 0);
-        return ApiResponse::data($this->service->auditLogs($this->page(), $this->perPage(), $action, $adminId));
+        try {
+            $action = $this->request->input('action', '');
+            $adminId = $this->request->input('adminId', 0);
+            if (!is_string($action) || !is_scalar($adminId)) throw new \RuntimeException('筛选条件无效', 422);
+            $action = trim($action);
+            $adminId = (int) $adminId;
+            $filters = [];
+            foreach (['from', 'to', 'targetType', 'targetId'] as $key) {
+                $value = $this->request->input($key, '');
+                if (!is_string($value)) throw new \RuntimeException('筛选条件无效', 422);
+                $filters[] = $value;
+            }
+            return ApiResponse::data($this->service->auditLogs($this->page(), $this->perPage(), $action, $adminId, ...$filters));
+        } catch (\RuntimeException $e) {
+            if (!in_array($e->getCode(), [403, 422], true)) throw $e;
+            return ApiResponse::message($e->getMessage(), $e->getCode());
+        }
     }
 
     public function attempts(): ResponseInterface

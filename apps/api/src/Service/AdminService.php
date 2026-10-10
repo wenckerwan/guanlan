@@ -20,6 +20,7 @@ use App\Model\User;
 use App\Model\UserToken;
 use App\Support\ContentMaintenance;
 use App\Support\ContentStatus;
+use App\Support\AdminDateRange;
 use App\Support\UserGroup;
 use Hyperf\DbConnection\Db;
 
@@ -36,8 +37,11 @@ class AdminService
     }
 
     /** @return array<string, mixed> */
-    public function overview(): array
+    public function overview(string $from = '', string $to = ''): array
     {
+        AdminDashboardService::authorize();
+        $range = AdminDateRange::overview($from, $to);
+        $statistics = (new AdminDashboardService())->statistics($range);
         $counts = [];
         foreach ([
             'users' => User::class,
@@ -55,36 +59,14 @@ class AdminService
             $counts[$key] = (int) $model::query()->count();
         }
 
-        // 近 14 天注册趋势：按天 group by，前端用 trend 纯函数补齐空档日
-        $since = date('Y-m-d 00:00:00', strtotime('-13 days'));
-        $trendRows = User::query()
-            ->selectRaw("DATE(created_at) as day, count(*) as total")
-            ->where('created_at', '>=', $since)
-            ->groupBy(Db::raw('DATE(created_at)'))
-            ->get();
-        $perDay = [];
-        foreach ($trendRows as $row) {
-            $perDay[(string) $row->day] = (int) $row->total;
-        }
-
-        // 近 14 天作答趋势
-        $attemptRows = Attempt::query()
-            ->selectRaw("DATE(created_at) as day, count(*) as total")
-            ->where('created_at', '>=', $since)
-            ->groupBy(Db::raw('DATE(created_at)'))
-            ->get();
-        $attemptsPerDay = [];
-        foreach ($attemptRows as $row) {
-            $attemptsPerDay[(string) $row->day] = (int) $row->total;
-        }
-
         // 内容上下线分布
         $statusCounts = [];
         foreach (['hotspots' => Hotspot::class, 'analysis_articles' => AnalysisArticle::class, 'predictions' => Prediction::class] as $key => $model) {
             $rows = $model::query()->selectRaw('status, count(*) as total')->groupBy('status')->get();
             $statusCounts[$key] = [];
             foreach ($rows as $row) {
-                $statusCounts[$key][(string) ($row->status ?? 'published')] = (int) $row->total;
+                $status = ContentStatus::normalize($row->status);
+                $statusCounts[$key][$status] = ($statusCounts[$key][$status] ?? 0) + (int) $row->total;
             }
         }
 
@@ -101,7 +83,7 @@ class AdminService
                 'targetType' => (string) $row->target_type,
                 'targetId' => (string) $row->target_id,
                 'adminEmail' => (string) ($row->admin_email ?? ''),
-                'createdAt' => (string) $row->created_at,
+                'createdAt' => AdminDateRange::utcIso($row->created_at),
             ];
         }
 
@@ -114,12 +96,13 @@ class AdminService
                     'email' => (string) $u->email,
                     'displayName' => (string) $u->display_name,
                     'role' => (string) $u->role,
-                    'createdAt' => (string) $u->created_at,
+                    'createdAt' => AdminDateRange::utcIso((string) $u->created_at),
                 ])
                 ->all(),
-            'todayUsers' => User::query()->where('created_at', '>=', date('Y-m-d') . ' 00:00:00')->count(),
-            'registrationTrend' => $perDay,
-            'attemptsTrend' => $attemptsPerDay,
+            'todayUsers' => (int) AdminDateRange::overview((new \DateTimeImmutable('today', new \DateTimeZone('Asia/Shanghai')))->format('Y-m-d'), '')->apply(User::query(), 'created_at')->count(),
+            'registrationTrend' => $statistics['registrationTrend'],
+            'attemptsTrend' => $statistics['attemptsTrend'],
+            'statistics' => $statistics,
             'statusCounts' => $statusCounts,
             'recentAudit' => $recentAudit,
         ];
@@ -221,16 +204,24 @@ class AdminService
     }
 
     /** 审计日志分页（含操作人邮箱） */
-    public function auditLogs(int $page = 1, int $perPage = 20, string $action = '', int $adminId = 0): array
+    public function auditLogs(int $page = 1, int $perPage = 20, string $action = '', int $adminId = 0, string $from = '', string $to = '', string $targetType = '', string $targetId = ''): array
     {
+        AdminDashboardService::authorize();
+        $range = new AdminDateRange($from, $to);
+        $perPage = min(100, max(1, $perPage));
         $query = Db::table('admin_audit_logs')->leftJoin('users', 'users.id', '=', 'admin_audit_logs.admin_id');
         if ($action !== '') {
-            $query->where('admin_audit_logs.action', 'like', $action . '%');
+            $prefix = strtr($action, ['=' => '==', '%' => '=%', '_' => '=_']) . '%';
+            $query->whereRaw("admin_audit_logs.action LIKE ? ESCAPE '='", [$prefix]);
         }
         if ($adminId > 0) {
             $query->where('admin_audit_logs.admin_id', $adminId);
         }
+        if ($targetType !== '') $query->where('admin_audit_logs.target_type', $targetType);
+        if ($targetId !== '') $query->where('admin_audit_logs.target_id', $targetId);
+        $range->apply($query, 'admin_audit_logs.created_at');
         $total = (int) (clone $query)->count();
+        $page = min(max(1, $page), max(1, (int) ceil($total / $perPage)));
         $rows = $query
             ->orderByDesc('admin_audit_logs.id')
             ->forPage(max(1, $page), max(1, min(100, $perPage)))
@@ -255,11 +246,11 @@ class AdminService
                 'targetType' => (string) $row->target_type,
                 'targetId' => (string) $row->target_id,
                 'detail' => json_decode((string) ($row->detail ?? ''), true),
-                'createdAt' => (string) $row->created_at,
+                'createdAt' => AdminDateRange::utcIso($row->created_at),
             ];
         }
 
-        return ['items' => $items, 'total' => $total, 'page' => max(1, $page), 'perPage' => max(1, min(100, $perPage))];
+        return ['items' => $items, 'total' => $total, 'page' => max(1, $page), 'perPage' => $perPage, 'timezone' => 'Asia/Shanghai', 'timestampTimezone' => 'UTC'];
     }
 
     public function savePaper(array $data, ?int $id = null): Paper

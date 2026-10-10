@@ -1,4 +1,5 @@
 <script setup lang="ts">
+definePageMeta({ layout: 'admin' })
 import { computed, onMounted, ref, watch } from 'vue'
 import { Upload } from 'lucide-vue-next'
 import type { AdminListPayload, MistakeItem } from '~/types/api'

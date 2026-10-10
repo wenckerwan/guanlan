@@ -5,5 +5,5 @@ await useAuth().restore()
 </script>
 
 <template>
-  <NuxtPage />
+  <NuxtLayout><NuxtPage /></NuxtLayout>
 </template>

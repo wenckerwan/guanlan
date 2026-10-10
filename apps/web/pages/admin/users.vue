@@ -1,4 +1,5 @@
 <script setup lang="ts">
+definePageMeta({ layout: 'admin' })
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { userListFilters, userListQuery } from '~/utils/admin-users-query.mjs'
 import type { AdminListPayload, User, UserGroup } from '~/types/api'

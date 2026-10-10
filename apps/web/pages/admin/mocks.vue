@@ -1,4 +1,5 @@
 <script setup lang="ts">
+definePageMeta({ layout: 'admin' })
 import type { Mock } from '~/types/api'
 const { items: mocks, total, filters, loading, loaded, loadError, visible, load, go } = useAdminList<Mock>('/admin/mocks')
 </script>

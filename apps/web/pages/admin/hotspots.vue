@@ -1,4 +1,5 @@
 <script setup lang="ts">
+definePageMeta({ layout: 'admin' })
 import { ref } from 'vue'
 import { Plus, Trash2 } from 'lucide-vue-next'
 import type { ArticleSummary } from '~/types/api'
@@ -79,6 +80,7 @@ async function setCommentMode(item: AdminArticle, event: Event) {
     <p v-if="message" class="admin-meta">{{ message }}</p>
 
     <AdminListState :loading="loading" :error="loadError" :empty="loaded && !items.length" @retry="load">没有匹配的内容。</AdminListState>
+    <AdminArticleBatchActions kind="hotspot" :items="items" :busy="loading || editorOpen || !!loadError" @updated="load" />
     <ul v-if="visible && items.length" class="record-list">
       <li v-for="item in items" :key="item.id">
         <span class="record-type">{{ item.priority || 'A' }}</span>

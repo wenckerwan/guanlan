@@ -116,6 +116,7 @@ Router::addGroup('/api/v1/study', function () {
 
 // 后台
 Router::addGroup('/api/v1/admin', function () {
+    Router::post('/articles/{kind}/status-batch', [\App\Controller\AdminArticleBatchController::class, 'updateStatus']);
     Router::get('/overview', [AdminController::class, 'overview']);
     Router::get('/papers', [AdminController::class, 'papers']);
     Router::get('/papers/{pid}/questions', [AdminController::class, 'paperQuestions']);

@@ -1,199 +1,100 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import type { AdminOverview, LeaderboardEntry } from '~/types/api'
-import { fillTrend, lastNDays, trendTotal } from '~/utils/trend.mjs'
+import type { AdminOverview } from '~/types/api'
 
-definePageMeta({ name: 'admin-overview' })
-
+definePageMeta({ name: 'admin-overview', layout: 'admin' })
+type Statistics = {
+  from: string; to: string; timezone: string; timestampTimezone: string; studyDateTimezone: string; updatedAt: string; dates: string[]
+  totals: { registrations: number; attempts: number; correctAttempts: number; visits: number; studySeconds: number; activeStudyAccounts: number }
+  registrationTrend: Record<string, number>; attemptsTrend: Record<string, number>; visitTrend: Record<string, number>; studyTrend: Record<string, number>
+}
+type Overview = AdminOverview & { statistics: Statistics; statusCounts?: Record<string, Record<string, number>>; recentAudit?: { action: string; targetType: string; targetId: string; adminEmail: string; createdAt: string }[] }
+const route = useRoute(), router = useRouter()
 const { request, restore } = useAuth()
-const data = ref<AdminOverview | null>(null)
-
-onMounted(async () => {
-  restore()
+const data = ref<Overview | null>(null), loading = ref(false), error = ref('')
+const from = ref(''), to = ref('')
+let sequence = 0
+function dateAtBeijing(date: Date) { return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date) }
+const today = dateAtBeijing(new Date())
+const first = dateAtBeijing(new Date(Date.now() - 13 * 86400000))
+function syncInputs() { from.value = String(route.query.from ?? first); to.value = String(route.query.to ?? today) }
+async function load() {
+  const id = ++sequence
+  loading.value = true; error.value = ''; data.value = null
   try {
-    data.value = await request<AdminOverview>('/admin/overview')
-  } catch {
-    data.value = null
-  }
-})
-
-const { data: leaderboardData } = useApiFetch<{ period: string; items: LeaderboardEntry[] }>('/stats/leaderboard?period=week&limit=10', { period: 'week', items: [] }, { lazy: true, server: false })
-const leaderboard = computed(() => leaderboardData.value?.items ?? [])
-
-function formatDuration(seconds: number) {
-  if (seconds < 60) return `${seconds} 秒`
-  if (seconds < 3600) return `${Math.round(seconds / 60)} 分钟`
-  const h = Math.floor(seconds / 3600)
-  const m = Math.round((seconds % 3600) / 60)
-  return m ? `${h} 小时 ${m} 分` : `${h} 小时`
+    const params = new URLSearchParams({ from: String(route.query.from ?? first), to: String(route.query.to ?? today) })
+    const result = await request<Overview>(`/admin/overview?${params}`)
+    if (!result?.statistics || !Array.isArray(result.statistics.dates)) throw new Error('统计数据不可用')
+    if (id === sequence) data.value = result
+  } catch (exception) {
+    if (id === sequence) error.value = (exception as { data?: { message?: string }; message?: string }).data?.message || (exception as Error).message || '统计加载失败'
+  } finally { if (id === sequence) loading.value = false }
 }
-
-const labels: Record<string, string> = {
-  users: '用户',
-  papers: '试卷',
-  questions: '题目',
-  analysis_articles: '真题分析',
-  hotspots: '时政热点',
-  predictions: '时政预测',
-  mistake_items: '错题',
-  mistake_reviews: '复习记录',
-  attempts: '作答记录',
-  favorites: '收藏',
-  notes: '笔记',
+async function apply() {
+  const query = { ...route.query, from: from.value, to: to.value }
+  if (String(route.query.from ?? '') === from.value && String(route.query.to ?? '') === to.value) await load()
+  else await router.push({ query })
 }
-
-const trendSeries = computed(() => fillTrend(data.value?.registrationTrend ?? {}, lastNDays(new Date(), 14)))
-const trendMax = computed(() => Math.max(1, ...trendSeries.value.map((item) => item.count)))
-const trendSum = computed(() => trendTotal(trendSeries.value))
-
-const attemptSeries = computed(() => fillTrend((data.value as { attemptsTrend?: Record<string, number> } | null)?.attemptsTrend ?? {}, lastNDays(new Date(), 14)))
-const attemptMax = computed(() => Math.max(1, ...attemptSeries.value.map((item) => item.count)))
-const attemptSum = computed(() => trendTotal(attemptSeries.value))
-
-const statusLabels: Record<string, string> = { published: '已发布', hidden: '已隐藏' }
+onMounted(async () => { await restore(); syncInputs(); await load() })
+watch(() => [route.query.from, route.query.to], () => { syncInputs(); load() })
+onBeforeUnmount(() => { sequence++ })
+const statistics = computed(() => data.value?.statistics)
+const labels: Record<string, string> = { users: '用户', papers: '试卷', questions: '题目', analysis_articles: '真题分析', hotspots: '时政热点', predictions: '时政预测', mistake_items: '错题', mistake_reviews: '复习记录', attempts: '作答记录', favorites: '收藏', notes: '笔记' }
+const links: Record<string, string> = { users: '/admin/users', papers: '/admin/papers', questions: '/admin/papers', analysis_articles: '/admin/analysis', hotspots: '/admin/hotspots', predictions: '/admin/predictions', mistake_items: '/admin/mistakes' }
 const statusNames: Record<string, string> = { hotspots: '时政热点', analysis_articles: '真题分析', predictions: '时政预测' }
-const recentAudit = computed(() => (data.value as { recentAudit?: { action: string; targetType: string; targetId: string; adminEmail: string; createdAt: string }[] } | null)?.recentAudit ?? [])
+function beijing(value: string) { const date = new Date(value); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Shanghai', dateStyle: 'short', timeStyle: 'medium' }).format(date) }
+function duration(seconds: number) { return `${Math.floor(seconds / 3600)} 小时 ${Math.floor(seconds % 3600 / 60)} 分 ${seconds % 60} 秒` }
 </script>
 
 <template>
-  <section class="admin-section">
+  <section class="admin-section" :aria-busy="loading">
     <div class="section-heading"><div><span class="section-kicker">数据总览</span><h2>内容与用户</h2></div></div>
-    <div class="stat-row">
-      <div v-for="(value, key) in data?.counts ?? {}" :key="key" class="stat-cell">
-        <strong>{{ value }}</strong><small>{{ labels[key] ?? key }}</small>
+    <form class="range-filter" @submit.prevent="apply">
+      <label>开始日期<input v-model="from" type="date" required aria-label="开始日期" /></label>
+      <label>结束日期<input v-model="to" type="date" required aria-label="结束日期" /></label>
+      <button type="submit" class="ghost-button">查询统计</button>
+    </form>
+    <p class="admin-meta">日期含首尾，最多 366 天。注册、作答时间及访问日期按北京时间（Asia/Shanghai）统计。</p>
+    <p v-if="loading" role="status">正在加载统计…</p>
+    <div v-else-if="error" role="alert"><p>{{ error }}</p><button class="ghost-button" @click="load">重试</button></div>
+    <template v-else-if="data && statistics">
+      <h3>全站存量</h3>
+      <p class="admin-meta">以下内容与用户总数不受日期范围影响。</p>
+      <div class="stat-row"><div v-for="(value, key) in data.counts" :key="key" class="stat-cell"><NuxtLink v-if="links[key]" :to="links[key]"><strong>{{ value }}</strong><small>{{ labels[key] ?? key }}</small></NuxtLink><template v-else><strong>{{ value }}</strong><small>{{ labels[key] ?? key }}</small></template></div></div>
+      <h3>区间统计：{{ statistics.from }} — {{ statistics.to }}</h3>
+      <p class="admin-meta">更新于 {{ beijing(statistics.updatedAt) }}（北京时间）</p>
+      <div class="stat-row range-totals">
+        <div class="stat-cell"><NuxtLink to="/admin/users"><strong>{{ statistics.totals.registrations }}</strong><small>新增账号（注册/代建）</small></NuxtLink></div>
+        <div class="stat-cell"><strong>{{ statistics.totals.attempts }}</strong><small>作答次数</small></div>
+        <div class="stat-cell"><strong>{{ statistics.totals.correctAttempts }}</strong><small>系统判对记录</small></div>
+        <div class="stat-cell"><strong>{{ statistics.totals.visits }}</strong><small>访问次数（非人数）</small></div>
+        <div class="stat-cell"><strong>{{ duration(statistics.totals.studySeconds) }}</strong><small>累计学习心跳时长</small></div>
+        <div class="stat-cell"><strong>{{ statistics.totals.activeStudyAccounts }}</strong><small>有学习记录的账号</small></div>
       </div>
-    </div>
-    <p v-if="data" class="admin-meta">今日新增用户：{{ data.todayUsers }}</p>
-
-    <div class="overview-grid">
-      <div>
-        <div class="section-heading compact"><div><span class="section-kicker">近 14 天</span><h2>注册趋势（共 {{ trendSum }} 人）</h2></div></div>
-        <div class="trend-chart" role="img" aria-label="近 14 天注册趋势柱状图">
-          <div v-for="item in trendSeries" :key="item.day" class="trend-col">
-            <div class="trend-bar" :style="{ height: `${Math.round((item.count / trendMax) * 100)}%` }" :title="`${item.day}：${item.count}`" />
-            <small>{{ item.day.slice(5) }}</small>
-          </div>
-        </div>
+      <p class="admin-meta">学习口径：原始 UTC 自然日记录（studyDateTimezone={{ statistics.studyDateTimezone }}），仅按原记录日期汇总，不能精确转换为北京时间跨日时长。累计心跳记录不保证实际学习时长。</p>
+      <p v-if="Object.values(statistics.totals).every(value => value === 0)" class="empty-state">此区间没有统计记录。</p>
+      <div class="overview-grid">
+        <AdminMetricTrend title="账号创建趋势" unit="账号" :dates="statistics.dates" :values="statistics.registrationTrend" />
+        <AdminMetricTrend title="作答趋势" unit="次" :dates="statistics.dates" :values="statistics.attemptsTrend" />
+        <AdminMetricTrend title="访问趋势" unit="次" :dates="statistics.dates" :values="statistics.visitTrend" />
+        <AdminMetricTrend title="学习心跳趋势（UTC 记录日）" unit="秒" :dates="statistics.dates" :values="statistics.studyTrend" />
       </div>
-
-      <div>
-        <div class="section-heading compact"><div><span class="section-kicker">近 14 天</span><h2>作答趋势（共 {{ attemptSum }} 次）</h2></div></div>
-        <div class="trend-chart" role="img" aria-label="近 14 天作答趋势柱状图">
-          <div v-for="item in attemptSeries" :key="item.day" class="trend-col">
-            <div class="trend-bar accent" :style="{ height: `${Math.round((item.count / attemptMax) * 100)}%` }" :title="`${item.day}：${item.count}`" />
-            <small>{{ item.day.slice(5) }}</small>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <div class="section-heading compact"><div><span class="section-kicker">内容状态</span><h2>上下线分布</h2></div></div>
-        <table class="admin-table">
-          <thead><tr><th>内容</th><th>已发布</th><th>已隐藏</th></tr></thead>
-          <tbody>
-            <tr v-for="(dist, key) in (data as { statusCounts?: Record<string, Record<string, number>> } | null)?.statusCounts ?? {}" :key="key">
-              <td>{{ statusNames[key] ?? key }}</td>
-              <td>{{ dist.published ?? 0 }}</td>
-              <td>{{ dist.hidden ?? 0 }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div>
-        <div class="section-heading compact"><div><span class="section-kicker">本周学习时长</span><h2>学习排行</h2></div></div>
-        <ol v-if="leaderboard.length" class="leaderboard-list">
-          <li v-for="(item, i) in leaderboard" :key="item.userId">
-            <b class="leaderboard-rank" :class="`rank-${i + 1}`">{{ i + 1 }}</b>
-            <span class="leaderboard-name">{{ item.displayName || '同学' }}</span>
-            <UserGroupBadge :group="item.userGroup" :role="item.role" />
-            <small>{{ formatDuration(item.seconds) }}</small>
-          </li>
-        </ol>
-        <p v-else class="admin-meta">本周暂无学习时长记录。</p>
-      </div>
-
-      <div>
-        <div class="section-heading compact"><div><span class="section-kicker">最近注册</span><h2>新用户</h2></div></div>
-        <ul class="record-list">
-          <li v-for="item in data?.recentUsers ?? []" :key="item.id">
-            <span class="record-type">{{ item.role }}</span>
-            <span class="record-title">{{ item.displayName || item.email }}</span>
-            <time>{{ item.createdAt.slice(0, 10) }}</time>
-          </li>
-        </ul>
-      </div>
-
-      <div>
-        <div class="section-heading compact"><div><span class="section-kicker">操作审计</span><h2>最近 5 条</h2></div></div>
-        <ul class="record-list">
-          <li v-for="(item, index) in recentAudit" :key="index">
-            <span class="record-type">{{ item.action }}</span>
-            <span class="record-title">{{ item.targetType }}#{{ item.targetId }}</span>
-            <span class="admin-meta">{{ item.adminEmail }}</span>
-            <time>{{ item.createdAt.slice(0, 16).replace('T', ' ') }}</time>
-          </li>
-        </ul>
-        <p v-if="!recentAudit.length" class="admin-meta">暂无操作记录。</p>
-      </div>
-    </div>
+      <h3>全站内容状态</h3>
+      <table class="admin-table"><thead><tr><th>内容</th><th>已发布</th><th>已隐藏</th></tr></thead><tbody><tr v-for="(dist, key) in data.statusCounts ?? {}" :key="key"><td>{{ statusNames[key] ?? key }}</td><td>{{ dist.published ?? 0 }}</td><td>{{ dist.hidden ?? 0 }}</td></tr></tbody></table>
+      <h3>全站最近创建账号</h3>
+      <ul class="record-list"><li v-for="item in data.recentUsers" :key="item.id"><span class="record-type">{{ item.role }}</span><NuxtLink class="record-title" to="/admin/users">{{ item.displayName || item.email }}</NuxtLink><time>{{ beijing(item.createdAt) }}</time></li></ul>
+      <h3><NuxtLink to="/admin/audit-logs">最近操作审计</NuxtLink></h3>
+      <ul class="record-list"><li v-for="(item, index) in data.recentAudit ?? []" :key="index"><span class="record-type">{{ item.action }}</span><span class="record-title">{{ item.targetType }}#{{ item.targetId }}</span><span class="admin-meta">{{ item.adminEmail }}</span><time>{{ beijing(item.createdAt) }}</time></li></ul>
+      <p v-if="!data.recentAudit?.length" class="admin-meta">暂无操作记录。</p>
+    </template>
   </section>
 </template>
 
 <style scoped>
-.overview-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.5rem 2rem;
-}
-
-@media (min-width: 900px) {
-  .overview-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-.trend-chart {
-  display: flex;
-  align-items: flex-end;
-  gap: 0.5rem;
-  height: 8rem;
-  margin: 1rem 0;
-}
-
-.trend-col {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  height: 100%;
-  gap: 0.25rem;
-}
-
-.trend-bar {
-  width: 100%;
-  min-height: 2px;
-  background: var(--primary, #3b82f6);
-  border-radius: 3px 3px 0 0;
-  opacity: 0.85;
-}
-
-.trend-bar.accent { background: var(--accent, #10b981); }
-
-.trend-col small {
-  font-size: 0.625rem;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-
-.leaderboard-list { margin: 0.75rem 0 0; padding: 0; list-style: none; }
-.leaderboard-list li { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px dashed #e4e1da; font-size: 0.8125rem; }
-.leaderboard-list li:last-child { border-bottom: none; }
-.leaderboard-rank { flex: none; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: #f3f4f6; color: #6b7280; font-size: 11px; font-weight: 700; }
-.leaderboard-rank.rank-1 { background: #fde68a; color: #92400e; }
-.leaderboard-rank.rank-2 { background: #e5e7eb; color: #374151; }
-.leaderboard-rank.rank-3 { background: #fed7aa; color: #9a3412; }
-.leaderboard-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #5c5e59; }
-.leaderboard-list small { flex: none; color: #8a8c86; font-variant-numeric: tabular-nums; }
+.overview-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.range-filter { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; }
+.range-filter label { display: grid; gap: 6px; }
+.range-filter input { min-height: 40px; border: 1px solid var(--border, #ddd); border-radius: 8px; padding: 6px 10px; background: transparent; color: inherit; }
+.stat-cell a { display: grid; color: inherit; text-decoration: none; }
+.range-totals strong { font-size: 1.3rem; }
+@media (max-width: 700px) { .overview-grid { grid-template-columns: minmax(0, 1fr); } .range-filter label { flex: 1; min-width: 130px; } .range-filter input { width: 100%; } }
 </style>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+definePageMeta({ layout: 'admin' })
 import { onBeforeUnmount, reactive, ref, watch } from 'vue'
 import type { AdminListPayload, Paper, Question } from '~/types/api'
 
