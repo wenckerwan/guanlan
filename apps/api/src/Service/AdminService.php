@@ -346,14 +346,14 @@ class AdminService
     }
 
     /** All sources share one descending timestamp order and one page boundary. */
-    public function attemptPage(int $page = 1, int $perPage = 20, string $source = ''): array
+    public function attemptPage(int $page = 1, int $perPage = 20, string $source = '', int $maximumPerPage = 100): array
     {
         AdminDashboardService::authorize();
         if ($source !== '' && !in_array($source, ['practice', 'paper', 'mock', 'mistake', 'question'], true)) {
             throw new \RuntimeException('作答来源无效', 422);
         }
         $page = max(1, $page);
-        $perPage = max(1, min(100, $perPage));
+        $perPage = max(1, min($maximumPerPage, $perPage));
         $old = Db::table('attempts as a')
             ->leftJoin('users as u', 'u.id', '=', 'a.user_id')
             ->selectRaw("CAST(a.id AS CHAR) AS id, a.user_id AS userId, u.email AS userEmail, u.display_name AS userName, a.source AS source, a.source_ref AS sourceRef, a.question_ref AS questionRef, a.module AS module, a.chosen AS chosen, a.correct AS correct, a.is_right AS isRight, a.created_at AS createdAt")

@@ -251,7 +251,7 @@ class AdminController
             }
         }
         $limit = min(500, max(1, (int) $this->request->input('limit', 100)));
-        return ApiResponse::data($this->service->attemptPage(1, $limit)['items']);
+        return ApiResponse::data($this->service->attemptPage(1, $limit, '', 500)['items']);
     }
 
     public function mistakes(): ResponseInterface
