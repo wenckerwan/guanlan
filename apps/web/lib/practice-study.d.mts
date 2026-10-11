@@ -5,6 +5,8 @@ export function isPracticeBank(value: unknown): boolean
 export function filterPracticeQuestions<T extends PracticeFilterQuestion>(questions: T[], filter: PracticeFilter, states: Record<string, PracticeFilterState>, favorites: string[]): T[]
 export function pagePracticeQuestions<T>(items: T[], requestedPage: number, pageSize?: number): { items: T[]; page: number; pages: number; total: number }
 export function outboxKey(userId: string | number, bankId: string, contentVersion: string): string
+export function readBankOutbox<T extends { eventId: string }>(storage: Storage, userId: string | number, bankId: string): (T & { outboxKey: string; conflict?: boolean })[]
 export function readOutbox<T extends { eventId: string }>(storage: Storage, key: string): T[]
 export function enqueueAttempt<T extends { eventId: string }>(storage: Storage, key: string, event: T): T[]
 export function removeAttempt<T extends { eventId: string }>(storage: Storage, key: string, eventId: string): T[]
+export function markAttemptConflict(storage: Storage, key: string, eventId: string): void

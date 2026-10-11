@@ -135,5 +135,5 @@ export function useAuth() {
   const isLoggedIn = computed(() => token.value !== '')
   const isAdmin = computed(() => user.value?.role === 'admin')
 
-  return { token, user, ready, isLoggedIn, isAdmin, restore, login, register, logout, request, invalidateToken }
+  return { token, user, ready, isLoggedIn, isAdmin, fetchUser, restore, login, register, logout, request, invalidateToken }
 }

@@ -1,4 +1,4 @@
-import { enqueueAttempt, isPracticeBank, outboxKey, readOutbox, removeAttempt } from '~/lib/practice-study.mjs'
+import { enqueueAttempt, isPracticeBank, markAttemptConflict, outboxKey, readBankOutbox, removeAttempt } from '~/lib/practice-study.mjs'
 
 export type PracticeQuestion = {
   questionRef: string; questionVersion: string; type: 'single' | 'multi'; module: string
@@ -10,8 +10,9 @@ export type QuestionState = {
   lastCorrect?: string[] | string; lastAttemptAt?: string; favorited?: boolean
 }
 type Bank = { bankId: string; contentVersion: string; questionCount: number; questions: PracticeQuestion[] }
-type Outcome = { attemptId: number; isRight: boolean; correct: string[] | string; duplicate: boolean; questionState: QuestionState }
+type Outcome = { attemptId: number; isRight: boolean; correct: string[] | string; duplicate: boolean; questionState: QuestionState | null }
 type Event = { bankId: string; questionRef: string; questionVersion: string; chosen: string[]; eventId: string }
+type PendingEvent = Event & { outboxKey: string; conflict?: boolean }
 
 function errorStatus(error: unknown) {
   const e = error as { statusCode?: number; status?: number }
@@ -24,7 +25,7 @@ export function usePracticeStudy() {
   const states = ref<Record<string, QuestionState>>({})
   const favorites = ref<string[]>([])
   const guestResults = ref<Record<string, { chosen: string[]; isRight: boolean; correct: string }>>({})
-  const pending = ref<Event[]>([])
+  const pending = ref<PendingEvent[]>([])
   const loading = ref(true)
   const message = ref('')
   const error = ref('')
@@ -45,7 +46,7 @@ export function usePracticeStudy() {
   }
 
   function loadPending() {
-    pending.value = import.meta.client && key.value ? readOutbox(localStorage, key.value) : []
+    pending.value = import.meta.client && bank.value && identity.value ? readBankOutbox<Event>(localStorage, identity.value, bank.value.bankId) : []
   }
 
   async function load() {
@@ -81,11 +82,13 @@ export function usePracticeStudy() {
   async function send(event: Event, outbox: string, account: string, epoch: number) {
     if (readAuthToken() !== auth.token.value) { await reconcileIdentity(); return null }
     try {
-      const outcome = await auth.request<Outcome>('/study/practice/attempts', { method: 'POST', body: event })
+      const body: Event = { bankId: event.bankId, questionRef: event.questionRef, questionVersion: event.questionVersion, chosen: event.chosen, eventId: event.eventId }
+      const outcome = await auth.request<Outcome>('/study/practice/attempts', { method: 'POST', body })
       if (import.meta.client) removeAttempt(localStorage, outbox, event.eventId)
       if (epoch !== generation.value || account !== identity.value) return null
       loadPending()
-      states.value = { ...states.value, [event.questionRef]: outcome.questionState }
+      if (outcome.questionState) states.value = { ...states.value, [event.questionRef]: outcome.questionState }
+      else void refreshAccountState()
       message.value = outcome.duplicate ? '该次作答已同步。' : '作答已保存到账号。'
       error.value = ''
       return outcome
@@ -93,7 +96,10 @@ export function usePracticeStudy() {
       if (epoch !== generation.value || account !== identity.value) return null
       const status = errorStatus(cause)
       if (status === 401) error.value = '登录状态已失效，待同步作答保留在原账号队列中。'
-      else if (status === 409) error.value = '题目版本已更新或事件冲突，请刷新题库后核对。待同步作答仍保留。'
+      else if (status === 409) {
+        if (import.meta.client) markAttemptConflict(localStorage, outbox, event.eventId)
+        error.value = '这次作答与当前版本冲突，已保留在本地。可核对后清除该条本地待同步记录。'
+      }
       else if (status === 422) error.value = '答案格式不符合题目要求，请核对后重新作答。'
       else error.value = '保存失败，作答仍在待同步队列中。可稍后重试。'
       loadPending()
@@ -126,15 +132,23 @@ export function usePracticeStudy() {
   }
 
   async function retryPending() {
-    if (!key.value || !identity.value) return
+    if (!bank.value || !identity.value) return
     if (readAuthToken() !== auth.token.value) { await reconcileIdentity(); return }
-    const outbox = key.value
     const account = identity.value
     const epoch = generation.value
     for (const event of [...pending.value]) {
       if (epoch !== generation.value || account !== identity.value) break
-      await send(event, outbox, account, epoch)
+      if (!event.conflict) await send(event, event.outboxKey, account, epoch)
     }
+  }
+
+  function discardPending(eventId: string) {
+    if (!import.meta.client || readAuthToken() !== auth.token.value) { void reconcileIdentity(); return }
+    const event = pending.value.find(item => item.eventId === eventId)
+    if (!event || !bank.value || !identity.value) return
+    removeAttempt(localStorage, event.outboxKey, eventId)
+    loadPending()
+    message.value = '仅清除了这条本地待同步记录；服务端已有作答未删除。'
   }
 
   async function toggleFavorite(question: PracticeQuestion) {
@@ -173,7 +187,7 @@ export function usePracticeStudy() {
   }
 
   function onStorage(event: StorageEvent) {
-    if (key.value && event.key?.startsWith(`${key.value}:`)) {
+    if (bank.value && identity.value && event.key?.startsWith(`guanlan.practice.outbox.v1:${encodeURIComponent(identity.value)}:${encodeURIComponent(bank.value.bankId)}:`)) {
       loadPending()
       if (event.newValue === null) void refreshAccountState()
     }
@@ -188,5 +202,5 @@ export function usePracticeStudy() {
     window.removeEventListener('storage', onStorage)
   })
   watch(identity, (next, previous) => { if (next !== previous) void load() })
-  return { bank, states, favorites, guestResults, pending, loading, loggedIn, identity, message, error, load, submit, retryPending, toggleFavorite }
+  return { bank, states, favorites, guestResults, pending, loading, loggedIn, identity, message, error, load, submit, retryPending, discardPending, toggleFavorite }
 }

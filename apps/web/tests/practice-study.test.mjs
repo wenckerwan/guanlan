@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { filterPracticeQuestions, pagePracticeQuestions, outboxKey, enqueueAttempt, removeAttempt, readOutbox, isPracticeBank } from '../lib/practice-study.mjs'
+import { filterPracticeQuestions, pagePracticeQuestions, outboxKey, enqueueAttempt, removeAttempt, readOutbox, readBankOutbox, markAttemptConflict, isPracticeBank } from '../lib/practice-study.mjs'
 
 const questions = [
   { questionRef: 'A', module: 'sx', type: 'single', stem: '市场', options: { A: '甲' } },
@@ -32,6 +32,12 @@ test('outbox is isolated by user and content version; retry keeps event UUID', (
   assert.deepEqual(readOutbox(storage, outboxKey(7, 'bank', 'v2')), [])
   removeAttempt(storage, key, 'uuid-1')
   assert.deepEqual(readOutbox(storage, key), [other])
+  const historical = { ...event, eventId: 'uuid-old' }
+  enqueueAttempt(storage, outboxKey(7, 'bank', 'v0'), historical)
+  assert.deepEqual(readBankOutbox(storage, 7, 'bank').map(item => item.eventId), ['uuid-2', 'uuid-old'])
+  assert.deepEqual(readBankOutbox(storage, 8, 'bank'), [])
+  markAttemptConflict(storage, outboxKey(7, 'bank', 'v0'), 'uuid-old')
+  assert.equal(readBankOutbox(storage, 7, 'bank').find(item => item.eventId === 'uuid-old').conflict, true)
 })
 
 test('redirected HTML or malformed API payload cannot become a question bank', () => {

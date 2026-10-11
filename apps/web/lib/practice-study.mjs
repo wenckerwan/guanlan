@@ -32,6 +32,26 @@ export function outboxKey(userId, bankId, contentVersion) {
   return `guanlan.practice.outbox.v1:${encodeURIComponent(String(userId))}:${encodeURIComponent(bankId)}:${encodeURIComponent(contentVersion)}`
 }
 
+export function readBankOutbox(storage, userId, bankId) {
+  const prefix = `guanlan.practice.outbox.v1:${encodeURIComponent(String(userId))}:${encodeURIComponent(bankId)}:`
+  const events = []
+  try {
+    for (let index = 0; index < storage.length; index++) {
+      const entryKey = storage.key(index)
+      if (!entryKey?.startsWith(prefix)) continue
+      const separator = entryKey.lastIndexOf(':')
+      if (separator <= prefix.length) continue
+      try {
+        const event = JSON.parse(storage.getItem(entryKey) ?? 'null')
+        if (event?.bankId === bankId && typeof event.eventId === 'string') {
+          events.push({ ...event, outboxKey: entryKey.slice(0, separator) })
+        }
+      } catch { /* Keep corrupt entries without sending them. */ }
+    }
+  } catch { return events }
+  return events
+}
+
 export function readOutbox(storage, key) {
   const events = []
   try {
@@ -58,4 +78,10 @@ export function enqueueAttempt(storage, key, event) {
 export function removeAttempt(storage, key, eventId) {
   storage.removeItem(`${key}:${encodeURIComponent(eventId)}`)
   return readOutbox(storage, key)
+}
+
+export function markAttemptConflict(storage, key, eventId) {
+  const entryKey = `${key}:${encodeURIComponent(eventId)}`
+  const event = JSON.parse(storage.getItem(entryKey) ?? 'null')
+  if (event?.eventId === eventId) storage.setItem(entryKey, JSON.stringify({ ...event, conflict: true }))
 }
