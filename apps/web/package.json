@@ -6,7 +6,7 @@
     "dev": "nuxt dev",
     "build": "nuxt build",
     "preview": "nuxt preview",
-    "test": "node --test --test-concurrency=1 tests/home.test.mjs tests/subjects.test.mjs tests/api.test.mjs tests/quiz.test.mjs tests/articles.test.mjs tests/search.test.mjs tests/pagination.test.mjs tests/trend.test.mjs tests/report-markdown.test.mjs tests/visits.test.mjs tests/practice-study.test.mjs tests/practice-auth-integration.test.mjs"
+    "test": "node --test --test-concurrency=1 tests/home.test.mjs tests/subjects.test.mjs tests/api.test.mjs tests/quiz.test.mjs tests/articles.test.mjs tests/search.test.mjs tests/pagination.test.mjs tests/trend.test.mjs tests/report-markdown.test.mjs tests/visits.test.mjs tests/practice-study.test.mjs tests/practice-auth-integration.test.mjs tests/practice-page.test.mjs"
   },
   "dependencies": {
     "lucide-vue-next": "0.468.0",
