@@ -17,3 +17,6 @@ tools/deploy/backup/
 tools/deploy/*.bak
 tools/deploy/*.tar.gz
 *.sql.gz
+
+# Local browser verification artifacts.
+output/playwright/
