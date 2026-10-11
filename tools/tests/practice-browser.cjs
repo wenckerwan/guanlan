@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const base = process.env.PRACTICE_BROWSER_BASE || 'http://127.0.0.1:3211';
+const credentials = process.env.PRACTICE_BROWSER_CREDENTIALS ? JSON.parse(fs.readFileSync(process.env.PRACTICE_BROWSER_CREDENTIALS, 'utf8')) : { password: 'Practice-test-20261011!', accounts: { a: 'practice-a@example.test', b: 'practice-b@example.test' } };
 (async () => {
   console.log('BROWSER_START');
   const browser = await chromium.launch(process.env.PRACTICE_BROWSER_EXECUTABLE ? { executablePath: process.env.PRACTICE_BROWSER_EXECUTABLE, headless: true } : {channel:'msedge',headless:true});
@@ -17,8 +18,8 @@ const base = process.env.PRACTICE_BROWSER_BASE || 'http://127.0.0.1:3211';
     assert.equal(await page.locator('.practice-card').count(),6);
     console.log('PASS guest six-question preview real API');
     await page.goto(base+'/login?redirect=%2Fpractice%2Fcurrent-affairs');
-    await page.locator('input[type=email]').fill('practice-a@example.test');
-    await page.locator('input[type=password]').fill('Practice-test-20261011!');
+    await page.locator('input[type=email]').fill(credentials.accounts.a);
+    await page.locator('input[type=password]').fill(credentials.password);
     await page.locator('form button[type=submit]').click();
     await page.getByRole('heading',{name:'时政练习题',exact:true}).waitFor();
     await page.getByPlaceholder('搜索题干、选项或考点').fill('SZ08-1');
@@ -42,9 +43,16 @@ const base = process.env.PRACTICE_BROWSER_BASE || 'http://127.0.0.1:3211';
       await page.screenshot({path:`output/playwright/practice-${width}.png`,fullPage:true});
     }
     console.log('PASS 390/821/1440 layout');
+    const centerResponse=page.waitForResponse(response=>new URL(response.url()).pathname.endsWith('/study/stats')&&response.status()===200);
     await page.goto(base+'/me');
     await page.getByRole('heading',{name:'时政练习',exact:true}).waitFor();
     assert.match(await page.locator('body').innerText(),/首次正确率/);
+    if(process.env.PRACTICE_BROWSER_CREDENTIALS){
+      const center=(await(await centerResponse).json()).data;
+      assert.equal(center.total,4);assert.equal(center.right,2);
+      assert.equal(center.currentAffairs.uniqueQuestionCount,1);assert.equal(center.currentAffairs.firstAccuracy,0);
+      assert.equal(center.currentAffairs.latestAccuracy,100);assert.equal(center.currentAffairs.repeatCount,3);
+    }else await centerResponse;
     await page.goto(base+'/me/progress');
     await page.getByRole('heading',{name:'时政练习完成度',exact:true}).waitFor();
     console.log('PASS personal center/progress real API');
@@ -59,8 +67,8 @@ const base = process.env.PRACTICE_BROWSER_BASE || 'http://127.0.0.1:3211';
     await page.reload(); await page.getByRole('button',{name:'重试保存',exact:true}).waitFor();
     const login=async (target, identity)=>{
       await target.goto(base+'/login?redirect=%2Fpractice%2Fcurrent-affairs');
-      await target.locator('input[type=email]').fill(`practice-${identity}@example.test`);
-      await target.locator('input[type=password]').fill('Practice-test-20261011!');
+      await target.locator('input[type=email]').fill(credentials.accounts[identity]);
+      await target.locator('input[type=password]').fill(credentials.password);
       await target.locator('form button[type=submit]').click();
       await target.getByRole('heading',{name:'时政练习题',exact:true}).waitFor();
     };
