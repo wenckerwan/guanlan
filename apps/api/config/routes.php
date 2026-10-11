@@ -13,9 +13,11 @@ use App\Controller\MistakeController;
 use App\Controller\MockController;
 use App\Controller\PaperController;
 use App\Controller\QuestionController;
+use App\Controller\PracticeController;
 use App\Controller\SearchController;
 use App\Controller\StatsController;
 use App\Controller\StudyController;
+use App\Controller\StudyPracticeController;
 use App\Controller\SubjectController;
 use App\Controller\VisitController;
 use App\Middleware\AuthMiddleware;
@@ -43,6 +45,7 @@ Router::get('/api/v1/papers/modules', [PaperController::class, 'modules']);
 Router::get('/api/v1/papers/{pid}', [PaperController::class, 'show']);
 Router::get('/api/v1/questions', [QuestionController::class, 'index']);
 Router::get('/api/v1/questions/{id:\d+}', [QuestionController::class, 'show']);
+Router::get('/api/v1/practice/banks/{slug}', [PracticeController::class, 'bank'], ['middleware' => [AuthMiddleware::class]]);
 
 // 真题分析 / 时政热点 / 时政预测（AuthMiddleware 只解析身份，游客配额据此计算）
 Router::addGroup('/api/v1', function () {
@@ -99,6 +102,10 @@ Router::post('/api/v1/auth/logout', [AuthController::class, 'logout'], ['middlew
 
 // 用户态：收藏 / 笔记 / 做题记录 / 进度
 Router::addGroup('/api/v1/study', function () {
+    Router::post('/practice/attempts', [StudyPracticeController::class, 'submit']);
+    Router::get('/practice/banks/{slug}/state', [StudyPracticeController::class, 'state']);
+    Router::get('/practice/summary', [StudyPracticeController::class, 'summary']);
+    Router::get('/practice/attempts', [StudyPracticeController::class, 'history']);
     Router::get('/favorites', [StudyController::class, 'favorites']);
     Router::post('/favorites', [StudyController::class, 'toggleFavorite']);
     Router::put('/favorites', [StudyController::class, 'setFavorite']);
