@@ -8,7 +8,7 @@ let generation = 0, alive = true
 const nav = [
   ['/admin/overview', '总览'], ['/admin/users', '用户'], ['/admin/hotspots', '时政'], ['/admin/analysis', '分析'],
   ['/admin/papers', '真题'], ['/admin/mocks', '押题'], ['/admin/predictions', '预测'], ['/admin/mistakes', '错题'],
-  ['/admin/comments', '评论'], ['/admin/audit-logs', '审计日志'],
+  ['/admin/comments', '评论'], ['/admin/attempts', '作答'], ['/admin/audit-logs', '审计日志'],
 ]
 async function verify() {
   const current = ++generation

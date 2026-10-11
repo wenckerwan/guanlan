@@ -11,6 +11,7 @@ use App\Model\Note;
 use App\Model\Question;
 use App\Model\StudyProgress;
 use App\Model\User;
+use Hyperf\Database\Schema\Schema;
 use Hyperf\Database\Model\Builder;
 
 /**
@@ -19,7 +20,7 @@ use Hyperf\Database\Model\Builder;
 class StudyService
 {
     public const TARGET_TYPES = [
-        'question', 'paper', 'analysis', 'hotspot', 'prediction', 'mistake', 'mistake_item', 'handbook', 'mock',
+        'question', 'paper', 'analysis', 'hotspot', 'prediction', 'mistake', 'mistake_item', 'handbook', 'mock', 'practice_question',
         // 马原知识宇宙
         'mayuan_concept', 'mayuan_relation', 'mayuan_comparison', 'mayuan_experiment',
         // 近现代史时间实验室
@@ -291,33 +292,75 @@ class StudyService
     /** @return array<string, mixed> */
     public function stats(User $user): array
     {
-        $total = Attempt::query()->where('user_id', $user->id)->count();
-        $right = Attempt::query()->where('user_id', $user->id)->where('is_right', true)->count();
+        $oldTotal = Attempt::query()->where('user_id', $user->id)->count();
+        $oldRight = Attempt::query()->where('user_id', $user->id)->where('is_right', true)->count();
+        $practice = Schema::hasTable('practice_attempts')
+            ? (new PracticeStudyService())->summary($user)
+            : ['total' => 0, 'right' => 0, 'byModule' => [], 'bySource' => [], 'currentAffairs' => null];
+        $total = (int) $oldTotal + (int) ($practice['total'] ?? 0);
+        $right = (int) $oldRight + (int) ($practice['right'] ?? 0);
 
         $byModule = Attempt::query()
             ->selectRaw('module, count(*) as total, sum(is_right) as right_count')
             ->where('user_id', $user->id)
             ->groupBy('module')
             ->get()
-            ->map(fn ($row) => [
-                'module' => (string) $row->module,
-                'total' => (int) $row->total,
-                'right' => (int) $row->right_count,
-                'accuracy' => (int) $row->total > 0
-                    ? (int) round((int) $row->right_count / (int) $row->total * 100)
-                    : 0,
-            ])
+            ->map(fn ($row) => ['module' => (string) $row->module, 'total' => (int) $row->total, 'right' => (int) $row->right_count])
             ->all();
+
+        $modules = [];
+        foreach (array_merge($byModule, $practice['byModule'] ?? []) as $row) {
+            $code = self::canonicalModule((string) ($row['module'] ?? ''));
+            $modules[$code] ??= ['module' => $code, 'name' => self::moduleName($code), 'total' => 0, 'right' => 0];
+            $modules[$code]['total'] += (int) ($row['total'] ?? 0);
+            $modules[$code]['right'] += (int) ($row['right'] ?? 0);
+        }
+        foreach ($modules as &$row) $row['accuracy'] = $row['total'] > 0 ? (int) round($row['right'] / $row['total'] * 100) : 0;
+        unset($row);
+
+        $sources = [];
+        $oldSources = Attempt::query()->selectRaw('source, count(*) as total, sum(is_right) as right_count')
+            ->where('user_id', $user->id)->groupBy('source')->get();
+        foreach ($oldSources as $row) {
+            $key = (string) $row->source;
+            $sources[$key] = ['source' => $key, 'total' => (int) $row->total, 'right' => (int) $row->right_count];
+        }
+        foreach ($practice['bySource'] ?? [] as $row) {
+            $key = (string) ($row['source'] ?? 'practice');
+            $sources[$key] ??= ['source' => $key, 'total' => 0, 'right' => 0];
+            $sources[$key]['total'] += (int) ($row['total'] ?? 0);
+            $sources[$key]['right'] += (int) ($row['right'] ?? 0);
+        }
+        foreach ($sources as &$row) $row['accuracy'] = $row['total'] > 0 ? (int) round($row['right'] / $row['total'] * 100) : 0;
+        unset($row);
 
         return [
             'total' => (int) $total,
             'right' => (int) $right,
             'wrong' => (int) $total - (int) $right,
             'accuracy' => (int) $total > 0 ? (int) round($right / $total * 100) : 0,
-            'byModule' => array_values($byModule),
+            'byModule' => array_values($modules),
+            'bySource' => array_values($sources),
+            'currentAffairs' => $practice['currentAffairs'] ?? null,
             'favorites' => Favorite::query()->where('user_id', $user->id)->count(),
             'notes' => Note::query()->where('user_id', $user->id)->count(),
         ];
+    }
+
+    private static function canonicalModule(string $module): string
+    {
+        return match (trim($module)) {
+            '习思想', '习近平新时代中国特色社会主义思想', 'sx' => 'sx',
+            '时政', '时政与当代', '形势与政策', 'xs' => 'xs',
+            '史纲', '中国近现代史纲要', 'sg' => 'sg',
+            '思法', '思想道德与法治', 'sc' => 'sc',
+            default => trim($module),
+        };
+    }
+
+    private static function moduleName(string $code): string
+    {
+        return ['sx' => '习思想', 'xs' => '时政与当代', 'sg' => '史纲', 'sc' => '思法'][$code] ?? ($code ?: '未归类');
     }
 
     /** @return array<int, StudyProgress> */

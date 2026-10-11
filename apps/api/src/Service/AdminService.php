@@ -23,6 +23,7 @@ use App\Support\ContentStatus;
 use App\Support\AdminDateRange;
 use App\Support\UserGroup;
 use Hyperf\DbConnection\Db;
+use Hyperf\Database\Schema\Schema;
 
 /**
  * 通过后台：概览、用户管理、内容增删改。
@@ -58,6 +59,8 @@ class AdminService
         ] as $key => $model) {
             $counts[$key] = (int) $model::query()->count();
         }
+        $counts['practice_attempts'] = Schema::hasTable('practice_attempts') ? (int) Db::table('practice_attempts')->count() : 0;
+        $counts['attempts'] += $counts['practice_attempts'];
 
         // 内容上下线分布
         $statusCounts = [];
@@ -340,6 +343,55 @@ class AdminService
     public function attempts(int $limit = 100): array
     {
         return Attempt::query()->orderByDesc('id')->limit($limit)->get()->all();
+    }
+
+    /** All sources share one descending timestamp order and one page boundary. */
+    public function attemptPage(int $page = 1, int $perPage = 20, string $source = ''): array
+    {
+        AdminDashboardService::authorize();
+        if ($source !== '' && !in_array($source, ['practice', 'paper', 'mock', 'mistake', 'question'], true)) {
+            throw new \RuntimeException('作答来源无效', 422);
+        }
+        $page = max(1, $page);
+        $perPage = max(1, min(100, $perPage));
+        $old = Db::table('attempts as a')
+            ->leftJoin('users as u', 'u.id', '=', 'a.user_id')
+            ->selectRaw("CAST(a.id AS CHAR) AS id, a.user_id AS userId, u.email AS userEmail, u.display_name AS userName, a.source AS source, a.source_ref AS sourceRef, a.question_ref AS questionRef, a.module AS module, a.chosen AS chosen, a.correct AS correct, a.is_right AS isRight, a.created_at AS createdAt")
+            ->when($source !== '' && $source !== 'practice', fn ($q) => $q->where('a.source', $source));
+        if ($source === 'practice') $old->whereRaw('1 = 0');
+
+        if (Schema::hasTable('practice_attempts')) {
+            $new = Db::table('practice_attempts as pa')
+                ->join('practice_questions as pq', 'pq.id', '=', 'pa.question_id')
+                ->join('practice_banks as pb', 'pb.id', '=', 'pa.bank_id')
+                ->leftJoin('users as u', 'u.id', '=', 'pa.user_id')
+                ->selectRaw("CONCAT('practice:', pa.id) AS id, pa.user_id AS userId, u.email AS userEmail, u.display_name AS userName, 'practice' AS source, pb.slug AS sourceRef, pq.question_ref AS questionRef, pq.module AS module, CAST(pa.chosen AS CHAR) AS chosen, pa.correct_snapshot AS correct, pa.is_right AS isRight, pa.created_at AS createdAt")
+                ->when($source !== '' && $source !== 'practice', fn ($q) => $q->whereRaw('1 = 0'));
+            $old->unionAll($new);
+        }
+        $rows = Db::table('attempts')->fromSub($old, 'entries');
+        $total = (int) (clone $rows)->count();
+        $page = min($page, max(1, (int) ceil($total / $perPage)));
+        $items = $rows->orderByDesc('createdAt')->orderByDesc('id')->forPage($page, $perPage)->get();
+        return [
+            'items' => $items->map(static fn ($row) => [
+                'id' => (string) $row->source === 'practice' ? (string) $row->id : (int) $row->id,
+                'userId' => (int) $row->userId,
+                'userEmail' => (string) ($row->userEmail ?? ''),
+                'userName' => (string) ($row->userName ?? ''),
+                'source' => (string) $row->source,
+                'sourceRef' => (string) $row->sourceRef,
+                'questionRef' => (string) $row->questionRef,
+                'module' => (string) $row->module,
+                'chosen' => (string) $row->chosen,
+                'correct' => (string) $row->correct,
+                'isRight' => (bool) $row->isRight,
+                'createdAt' => AdminDateRange::utcIso((string) $row->createdAt),
+            ])->all(),
+            'total' => $total,
+            'page' => $page,
+            'perPage' => $perPage,
+        ];
     }
 
     /** @return array<string, int> */

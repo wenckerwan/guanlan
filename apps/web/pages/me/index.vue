@@ -30,6 +30,7 @@ const cards = computed(() => [
   { label: '收藏', value: stats.value?.favorites ?? 0, tone: 'gold' },
   { label: '笔记', value: stats.value?.notes ?? 0, tone: 'blue' },
 ])
+const sourceNames: Record<string, string> = { paper: '真题', mock: '模拟卷', mistake: '错题', question: '单题', practice: '时政练习' }
 </script>
 
 <template>
@@ -56,6 +57,22 @@ const cards = computed(() => [
           <strong>{{ card.value }}</strong><small>{{ card.label }}</small>
         </div>
       </section>
+      <p class="section-kicker">累计作答与正确率按每次有效提交计算，含历史练习记录。</p>
+
+      <section v-if="stats?.currentAffairs" class="module-stats">
+        <div class="section-heading compact"><div><span class="section-kicker">当前生效题目版本</span><h2>时政练习</h2></div><NuxtLink to="/practice/current-affairs">继续练习</NuxtLink></div>
+        <div class="stat-row">
+          <div class="stat-cell"><strong>{{ stats.currentAffairs.uniqueQuestionCount }}/{{ stats.currentAffairs.questionCount }}</strong><small>不同题 · 完成 {{ stats.currentAffairs.completion }}%</small></div>
+          <div class="stat-cell"><strong>{{ stats.currentAffairs.firstAccuracy }}%</strong><small>首次正确率 · {{ stats.currentAffairs.firstCorrectCount }} 题</small></div>
+          <div class="stat-cell"><strong>{{ stats.currentAffairs.latestAccuracy }}%</strong><small>最近正确率 · {{ stats.currentAffairs.latestCorrectCount }} 题</small></div>
+          <div class="stat-cell"><strong>{{ stats.currentAffairs.repeatCount }}</strong><small>重答次数 · {{ stats.currentAffairs.submissionCount }} 次提交</small></div>
+        </div>
+      </section>
+
+      <section v-if="stats?.bySource?.length" class="module-stats">
+        <div class="section-heading compact"><div><span class="section-kicker">累计提交</span><h2>按来源</h2></div></div>
+        <ul><li v-for="row in stats.bySource" :key="row.source"><span>{{ sourceNames[row.source] ?? row.source }}</span><b>{{ row.right }}/{{ row.total }} · {{ row.accuracy }}%</b></li></ul>
+      </section>
 
       <section class="me-links">
         <NuxtLink to="/me/favorites"><Bookmark :size="16" />我的收藏<span>收藏题目、文章与热点</span></NuxtLink>
@@ -67,7 +84,7 @@ const cards = computed(() => [
         <div class="section-heading compact"><div><span class="section-kicker">按模块</span><h2>我的正确率</h2></div></div>
         <ul>
           <li v-for="row in stats.byModule" :key="row.module">
-            <span>{{ row.module || '未归类' }}</span>
+            <span>{{ row.name || row.module || '未归类' }}</span>
             <span class="progress-line"><i :style="{ width: `${row.accuracy}%` }"></i></span>
             <b>{{ row.right }}/{{ row.total }} · {{ row.accuracy }}%</b>
           </li>

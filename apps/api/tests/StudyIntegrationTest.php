@@ -15,9 +15,9 @@ namespace {
         }
     };
 
-    // 类型白名单：现有 9 类 + 马原 4 类 + 史纲 2 类 = 15 类。
-    $check('target type count is 15', count(StudyService::TARGET_TYPES), 15);
-    foreach (['mayuan_concept', 'mayuan_relation', 'mayuan_comparison', 'mayuan_experiment', 'history_event', 'history_comparison'] as $type) {
+    // 类型白名单：原有 15 类 + 时政练习题。
+    $check('target type count is 16', count(StudyService::TARGET_TYPES), 16);
+    foreach (['mayuan_concept', 'mayuan_relation', 'mayuan_comparison', 'mayuan_experiment', 'history_event', 'history_comparison', 'practice_question'] as $type) {
         $check('whitelist contains ' . $type, in_array($type, StudyService::TARGET_TYPES, true), true);
     }
 

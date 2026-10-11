@@ -240,26 +240,18 @@ class AdminController
 
     public function attempts(): ResponseInterface
     {
-        $limit = min(500, max(1, (int) $this->request->input('limit', 100)));
-        $rows = $this->service->attempts($limit);
-
-        $out = [];
-        foreach ($rows as $row) {
-            $out[] = [
-                'id' => (int) $row->id,
-                'userId' => (int) $row->user_id,
-                'source' => (string) $row->source,
-                'sourceRef' => (string) $row->source_ref,
-                'questionRef' => (string) $row->question_ref,
-                'module' => (string) $row->module,
-                'chosen' => (string) $row->chosen,
-                'correct' => (string) $row->correct,
-                'isRight' => (bool) $row->is_right,
-                'createdAt' => (string) $row->created_at,
-            ];
+        if ($this->request->has('page') || $this->request->has('perPage') || $this->request->has('source')) {
+            try {
+                $source = $this->request->input('source', '');
+                if (!is_string($source)) throw new \RuntimeException('作答来源无效', 422);
+                return ApiResponse::data($this->service->attemptPage($this->page(), $this->perPage(), $source));
+            } catch (\RuntimeException $e) {
+                if (!in_array($e->getCode(), [403, 422], true)) throw $e;
+                return ApiResponse::message($e->getMessage(), $e->getCode());
+            }
         }
-
-        return ApiResponse::data($out);
+        $limit = min(500, max(1, (int) $this->request->input('limit', 100)));
+        return ApiResponse::data($this->service->attemptPage(1, $limit)['items']);
     }
 
     public function mistakes(): ResponseInterface

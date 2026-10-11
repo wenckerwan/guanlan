@@ -306,7 +306,20 @@ export type StudyStats = {
   right: number
   wrong: number
   accuracy: number
-  byModule: { module: string; total: number; right: number; accuracy: number }[]
+  byModule: { module: string; name?: string; total: number; right: number; accuracy: number }[]
+  bySource?: { source: string; total: number; right: number; accuracy: number }[]
+  currentAffairs?: {
+    bankId: string
+    questionCount: number
+    submissionCount: number
+    uniqueQuestionCount: number
+    firstCorrectCount: number
+    firstAccuracy: number
+    latestCorrectCount: number
+    latestAccuracy: number
+    repeatCount: number
+    completion: number
+  } | null
   favorites: number
   notes: number
 }
@@ -338,8 +351,10 @@ export type AdminListPayload<T> = {
 }
 
 export type AdminAttempt = {
-  id: number
+  id: number | string
   userId: number
+  userEmail?: string
+  userName?: string
   source: string
   sourceRef: string
   questionRef: string

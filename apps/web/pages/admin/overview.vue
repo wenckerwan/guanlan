@@ -38,8 +38,8 @@ onMounted(async () => { await restore(); syncInputs(); await load() })
 watch(() => [route.query.from, route.query.to], () => { syncInputs(); load() })
 onBeforeUnmount(() => { sequence++ })
 const statistics = computed(() => data.value?.statistics)
-const labels: Record<string, string> = { users: '用户', papers: '试卷', questions: '题目', analysis_articles: '真题分析', hotspots: '时政热点', predictions: '时政预测', mistake_items: '错题', mistake_reviews: '复习记录', attempts: '作答记录', favorites: '收藏', notes: '笔记' }
-const links: Record<string, string> = { users: '/admin/users', papers: '/admin/papers', questions: '/admin/papers', analysis_articles: '/admin/analysis', hotspots: '/admin/hotspots', predictions: '/admin/predictions', mistake_items: '/admin/mistakes' }
+const labels: Record<string, string> = { users: '用户', papers: '试卷', questions: '题目', analysis_articles: '真题分析', hotspots: '时政热点', predictions: '时政预测', mistake_items: '错题', mistake_reviews: '复习记录', attempts: '作答记录', practice_attempts: '其中时政练习', favorites: '收藏', notes: '笔记' }
+const links: Record<string, string> = { users: '/admin/users', papers: '/admin/papers', questions: '/admin/papers', analysis_articles: '/admin/analysis', hotspots: '/admin/hotspots', predictions: '/admin/predictions', mistake_items: '/admin/mistakes', attempts: '/admin/attempts', practice_attempts: '/admin/attempts?source=practice' }
 const statusNames: Record<string, string> = { hotspots: '时政热点', analysis_articles: '真题分析', predictions: '时政预测' }
 function beijing(value: string) { const date = new Date(value); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Shanghai', dateStyle: 'short', timeStyle: 'medium' }).format(date) }
 function duration(seconds: number) { return `${Math.floor(seconds / 3600)} 小时 ${Math.floor(seconds % 3600 / 60)} 分 ${seconds % 60} 秒` }
@@ -64,7 +64,7 @@ function duration(seconds: number) { return `${Math.floor(seconds / 3600)} 小�
       <p class="admin-meta">更新于 {{ beijing(statistics.updatedAt) }}（北京时间）</p>
       <div class="stat-row range-totals">
         <div class="stat-cell"><NuxtLink to="/admin/users"><strong>{{ statistics.totals.registrations }}</strong><small>新增账号（注册/代建）</small></NuxtLink></div>
-        <div class="stat-cell"><strong>{{ statistics.totals.attempts }}</strong><small>作答次数</small></div>
+        <div class="stat-cell"><NuxtLink to="/admin/attempts"><strong>{{ statistics.totals.attempts }}</strong><small>作答次数</small></NuxtLink></div>
         <div class="stat-cell"><strong>{{ statistics.totals.correctAttempts }}</strong><small>系统判对记录</small></div>
         <div class="stat-cell"><strong>{{ statistics.totals.visits }}</strong><small>访问次数（非人数）</small></div>
         <div class="stat-cell"><strong>{{ duration(statistics.totals.studySeconds) }}</strong><small>累计学习心跳时长</small></div>

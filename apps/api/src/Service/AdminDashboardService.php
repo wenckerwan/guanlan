@@ -7,6 +7,7 @@ use App\Model\User;
 use App\Support\AdminDateRange;
 use App\Support\Auth;
 use Hyperf\DbConnection\Db;
+use Hyperf\Database\Schema\Schema;
 
 final class AdminDashboardService
 {
@@ -23,6 +24,8 @@ final class AdminDashboardService
         $dates=$range->dates();
         $registration=$this->timestampTrend('users',$range,$dates);
         $attempts=$this->timestampTrend('attempts',$range,$dates);
+        $practiceAttempts=Schema::hasTable('practice_attempts') ? $this->timestampTrend('practice_attempts',$range,$dates) : array_fill_keys($dates,0);
+        foreach ($dates as $day) $attempts[$day] += $practiceAttempts[$day];
         $visits=$this->dateTrend('site_visit_days','visits',$range,$dates);
         // Study rows contain UTC date buckets only. Exact Beijing attribution is unavailable.
         $study=$this->dateTrend('user_study_stats','seconds',$range,$dates);
@@ -32,11 +35,14 @@ final class AdminDashboardService
             'updatedAt'=>(new \DateTimeImmutable('now',new \DateTimeZone('Asia/Shanghai')))->format(DATE_ATOM),
             'totals'=>[
                 'registrations'=>array_sum($registration), 'attempts'=>array_sum($attempts),
-                'correctAttempts'=>(int)$range->apply(Db::table('attempts')->where('is_right',1),'created_at')->count(),
+                'correctAttempts'=>(int)$range->apply(Db::table('attempts')->where('is_right',1),'created_at')->count()
+                    +(Schema::hasTable('practice_attempts') ? (int)$range->apply(Db::table('practice_attempts')->where('is_right',1),'created_at')->count() : 0),
+                'practiceAttempts'=>array_sum($practiceAttempts),
                 'visits'=>array_sum($visits), 'studySeconds'=>array_sum($study),
                 'activeStudyAccounts'=>(int)Db::table('user_study_stats')->whereBetween('date',[$range->from,$range->to])->where('seconds','>',0)->distinct()->count('user_id'),
             ],
-            'registrationTrend'=>$registration, 'attemptsTrend'=>$attempts, 'visitTrend'=>$visits, 'studyTrend'=>$study,
+            'registrationTrend'=>$registration, 'attemptsTrend'=>$attempts, 'practiceAttemptsTrend'=>$practiceAttempts,
+            'visitTrend'=>$visits, 'studyTrend'=>$study,
         ];
     }
 
