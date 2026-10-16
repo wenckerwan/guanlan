@@ -81,6 +81,9 @@ namespace {
     }
     $check($app->dispatch('GET', '/content', [], ['id' => 'guanlan:123']) === ['nodes' => []], 'authenticated content remains readable');
     $check(!isset($app->dispatch('GET', '/session', [], null)['integration']), 'session hides integration internals');
+    define('BASE_PATH', '/isolated-security-test');
+    $sessionConfig = require __DIR__ . '/../../../vendor/mayuan/apps/api/config/autoload/session.php';
+    $check(($sessionConfig['options']['domain'] ?? null) === '', 'session cookie must be host-only, never an internal container domain');
     if ($failures) { fwrite(STDERR, implode("\n", $failures)."\n"); exit(1); }
     echo "PASS article authorization and email-code client IP boundaries\n";
 }
