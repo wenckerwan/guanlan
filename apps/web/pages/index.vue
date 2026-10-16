@@ -21,7 +21,7 @@ const universeSections = computed(() => [
 
 const { data: home } = await useApiFetch<HomePayload>('/home', { hotspots: [], documents: [], subjects: [], stats: undefined })
 
-const { data: leaderboardData } = useApiFetch<{ period: string; items: LeaderboardEntry[] }>('/stats/leaderboard?period=week&limit=10', { period: 'week', items: [] }, { lazy: true, server: false })
+const { data: leaderboardData } = useApiFetch<{ period: string; items: LeaderboardEntry[] }>('/stats/leaderboard?period=week&limit=10', { period: 'week', items: [] }, { lazy: true, server: false, immediate: !!readAuthToken() })
 const leaderboard = computed(() => leaderboardData.value?.items ?? [])
 
 function formatDuration(seconds: number) {

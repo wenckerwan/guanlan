@@ -21,5 +21,7 @@ $good=$ac['draft'];$good['nodes'][0]['summary']='新版摘要';$draft=$a->dispat
 rejected(fn()=>$a->dispatch('POST','/import',['progress'=>['version'=>1,'nodes'=>['unknown'=>[]]],'confirm'=>true],$u),422,'invalid import rejected');
 $backup=$a->dispatch('GET','/export',[],$u);$import=$a->dispatch('POST','/import',['progress'=>$backup,'confirm'=>true],$v);check($import['summary']['attempts']===0&&count($import['historicalAnswers'])===1,'imported answers stay historical unverified');
 $a2=new Application($db,'guanlan');rejected(fn()=>$a2->dispatch('POST','/dev-login',['account'=>'admin'],null),403,'development identity disabled in production');
-check($a2->dispatch('GET','/session',[],null)['integration']['configured']===false,'missing integration honestly unconfigured');
+check(!isset($a2->dispatch('GET','/session',[],null)['integration']),'anonymous session hides integration internals');
+rejected(fn()=>$a2->dispatch('GET','/content',[],null),401,'production content requires authentication');
+rejected(fn()=>$a2->dispatch('GET','/content',[],['id'=>'dev:admin']),401,'production content rejects development identity');
 foreach(["roundtrip.php","legacy.php","production-session.php","content-validation.php","outbox.php","recall-history.php","import-dedup.php","principal.php"] as $file)require __DIR__."/".$file;echo "ALL API DOMAIN TESTS PASSED\n";

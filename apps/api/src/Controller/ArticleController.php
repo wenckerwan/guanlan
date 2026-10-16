@@ -114,7 +114,8 @@ class ArticleController
      */
     private function detailOrQuota(iterable $ordered, string $slug, object $model): ResponseInterface
     {
-        if (isset($this->lockedSlugs($ordered)[$slug])) {
+        // Authorize the database identity, not an alias accepted by its collation.
+        if (isset($this->lockedSlugs($ordered)[(string) $model->slug])) {
             return ApiResponse::message('登录后查看完整内容', 403);
         }
 

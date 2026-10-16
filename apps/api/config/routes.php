@@ -30,7 +30,7 @@ Router::get('/api/v1/health', [HealthController::class, 'index']);
 Router::get('/api/v1/home', [HomeController::class, 'index']);
 Router::get('/api/v1/stats/overview', [StatsController::class, 'overview']);
 Router::post('/api/v1/stats/heartbeat', [StatsController::class, 'heartbeat'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
-Router::get('/api/v1/stats/leaderboard', [StatsController::class, 'leaderboard']);
+Router::get('/api/v1/stats/leaderboard', [StatsController::class, 'leaderboard'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
 Router::get('/api/v1/stats/visits', [VisitController::class, 'overview']);
 Router::post('/api/v1/stats/visit', [VisitController::class, 'record']);
 Router::get('/api/v1/search', [SearchController::class, 'index'], ['middleware' => [AuthMiddleware::class]]);
@@ -42,9 +42,9 @@ Router::get('/api/v1/subjects/{slug}', [SubjectController::class, 'show']);
 // 真题回顾
 Router::get('/api/v1/papers', [PaperController::class, 'index']);
 Router::get('/api/v1/papers/modules', [PaperController::class, 'modules']);
-Router::get('/api/v1/papers/{pid}', [PaperController::class, 'show']);
-Router::get('/api/v1/questions', [QuestionController::class, 'index']);
-Router::get('/api/v1/questions/{id:\d+}', [QuestionController::class, 'show']);
+Router::get('/api/v1/papers/{pid}', [PaperController::class, 'show'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
+Router::get('/api/v1/questions', [QuestionController::class, 'index'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
+Router::get('/api/v1/questions/{id:\d+}', [QuestionController::class, 'show'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
 Router::get('/api/v1/practice/banks/{slug}', [PracticeController::class, 'bank'], ['middleware' => [AuthMiddleware::class]]);
 
 // 真题分析 / 时政热点 / 时政预测（AuthMiddleware 只解析身份，游客配额据此计算）
@@ -62,7 +62,7 @@ Router::get('/api/v1/history/events', [HistoryController::class, 'events'], ['mi
 
 // 模拟押题
 Router::get('/api/v1/mocks', [MockController::class, 'index']);
-Router::get('/api/v1/mocks/{slug}', [MockController::class, 'show']);
+Router::get('/api/v1/mocks/{slug}', [MockController::class, 'show'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
 
 // 个人错题分析（AuthMiddleware 解析身份；可见性在控制器内统一裁决）
 Router::addGroup('/api/v1/mistakes', function () {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import core from "../lib/core.mjs";
+import { loadContent } from "../lib/content-session.mjs";
 import {
   recallSet,
   maskConcept,
@@ -189,9 +190,12 @@ const scheduledDue = computed(() =>
 function title(id: string) {
   return nodes.value.find((n: any) => n.id === id)?.title || id;
 }
-/** 唯一的后端调用:GET /api/v2/content 拉只读题库。 */
-async function api(path: string) {
-  const r = await fetch("/api/v2" + path, { credentials: "same-origin" });
+/** 读取题库及建立观澜身份会话；学习状态继续在本地保存。 */
+async function api(path: string, body?: object) {
+  const r = await fetch("/api/v2" + path, {
+    credentials: "same-origin",
+    ...(body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {}),
+  });
   const json = await r.json().catch(() => null);
   if (!r.ok)
     throw Object.assign(Error(json?.error?.message || "请求失败"), {
@@ -204,7 +208,7 @@ async function load() {
   loading.value = true;
   error.value = "";
   try {
-    const c = await api("/content");
+    const c = await loadContent(api, document.cookie);
     content.value = c;
     state.value = readLocalState();
     view.value = "map";
