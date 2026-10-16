@@ -29,11 +29,22 @@ class AuthController
         }
 
         $serverParams = $this->request->getServerParams();
-        $ip = (string) ($this->request->getHeaderLine('X-Real-IP') ?: $this->request->getHeaderLine('X-Forwarded-For'));
-        if ($ip === '') {
-            $ip = (string) ($serverParams['remote_addr'] ?? '');
-        } elseif (str_contains($ip, ',')) {
-            $ip = trim(explode(',', $ip)[0]);
+        $ip = (string) ($serverParams['remote_addr'] ?? 'unknown');
+        // Only explicitly configured proxy IPs may supply a forwarding chain.
+        $trusted = array_filter(array_map('trim', explode(',', getenv('TRUSTED_PROXY_IPS') ?: '')));
+        if (in_array($ip, $trusted, true)) {
+            $forwarded = $this->request->getHeaderLine('X-Forwarded-For');
+            $chain = $forwarded !== '' ? explode(',', $forwarded) : [$this->request->getHeaderLine('X-Real-IP')];
+            foreach (array_reverse($chain) as $hop) {
+                $hop = trim($hop);
+                if (!filter_var($hop, FILTER_VALIDATE_IP)) {
+                    break;
+                }
+                $ip = $hop;
+                if (!in_array($ip, $trusted, true)) {
+                    break;
+                }
+            }
         }
 
         $result = $this->service->sendRegisterCode($validator->string('email'), $ip);

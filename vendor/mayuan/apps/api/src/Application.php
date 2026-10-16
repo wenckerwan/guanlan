@@ -7,9 +7,11 @@ final class Application {
  private static function now():int{return (int)floor(microtime(true)*1000);}
  public static function blank():array{return ['revision'=>0,'nodes'=>[],'attempts'=>[],'recalls'=>[],'historicalAnswers'=>[],'favorites'=>[],'notes'=>[],'resume'=>['view'=>'map','nodeId'=>null],'sync'=>['status'=>'unconfigured','pending'=>0]];}
  public function dispatch(string $method,string $path,array $body,?array $user):array{
- if($method==='GET'&&$path==='/session')return ['mode'=>$this->mode==='development'?'development':'guanlan','user'=>$user,'integration'=>GuanlanAdapter::status()];
+ if($method==='GET'&&$path==='/session')return ['mode'=>$this->mode==='development'?'development':'guanlan','user'=>$user];
  if($method==='POST'&&$path==='/dev-login'){if($this->mode!=='development')throw new ApiError(403,'development_disabled','开发账号已禁用');$account=$body['account']??'';if(!in_array($account,['learner','second','admin'],true))throw new ApiError(422,'invalid_account','开发账号无效');return ['user'=>['id'=>'dev:'.$account,'name'=>['learner'=>'开发学习者','second'=>'第二开发学习者','admin'=>'开发管理员'][$account],'role'=>$account==='admin'?'admin':'learner']];}
- if($method==='GET'&&$path==='/content')return Content::publicContent($this->store->get('content')['published']);
+ if($method==='GET'&&$path==='/content'){
+ if($this->mode!=='development'&&(!$user||!str_starts_with($user['id'],'guanlan:')))throw new ApiError(401,'unauthenticated','请先登录');
+ return Content::publicContent($this->store->get('content')['published']);}
  if(!$user||($this->mode!=='development'&&!str_starts_with($user['id'],'guanlan:')))throw new ApiError(401,'unauthenticated','请先登录');
  if($method==='POST'&&$path==='/logout')return ['loggedOut'=>true];
  $key='user:'.hash('sha256',$user['id']);$this->store->put($key.':identity',$user['id']);

@@ -64,6 +64,7 @@ services:
     environment:
       APP_ENV: ${APP_ENV:-production}
       APP_NAME: guanlan-api
+      TRUSTED_PROXY_IPS: ${TRUSTED_PROXY_IPS:-}
       APP_KEY: ${APP_KEY:?APP_KEY is required}
       DB_HOST: mysql
       DB_PORT: 3306
