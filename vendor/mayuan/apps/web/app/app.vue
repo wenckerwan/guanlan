@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import core from "../lib/core.mjs";
 import { loadContent } from "../lib/content-session.mjs";
+import { createLocalStateStore, validateLocalStudyState } from "../lib/local-state.mjs";
 import {
   recallSet,
   maskConcept,
@@ -39,7 +40,7 @@ const isExploring = computed(() => ["map", "stars"].includes(view.value));
 const webglFailed = ref(false); // 3D 星空 WebGL 失败 → 回退 SVG star 视图
 const pendingAttempt = ref<any>(null);
 // ---- 纯本地免登录:学习状态只存浏览器 localStorage ----
-const LOCAL_KEY = "mayuan-v2-local-state";
+const saveStatus = ref({ mode: 'saved', message: '' });
 /** 与后端 Application::blank() 同构;favorites/notes 保留为空占位(UI 已删除)。 */
 function blankState() {
   return {
@@ -75,32 +76,24 @@ function recomputeSummary(s: any) {
   };
   return s;
 }
-function readLocalState() {
-  try {
-    const raw = localStorage.getItem(LOCAL_KEY);
-    if (!raw) return blankState();
-    return recomputeSummary({ ...blankState(), ...JSON.parse(raw) });
-  } catch {
-    return blankState();
-  }
-}
-let persistTimer: ReturnType<typeof setTimeout> | undefined;
+const localStore = createLocalStateStore({
+  storage: () => localStorage,
+  blank: blankState,
+  normalize: recomputeSummary,
+  onStatus: (status: { mode: string; message: string }) => { saveStatus.value = status; },
+});
+function readLocalState() { return localStore.read(); }
 /** 防抖写 localStorage;revision 递增以沿用原结构。 */
 function persistState(immediate = false) {
   if (!state.value) return;
   state.value.revision = (state.value.revision || 0) + 1;
   state.value.updatedAt = Date.now();
   recomputeSummary(state.value);
-  const write = () =>
-    localStorage.setItem(LOCAL_KEY, JSON.stringify(state.value));
-  if (immediate) {
-    clearTimeout(persistTimer);
-    write();
-    return;
-  }
-  clearTimeout(persistTimer);
-  persistTimer = setTimeout(write, 300);
+  return localStore.save(state.value, immediate);
 }
+function retrySave() { if (state.value) localStore.retry(state.value); }
+function flushLocal() { localStore.flush(); }
+function flushWhenHidden() { if (document.visibilityState === 'hidden') flushLocal(); }
 const ci = ref(0),
   judgment = ref(""),
   revealed = ref(false),
@@ -210,7 +203,7 @@ async function load() {
   try {
     const c = await loadContent(api, document.cookie);
     content.value = c;
-    state.value = readLocalState();
+    if (!state.value) state.value = readLocalState();
     view.value = "map";
   } catch (e: any) {
     // 题库未加载且无缓存时提示;state 仍可先用本地数据。
@@ -386,23 +379,22 @@ function rate(rating: string) {
   for (const nodeId of ids) event("recall", { nodeId, rating, mode });
   nextRecall();
 }
-/** 导出 localStorage 中的学习记录为 JSON 备份(纯前端,不调 /export)。 */
-function exportData() {
-  if (!state.value) return;
-  const data = {
-    version: 2,
-    exportedAt: Date.now(),
-    contentVersion: content.value?.contentVersion,
-    state: state.value,
-  };
+function downloadJson(text: string, name: string) {
   const url = URL.createObjectURL(
-    new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }),
+    new Blob([text], { type: "application/json" }),
   );
   const a = document.createElement("a");
   a.href = url;
-  a.download = "马原学习备份.json";
+  a.download = name;
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+/** 始终导出内存中的最新状态，包括尚未成功落盘的记录。 */
+function exportData() {
+  if (state.value) downloadJson(localStore.exportState(state.value, content.value?.contentVersion), '马原学习备份.json');
+}
+function exportDamaged() {
+  if (localStore.originalRaw != null) downloadJson(localStore.originalRaw, '马原原始记录待恢复.json');
 }
 async function readImport(e: Event) {
   await run(async () => {
@@ -410,6 +402,7 @@ async function readImport(e: Event) {
     if (!f) return;
     if (f.size > 5000000) throw Error("文件不能超过 5 MB");
     const raw = JSON.parse(await f.text());
+    validateLocalStudyState(raw.progress || raw.state || raw);
     const preview = previewImport(raw);
     importRaw.value = raw;
     importPreview.value = preview;
@@ -454,11 +447,20 @@ async function confirmImport() {
     }
     importRaw.value = null;
     importPreview.value = null;
-    persistState(true);
-    notice.value = "备份已合并，历史练习仅作为未验证记录保留。";
+    const saved = persistState(true);
+    notice.value = saved ? "备份已合并，历史练习仅作为未验证记录保留。" : "备份已合并到本页，尚未保存。请导出或重试保存。";
   });
 }
-onMounted(load);
+onMounted(() => {
+  void load();
+  window.addEventListener('pagehide', flushLocal);
+  document.addEventListener('visibilitychange', flushWhenHidden);
+});
+onBeforeUnmount(() => {
+  localStore.dispose();
+  window.removeEventListener('pagehide', flushLocal);
+  document.removeEventListener('visibilitychange', flushWhenHidden);
+});
 let previousFocus: HTMLElement | null = null;
 watch(
   () => relation.value?.id || selected.value?.id,
@@ -538,6 +540,13 @@ onUnmounted(() => document.removeEventListener("keydown", trapDialog));
         </div>
       </header>
       <main id="main">
+        <div v-if="['error', 'corrupt'].includes(saveStatus.mode)" role="alert" class="alert storage-warning">
+          <p>{{ saveStatus.message }}</p>
+          <button type="button" @click="exportData">导出当前记录</button>
+          <button v-if="localStore.originalRaw != null" type="button" @click="exportDamaged">下载损坏的原始记录</button>
+          <button type="button" @click="retrySave">{{ localStore.originalRaw != null ? '备份原记录并重试保存' : '重试保存' }}</button>
+        </div>
+        <p v-else-if="saveStatus.mode === 'pending'" role="status" class="save-pending">{{ saveStatus.message }}</p>
         <div v-if="loading" class="panel">正在读取内容与本地学习记录…</div>
         <template v-else-if="content"
           ><div v-if="error" role="alert" class="alert">
@@ -1197,6 +1206,10 @@ onUnmounted(() => document.removeEventListener("keydown", trapDialog));
 </template>
 
 <style>
+.storage-warning { flex-wrap: wrap; }
+.storage-warning p { flex-basis: 100%; margin: 0 0 8px; }
+.storage-warning button { margin-right: 8px; }
+.save-pending { padding: 8px 16px; font-size: 13px; color: #655f53; }
 :root {
   --bg: #f6f5f0;
   --paper: #fffefb;

@@ -24,15 +24,28 @@ export interface GuanlanStudyConfig {
   authHeaders?: () => HeadersInit | Promise<HeadersInit>;
   /** 观澜 API 前缀，默认 ''（相对，同源）；不可带路径以外的 query/hash。 */
   apiBase?: string;
-  /** 本地降级库名；按账号区分可避免串号。 */
-  localName?: string;
+  /** 由宿主向服务端确认的账号ID；缺省为独立游客分区。 */
+  accountId?: number | string | null;
+  /** Cookie/宿主身份变化时立即停用旧仓库。 */
+  isCurrent?: () => boolean;
   contentVersion?: string;
   /** 未登录或 401 时由宿主决定跳转（如 /login?redirect=...）；不注入则仅提示。 */
   onAuthRequired?: () => void;
 }
 
 const HISTORY_TYPES = new Set(['history_event', 'history_comparison']);
-const LOCAL_FALLBACK = 'history-study-guanlan-v1';
+const LEGACY_DATABASE = 'history-study-guanlan-v1';
+export function historyStorageName(accountId?: number | string | null): string {
+  if (accountId == null) return 'history-study-guanlan-v2:guest';
+  if (!/^[1-9]\d*$/.test(String(accountId))) throw new Error('史纲账号标识无效');
+  return `history-study-guanlan-v2:user:${accountId}`;
+}
+
+/** 仅主动导出旧共享库；不清理、不自动归入任何账号。 */
+export async function exportLegacyHistory(): Promise<string | null> {
+  const state = await accessRecord(LEGACY_DATABASE, 'study', 'state', 'readonly', value => value === undefined ? null : validateStudyState(value));
+  return state ? JSON.stringify({ version: 1, contentVersion: 'history.v1', exportedAt: new Date().toISOString(), state }, null, 2) : null;
+}
 const PENDING_KEY = 'pending-sync';
 /** 本地“上次与观澜一致”的 bookmarks/notes 基线，用于跨实例计算增量写。 */
 const BASE_KEY = 'remote-base';
@@ -58,6 +71,8 @@ export class GuanlanStudyRepository implements StudyRepository {
   private readonly localName: string;
   private readonly contentVersion: string;
   private queue: Promise<unknown> = Promise.resolve();
+  private readonly boundHeaders: Promise<Headers>;
+  private readonly controller = new AbortController();
   /** 内存中的远端快照：bookmarks/notes 用于计算增量写，updatedAt 用于冲突取新。 */
   private remote: { bookmarks: Set<string>; notes: Map<string, { id: number | string; content: string; updatedAt: string }> } | null = null;
   private lastSavedLocal: { bookmarks: string[]; notes: Record<string, string> } | null = null;
@@ -65,19 +80,35 @@ export class GuanlanStudyRepository implements StudyRepository {
   constructor(private readonly config: GuanlanStudyConfig) {
     this.apiBase = (config.apiBase ?? '').replace(/\/+$/, '');
     if (/[?#]/.test(this.apiBase)) throw new Error('apiBase 不可带 query 或 hash');
-    this.localName = config.localName ?? LOCAL_FALLBACK;
+    this.localName = historyStorageName(config.accountId);
     this.contentVersion = config.contentVersion ?? 'history.v1';
+    // 凭证只在构造时读取一次；旧仓库永远不能借用新账号的凭证。
+    this.boundHeaders = Promise.resolve(config.accountId == null ? undefined : config.authHeaders?.()).then(value => new Headers(value));
   }
 
-  private enqueue<T>(operation: () => Promise<T>): Promise<T> {
-    const next = this.queue.catch(() => undefined).then(operation);
+  dispose(): void { this.controller.abort(); }
+
+  private assertCurrent(): void {
+    if (this.controller.signal.aborted || this.config.isCurrent?.() === false) throw new Error('账号已变化，请重新打开史纲');
+  }
+
+  private enqueue<T>(operation: () => Promise<T>, preserveLocal = false): Promise<T> {
+    const next = this.queue.catch(() => undefined).then(async () => {
+      if (!preserveLocal) this.assertCurrent();
+      const result = await operation();
+      this.assertCurrent();
+      return result;
+    });
     this.queue = next;
     void next.finally(() => { if (this.queue === next) this.queue = Promise.resolve(); }).catch(() => undefined);
     return next;
   }
 
   private async headers(): Promise<HeadersInit | undefined> {
-    return this.config.authHeaders ? this.config.authHeaders() : undefined;
+    this.assertCurrent();
+    const headers = new Headers(await this.boundHeaders);
+    this.assertCurrent();
+    return headers;
   }
   private hasToken(headers: HeadersInit | undefined): boolean {
     if (!headers) return false;
@@ -86,7 +117,9 @@ export class GuanlanStudyRepository implements StudyRepository {
   private async request(path: string, init: RequestInit = {}, allowFail = false): Promise<Response> {
     const headers = new Headers(await this.headers() ?? {});
     if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
-    const response = await this.config.fetch(`${this.apiBase}${path}`, { ...init, headers });
+    this.assertCurrent();
+    const response = await this.config.fetch(`${this.apiBase}${path}`, { ...init, headers, signal: this.controller.signal });
+    this.assertCurrent();
     if (response.status === 401) {
       this.status.mode = 'auth';
       this.status.warning = '登录已失效，已暂停同步；本地记录保留，重新登录后合并';
@@ -217,6 +250,7 @@ export class GuanlanStudyRepository implements StudyRepository {
         await this.writeBase({ bookmarks: merged.bookmarks, notes: merged.notes });
         return merged;
       } catch (error) {
+        this.assertCurrent();
         const local = await this.readLocal().catch(() => emptyState());
         if (this.status.mode !== 'auth') {
           this.status.mode = 'local';
@@ -233,13 +267,15 @@ export class GuanlanStudyRepository implements StudyRepository {
     const bookmarks = new Set(remote.bookmarks);
     for (const id of pending.bookmarks) {
       if (!bookmarks.has(id)) {
-        try { await this.putFavorite(id, true); bookmarks.add(id); } catch { /* 保留到下次 */ }
+        await this.putFavorite(id, true);
+        bookmarks.add(id);
       }
     }
     const notes = { ...remote.notes };
     for (const [id, content] of Object.entries(pending.notes)) {
       if (!(id in notes)) {
-        try { await this.postNote(id, content); notes[id] = content; } catch { /* 保留到下次 */ }
+        await this.postNote(id, content);
+        notes[id] = content;
       }
     }
     return validateStudyState({ version: 1, bookmarks: [...bookmarks], notes, attempts: remote.attempts, view: remote.view ?? pending.view });
@@ -269,6 +305,11 @@ export class GuanlanStudyRepository implements StudyRepository {
       // attempts 始终本地保存，不触发任何远端写。
       const localBefore = await this.readLocal().catch(() => emptyState());
       await this.writeLocal({ ...snapshot, attempts: snapshot.attempts.length ? snapshot.attempts : localBefore.attempts });
+      // 卸载时UI仍会flush防抖中的编辑。只保留到原分区，不再发起网络同步。
+      if (this.controller.signal.aborted || this.config.isCurrent?.() === false) {
+        await this.writePending({ bookmarks: snapshot.bookmarks, notes: snapshot.notes, view: snapshot.view });
+        this.assertCurrent();
+      }
       const headers = await this.headers().catch(() => undefined);
       if (!this.hasToken(headers) || this.status.mode === 'auth') {
         this.status.mode = this.status.mode === 'auth' ? 'auth' : 'local';
@@ -325,7 +366,7 @@ export class GuanlanStudyRepository implements StudyRepository {
         if (this.status.mode === 'online') { this.status.mode = 'local'; this.status.warning = '观澜不可用，本地保存，联网后同步'; }
         throw error;
       }
-    });
+    }, true);
   }
 
   async exportBackup(): Promise<string> {

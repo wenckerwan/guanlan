@@ -36,32 +36,43 @@ export function useAuth() {
   const token = useState<string>('auth.token', () => readAuthToken())
   const user = useState<User | null>('auth.user', () => null)
   const ready = useState<boolean>('auth.ready', () => false)
+  const generation = useState<number>('auth.generation', () => 0)
+
+  function cacheUser(value: User | null) {
+    if (!import.meta.client) return
+    try {
+      if (value) localStorage.setItem(USER_KEY, JSON.stringify(value))
+      else localStorage.removeItem(USER_KEY)
+    } catch { /* 资料缓存不可用不影响认证或退出。 */ }
+  }
 
   function persist(nextToken: string, nextUser: User | null) {
+    ++generation.value
     token.value = nextToken
     user.value = nextUser
     if (import.meta.client) {
       writeCookie(TOKEN_KEY, nextToken, nextToken ? TOKEN_MAX_AGE : 0)
-      if (nextUser) {
-        localStorage.setItem(USER_KEY, JSON.stringify(nextUser))
-      } else {
-        localStorage.removeItem(USER_KEY)
-      }
+      cacheUser(nextUser)
     }
   }
 
   async function fetchUser() {
-    if (!token.value) return null
+    const requestedToken = token.value
+    const requestedGeneration = generation.value
+    if (!requestedToken) return null
+    const isCurrent = () => token.value === requestedToken && generation.value === requestedGeneration
+      && (!import.meta.client || readAuthToken() === requestedToken)
     try {
       const payload = await $fetch<{ data: { user: User } }>('/auth/me', {
         baseURL: (import.meta.server ? config.apiInternalBase : config.public.apiBase) as string,
-        headers: { Authorization: `Bearer ${token.value}` },
+        headers: { Authorization: `Bearer ${requestedToken}` },
       })
+      if (!isCurrent()) return null
       user.value = payload.data.user
-      if (import.meta.client) localStorage.setItem(USER_KEY, JSON.stringify(user.value))
+      cacheUser(user.value)
       return user.value
-    } catch {
-      persist('', null)
+    } catch (error: any) {
+      if (isCurrent() && (error?.statusCode ?? error?.status ?? error?.response?.status) === 401) invalidateToken(requestedToken)
       return null
     }
   }
@@ -73,14 +84,12 @@ export function useAuth() {
   async function restore() {
     if (!token.value) token.value = readAuthToken()
     if (import.meta.client && !user.value) {
-      const raw = localStorage.getItem(USER_KEY)
-      if (raw) {
-        try {
+      try {
+        const raw = localStorage.getItem(USER_KEY)
+        if (raw) {
           user.value = JSON.parse(raw) as User
-        } catch {
-          user.value = null
         }
-      }
+      } catch { user.value = null }
     }
     if (token.value && !user.value) await fetchUser()
     ready.value = true
@@ -118,16 +127,20 @@ export function useAuth() {
   }
 
   async function logout() {
+    const requestedToken = token.value
+    const requestedGeneration = generation.value
     try {
       if (token.value) await request('/auth/logout', { method: 'POST' })
     } catch {
       // 忽略：本地登出优先
     }
-    persist('', null)
+    if (token.value === requestedToken && generation.value === requestedGeneration
+      && (!import.meta.client || readAuthToken() === requestedToken)) persist('', null)
   }
 
   function invalidateToken(expectedToken: string) {
     if (token.value !== expectedToken) return false
+    if (import.meta.client && readAuthToken() !== expectedToken) return false
     persist('', null)
     return true
   }
