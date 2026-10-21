@@ -24,4 +24,4 @@
   - 浏览器运行错误为 0。
 - 预览及打印输出：`output/history-reader/desktop.png`、`mobile.png`、`print.pdf`。
 
-本次只修改本地代码，未执行线上部署。
+用户随后授权推送并部署，已完成生产发布；见 [发布记录](history-reader-production-20261021.md)。
