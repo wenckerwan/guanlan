@@ -133,7 +133,10 @@ class Mailer
         $ehlo = $recv();
         $expect($ehlo, '250', 'ehlo');
 
-        if ($account['port'] !== 465 && str_contains($ehlo, 'STARTTLS')) {
+        if ($account['port'] !== 465) {
+            if (! str_contains(strtoupper($ehlo), 'STARTTLS')) {
+                throw new \RuntimeException('SMTP server does not advertise STARTTLS');
+            }
             $send('STARTTLS');
             $expect($recv(), '220', 'starttls');
             $transport['starttls']();
@@ -168,28 +171,48 @@ class Mailer
             'Content-Transfer-Encoding: base64',
         ];
         $payload = implode("\r\n", $headers) . "\r\n\r\n" . chunk_split(base64_encode($html));
-        // 点透明：正文行首的点补一个点；终止符必须紧跟上一行 CRLF（QQ 服务器对终止符前的空行会挂起不响应）
+        // 点透明；send() 自行追加 CRLF，终止行只传一个点，避免多发空 SMTP 命令。
         $payload = preg_replace('/^\./m', '..', $payload) ?? $payload;
-        $send($payload . ".\r\n");
+        $send($payload . '.');
         $expect($recv(), '250', 'data-end');
 
         $send('QUIT');
     }
 
     /**
-     * Swoole 协程原生传输。recv 带 0.5s 超时返回空串属正常，外层循环以「末行形如 250 ...」为终止条件。
+     * Swoole 协程原生传输。465 在 connect 内完成隐式 TLS；STARTTLS 在收到 220 后初始化并握手。
      */
     private static function swooleTransport(string $host, int $port): array
     {
         $socket = new Coroutine\Socket(\AF_INET, \SOCK_STREAM, \IPPROTO_IP);
-        if (! $socket->connect($host, $port, 15)) {
-            throw new \RuntimeException("connect to {$host}:{$port} failed: " . $socket->errMsg);
-        }
-        if ($port === 465 && ! $socket->sslHandshake()) {
-            throw new \RuntimeException('sslHandshake failed: ' . $socket->errMsg);
+        $enableTls = static function () use ($socket, $host): void {
+            if (! $socket->setProtocol([
+                'open_ssl' => true,
+                'ssl_host_name' => $host,
+                'ssl_verify_peer' => true,
+                'ssl_allow_self_signed' => false,
+            ])) {
+                throw new \RuntimeException('TLS initialization failed: ' . $socket->errMsg);
+            }
+        };
+        try {
+            // sslHandshake() without an initialized TLS context can crash the native extension.
+            // Enabling SSL before connect makes Swoole perform exactly one implicit handshake.
+            if ($port === 465) {
+                $enableTls();
+            }
+            if (! $socket->connect($host, $port, 15)) {
+                throw new \RuntimeException("connect to {$host}:{$port} failed: " . $socket->errMsg);
+            }
+        } catch (Throwable $exception) {
+            $socket->close();
+            throw $exception;
         }
 
-        $deadline = static fn (): float => microtime(true) + 15;
+        $retryableReadErrors = [
+            defined('SOCKET_ETIMEDOUT') ? constant('SOCKET_ETIMEDOUT') : 110,
+            defined('SOCKET_EAGAIN') ? constant('SOCKET_EAGAIN') : 11,
+        ];
         return [
             'send' => static function (string $command) use ($socket): void {
                 $buffer = $command . "\r\n";
@@ -207,7 +230,7 @@ class Mailer
                     throw new \RuntimeException('send timeout');
                 }
             },
-            'recv' => static function () use ($socket): string {
+            'recv' => static function () use ($socket, $retryableReadErrors): string {
                 $data = '';
                 $limit = microtime(true) + 15;
                 while (microtime(true) < $limit) {
@@ -216,16 +239,18 @@ class Mailer
                         $data .= $chunk;
                     }
                     if (preg_match('/(?:^|\r\n)\d{3} [^\r\n]*\r\n$/s', $data)) {
-                        break;
+                        return $data;
                     }
-                    if ($chunk === false) {
+                    // A short read timeout is not EOF: SMTP responses may arrive after 0.5s.
+                    if ($chunk === '' || ($chunk === false && ! in_array($socket->errCode, $retryableReadErrors, true))) {
                         throw new \RuntimeException('recv eof/err: ' . $socket->errMsg);
                     }
                     Coroutine::sleep(0.05);
                 }
-                return $data;
+                throw new \RuntimeException('SMTP response timeout');
             },
-            'starttls' => static function () use ($socket): void {
+            'starttls' => static function () use ($socket, $enableTls): void {
+                $enableTls();
                 if (! $socket->sslHandshake()) {
                     throw new \RuntimeException('STARTTLS handshake failed: ' . $socket->errMsg);
                 }
