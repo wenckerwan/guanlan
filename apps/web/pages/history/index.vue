@@ -9,7 +9,7 @@ import { History as HistoryIcon } from 'lucide-vue-next'
  */
 useHead({
   title: '史纲时间轴｜观澜考研政治知识库',
-  meta: [{ name: 'description', content: '1839—2026 近现代史交互时间轴：时间探索、事件对照与同期观察。' }],
+  meta: [{ name: 'description', content: '1839—2026 近现代史事件汇总：目录检索、逐事阅读、速记复习与事件对照。' }],
 })
 // 嵌入组件独立挂载、档案馆视觉令牌独立于观澜全局样式。
 definePageMeta({ layout: false })
@@ -174,7 +174,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.history-host { min-height: 100vh; display: flex; flex-direction: column; background: #f3f0e8; }
+.history-host { min-height: 100vh; display: flex; flex-direction: column; background: #f3f6fa; }
 .history-host__skip { position: absolute; left: 12px; top: 12px; z-index: 10; font-size: 13px; color: #6b6455; text-decoration: none; }
 .history-host__skip:hover { text-decoration: underline; }
 .history-host__mount { flex: 1; min-height: 0; }
