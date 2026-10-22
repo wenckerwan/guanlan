@@ -4,8 +4,8 @@ import { History as HistoryIcon } from 'lucide-vue-next'
 /**
  * 史纲时间轴（近现代史时间实验室）嵌入承载页。
  * 组件本体与视觉令牌独立（components/history/），此处只提供容器、注入观澜仓库与 Nuxt 路由薄封装。
- * 数据集：GET /api/v1/history/events（{data: HistoryDataset}，公开只读）。
- * 学习：观澜 /api/v1/study/*（history_event / history_comparison，未登录只读、写操作跳登录）。
+ * 数据集：GET /api/v1/history/events（{data: HistoryDataset}，需要登录）。
+ * 学习：观澜 /api/v1/study/*（history_event / history_comparison）。
  */
 useHead({
   title: '史纲时间轴｜观澜考研政治知识库',
@@ -82,6 +82,10 @@ async function mountHistory() {
   const currentGeneration = ++generation
   stopHistory()
   const sessionToken = readAuthToken()
+  if (!sessionToken) {
+    await navigateTo({ path: '/login', query: { redirect: route.fullPath } })
+    return
+  }
   const isCurrent = () => !disposed && currentGeneration === generation && readAuthToken() === sessionToken
   mountError.value = ''
   try {

@@ -72,7 +72,7 @@ guanlan/
 
 ### 主站前端
 
-建议使用 Node.js 22 与 npm，与仓库容器构建环境保持一致。
+建议使用 Node.js 24.22.1 LTS 与 npm，与仓库容器构建环境保持一致。
 
 ```bash
 git clone https://github.com/wenckerwan/guanlan.git

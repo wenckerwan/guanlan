@@ -271,10 +271,7 @@ export type User = {
 }
 
 export type LeaderboardEntry = {
-  userId: number
   displayName: string
-  role: string
-  userGroup: UserGroup
   seconds: number
 }
 

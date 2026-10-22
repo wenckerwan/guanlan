@@ -28,7 +28,7 @@ $check = static function (bool $ok, string $label): void {
 $initial = $http('/stats/visits', 'GET');
 $headers = implode("\n", $initial['headers']);
 $check(str_contains(strtolower($headers), 'cache-control: no-store'), 'no-store');
-$check(preg_match('/Set-Cookie: (guanlan_browser=([a-f0-9]{64}));/i', $headers, $matches) === 1, 'cookie issued');
+$check(preg_match('/Set-Cookie: (guanlan_browser=([a-f0-9]{64})\.[a-f0-9]{64});/i', $headers, $matches) === 1, 'signed cookie issued');
 $check(str_contains($headers, 'HttpOnly') && str_contains($headers, 'SameSite=Lax'), 'cookie flags');
 $cookie = $matches[1];
 $hash = hash('sha256', $matches[2]);

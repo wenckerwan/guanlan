@@ -136,10 +136,9 @@ function submitSearch() {
           <div class="saved-block">
             <div class="section-heading compact"><div><span class="section-kicker">本周学习时长</span><h2>学习排行</h2></div></div>
             <ol v-if="leaderboard.length" class="leaderboard-list">
-              <li v-for="(item, i) in leaderboard" :key="item.userId">
+              <li v-for="(item, i) in leaderboard" :key="i">
                 <b class="leaderboard-rank" :class="`rank-${i + 1}`">{{ i + 1 }}</b>
                 <span class="leaderboard-name">{{ item.displayName || '同学' }}</span>
-                <UserGroupBadge :group="item.userGroup" :role="item.role" />
                 <small>{{ formatDuration(item.seconds) }}</small>
               </li>
             </ol>

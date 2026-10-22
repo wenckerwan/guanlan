@@ -49,7 +49,7 @@ class AuthController
 
         $result = $this->service->sendRegisterCode($validator->string('email'), $ip);
         if (isset($result['error'])) {
-            return ApiResponse::message($result['error'], 429);
+            return ApiResponse::message($result['error'], $result['status'] ?? 429);
         }
 
         return ApiResponse::data(['ok' => true]);
@@ -77,7 +77,7 @@ class AuthController
         );
 
         if (isset($result['error'])) {
-            return ApiResponse::message($result['error'], 409);
+            return ApiResponse::message($result['error'], $result['status'] ?? 409);
         }
 
         $user = $result['user'];

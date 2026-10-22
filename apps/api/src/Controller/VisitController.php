@@ -27,8 +27,13 @@ class VisitController
         try {
             $response = ApiResponse::data($this->service->overview())->withHeader('Cache-Control', 'no-store');
             if ($this->browserId() === null) {
+                $id = bin2hex(random_bytes(32));
+                $signature = $this->signature($id);
+                if ($signature === null) {
+                    throw new \RuntimeException('Visit signing key unavailable');
+                }
                 $secure = env('APP_ENV', 'production') === 'production' ? '; Secure' : '';
-                $response = $response->withHeader('Set-Cookie', self::COOKIE . '=' . bin2hex(random_bytes(32))
+                $response = $response->withHeader('Set-Cookie', self::COOKIE . '=' . $id . '.' . $signature
                     . '; Path=/; Max-Age=31536000; HttpOnly; SameSite=Lax' . $secure);
             }
             return $response;
@@ -56,7 +61,17 @@ class VisitController
     private function browserId(): ?string
     {
         $id = $this->request->cookie(self::COOKIE);
-        return is_string($id) && preg_match('/\A[a-f0-9]{64}\z/', $id) === 1 ? $id : null;
+        if (!is_string($id) || preg_match('/\A([a-f0-9]{64})\.([a-f0-9]{64})\z/', $id, $parts) !== 1) {
+            return null;
+        }
+        $signature = $this->signature($parts[1]);
+        return $signature !== null && hash_equals($signature, $parts[2]) ? $parts[1] : null;
+    }
+
+    private function signature(string $id): ?string
+    {
+        $key = (string) env('APP_KEY', '');
+        return $key !== '' ? hash_hmac('sha256', 'guanlan_browser:v1:' . $id, $key) : null;
     }
 
     private function error(int $status, string $message): ResponseInterface

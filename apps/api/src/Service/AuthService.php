@@ -20,6 +20,9 @@ class AuthService
 
     public function register(string $email, string $password, string $displayName, ?string $code = null): array
     {
+        if (!Mailer::enabled()) {
+            return ['error' => '邮箱验证服务未开启，暂不开放自助注册', 'status' => 503];
+        }
         $email = mb_strtolower(trim($email));
 
         if (Mailer::enabled()) {
@@ -93,7 +96,7 @@ class AuthService
     public function sendRegisterCode(string $email, string $ip): array
     {
         if (! Mailer::enabled()) {
-            return ['error' => '邮箱验证服务未开启'];
+            return ['error' => '邮箱验证服务未开启', 'status' => 503];
         }
         $email = mb_strtolower(trim($email));
         $now = time();
@@ -136,7 +139,7 @@ class AuthService
 
         $sent = Mailer::send($email, '观澜注册验证码', self::codeHtml($code));
         if (! $sent) {
-            return ['error' => '验证码发送失败，请稍后重试'];
+            return ['error' => '验证码发送失败，请稍后重试', 'status' => 503];
         }
         return ['ok' => true];
     }

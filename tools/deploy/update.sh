@@ -12,6 +12,7 @@ log()  { echo "[update] $*"; }
 fail() { echo "FAIL: $1" >&2; exit 1; }
 
 [ -f "$ENV_FILE" ] || fail "env file not found: $ENV_FILE"
+chmod 600 "$ENV_FILE" || fail "cannot restrict env file permissions"
 
 # 1. 拒绝脏 Git 工作树。
 if [ -n "$(cd "$REPO_ROOT" && git status --porcelain)" ]; then
@@ -48,7 +49,7 @@ NEW_SHA="$(cd "$REPO_ROOT" && git rev-parse HEAD)"
 log "updated to HEAD: $NEW_SHA"
 
 # 5. 重建、启动并健康检查。
-if ! (compose build && compose up -d --remove-orphans && "$SCRIPT_DIR/healthcheck.sh" "$ENV_FILE"); then
+if ! (compose build --pull && compose up -d --remove-orphans && "$SCRIPT_DIR/healthcheck.sh" "$ENV_FILE"); then
   log "build/start/health check failed; rolling back"
   rollback
   fail "update failed: health check did not pass; failed SHA $NEW_SHA, restored SHA $OLD_SHA"

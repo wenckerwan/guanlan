@@ -57,8 +57,8 @@ Router::addGroup('/api/v1', function () {
     Router::get('/predictions/{slug}', [ArticleController::class, 'predictionShow']);
 }, ['middleware' => [AuthMiddleware::class]]);
 
-// 史纲（近现代史时间实验室）：只读数据集，公开（AuthMiddleware 仅解析身份，不强制登录）
-Router::get('/api/v1/history/events', [HistoryController::class, 'events'], ['middleware' => [AuthMiddleware::class]]);
+// 史纲数据集仅限登录用户，服务层进一步剔除待审核内容。
+Router::get('/api/v1/history/events', [HistoryController::class, 'events'], ['middleware' => [AuthMiddleware::class, RequireAuthMiddleware::class]]);
 
 // 模拟押题
 Router::get('/api/v1/mocks', [MockController::class, 'index']);

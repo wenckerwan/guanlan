@@ -17,6 +17,7 @@ log "docker compose version: $(docker compose version)"
 
 # 2. 环境文件存在
 [ -f "$ENV_FILE" ] || fail "env file not found: $ENV_FILE"
+chmod 600 "$ENV_FILE" || fail "cannot restrict env file permissions"
 
 # 3. 至少 2 GB 可用磁盘
 if command -v df >/dev/null 2>&1; then
@@ -55,7 +56,7 @@ if ! compose config --quiet; then
 fi
 
 # 7. 构建并启动
-compose build
+compose build --pull
 compose up -d --remove-orphans
 
 # 8. 有界轮询健康检查：最多 30 次、每次间隔 2 秒

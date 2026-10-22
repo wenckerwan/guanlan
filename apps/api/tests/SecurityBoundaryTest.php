@@ -66,7 +66,7 @@ namespace {
     $check($service->ip === '5.6.7.8', 'explicit trusted proxy may forward client IP');
     putenv('TRUSTED_PROXY_IPS');
     require __DIR__ . '/../config/routes.php';
-    foreach (['/api/v1/stats/leaderboard', '/api/v1/questions', '/api/v1/questions/{id:\d+}', '/api/v1/papers/{pid}', '/api/v1/mocks/{slug}'] as $path) {
+    foreach (['/api/v1/history/events', '/api/v1/stats/leaderboard', '/api/v1/questions', '/api/v1/questions/{id:\d+}', '/api/v1/papers/{pid}', '/api/v1/mocks/{slug}'] as $path) {
         $middleware = Hyperf\HttpServer\Router\Router::$routes[$path]['middleware'] ?? [];
         $check($middleware === [App\Middleware\AuthMiddleware::class, App\Middleware\RequireAuthMiddleware::class], 'protected route requires identity: '.$path);
     }

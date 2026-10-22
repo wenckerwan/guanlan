@@ -41,7 +41,7 @@ class StatsController
         return ApiResponse::data($this->stats->heartbeat($user, $seconds));
     }
 
-    /** 学习时长排行榜：?period=week|total&limit=20，公开（仅昵称+组+时长） */
+    /** 学习时长排行榜：?period=week|total&limit=20，需要登录，仅返回昵称与时长。 */
     public function leaderboard(): ResponseInterface
     {
         $period = $this->request->input('period', 'week') === 'total' ? 'total' : 'week';

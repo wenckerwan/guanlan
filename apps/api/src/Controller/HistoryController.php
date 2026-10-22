@@ -19,7 +19,7 @@ class HistoryController
 
     /**
      * GET /api/v1/history/events
-     * 公开只读（AuthMiddleware 仅解析身份，不强制登录）。
+     * 需要有效登录；仅返回公开发布内容。
      * 返回 { data: HistoryDataset }；无任何已发布版本时 404。
      */
     public function events(): ResponseInterface
@@ -29,6 +29,6 @@ class HistoryController
             return ApiResponse::message('历史数据集尚未发布', 404);
         }
 
-        return ApiResponse::data($dataset);
+        return ApiResponse::data($dataset)->withHeader('Cache-Control', 'no-store');
     }
 }

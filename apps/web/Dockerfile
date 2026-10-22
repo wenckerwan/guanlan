@@ -1,9 +1,9 @@
-FROM node:22-alpine AS build
+FROM node:24.22.1-alpine AS build
 WORKDIR /app
 COPY . .
 RUN npm ci && npm run build
 
-FROM node:22-alpine AS runtime
+FROM node:24.22.1-alpine AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build --chown=node:node /app/.output ./
