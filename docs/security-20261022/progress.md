@@ -7,3 +7,5 @@
 - requesting-code-review 独立审查建议对审核 comparisons fail closed；已补先失败再通过的误标测试，统一返回空列表。
 - Nginx 语法检查及独立临时进程限流实验通过；未 reload/restart 生产服务。Docker Hub 与 Registry 验证均因网络超时未完成。
 - 完整对应关系、验证边界与发布事项见修复记录.md。
+
+2026-10-22：业务提交5a42426已推送GitHub main并部署。线上登录、史纲227事件过滤、排行榜字段、签名Cookie、马原SSO、独立限流验收通过。8张内容表摘要和数据库/Redis/马原容器不变，临时测试数据已清理，详见部署记录。
