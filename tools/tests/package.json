@@ -1,0 +1,7 @@
+{
+  "name": "guanlan-browser-regression",
+  "private": true,
+  "dependencies": {
+    "playwright": "1.58.2"
+  }
+}

@@ -1,4 +1,4 @@
-﻿import type { StudyRepository, StudyState, ViewState } from '../core/index';
+import type { StudyRepository, StudyState, ViewState } from '../core/index';
 import { accessRecord } from './indexed-db';
 import { parseBackup, validateStudyState } from './validation';
 
@@ -49,6 +49,7 @@ export async function exportLegacyHistory(): Promise<string | null> {
 const PENDING_KEY = 'pending-sync';
 /** 本地“上次与观澜一致”的 bookmarks/notes 基线，用于跨实例计算增量写。 */
 const BASE_KEY = 'remote-base';
+type PendingStudy = { bookmarks: string[]; notes: Record<string, string>; view: ViewState | null; revision?: string };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -138,7 +139,7 @@ export class GuanlanStudyRepository implements StudyRepository {
     const snapshot = validateStudyState(state);
     await accessRecord(this.localName, 'study', 'state', 'readwrite', (_value, store) => { store.put(snapshot, 'state'); });
   }
-  private async readPending(): Promise<{ bookmarks: string[]; notes: Record<string, string>; view: ViewState | null } | null> {
+  private async readPending(): Promise<PendingStudy | null> {
     try {
       return await accessRecord(this.localName, 'study', PENDING_KEY, 'readonly', value => {
         if (value === undefined) return null;
@@ -147,14 +148,15 @@ export class GuanlanStudyRepository implements StudyRepository {
           bookmarks: Array.isArray(value.bookmarks) ? value.bookmarks.filter((id): id is string => typeof id === 'string') : [],
           notes: isRecord(value.notes) ? Object.fromEntries(Object.entries(value.notes).filter(([, v]) => typeof v === 'string')) as Record<string, string> : {},
           view: isRecord(value.view) ? (value.view as unknown as ViewState) : null,
+          ...(typeof value.revision === 'string' ? { revision: value.revision } : {}),
         };
       });
-    } catch { return null; }
+    } catch (error) { throw error; }
   }
   private async writePending(pending: { bookmarks: string[]; notes: Record<string, string>; view: ViewState | null } | null): Promise<void> {
     await accessRecord(this.localName, 'study', PENDING_KEY, 'readwrite', (_value, store) => {
       if (pending === null) store.delete(PENDING_KEY); else store.put(pending, PENDING_KEY);
-    }).catch(() => undefined);
+    });
   }
   private async readBase(): Promise<{ bookmarks: string[]; notes: Record<string, string> }> {
     try {
@@ -165,11 +167,10 @@ export class GuanlanStudyRepository implements StudyRepository {
           notes: isRecord(value.notes) ? Object.fromEntries(Object.entries(value.notes).filter(([, v]) => typeof v === 'string')) as Record<string, string> : {},
         };
       });
-    } catch { return { bookmarks: [], notes: {} }; }
+    } catch (error) { throw error; }
   }
   private async writeBase(base: { bookmarks: string[]; notes: Record<string, string> }): Promise<void> {
-    this.lastSavedLocal = { bookmarks: [...base.bookmarks], notes: { ...base.notes } };
-    await accessRecord(this.localName, 'study', BASE_KEY, 'readwrite', (_value, store) => { store.put({ bookmarks: base.bookmarks, notes: base.notes }, BASE_KEY); }).catch(() => undefined);
+    await accessRecord(this.localName, 'study', BASE_KEY, 'readwrite', (_value, store) => { store.put({ bookmarks: base.bookmarks, notes: base.notes }, BASE_KEY); });
   }
 
   // ---------- 远端聚合 ----------
@@ -217,7 +218,7 @@ export class GuanlanStudyRepository implements StudyRepository {
     const headers = await this.headers();
     if (!this.hasToken(headers)) return null; // 未登录：只读免登录，学习记录仅本地
     const remote = await this.fetchRemote();
-    const local = await this.readLocal().catch(() => emptyState());
+    const local = await this.readLocal();
     return validateStudyState({
       version: 1,
       bookmarks: remote.bookmarks,
@@ -228,57 +229,88 @@ export class GuanlanStudyRepository implements StudyRepository {
   }
 
   async load(): Promise<StudyState> {
-    return this.enqueue(async () => {
+    return this.enqueue(() => this.loadPendingSnapshot());
+  }
+
+  private async loadPendingSnapshot(): Promise<StudyState> {
       try {
         const remote = await this.loadRemoteState();
         if (remote === null) {
           this.status.mode = 'local';
           this.status.warning = '未登录：学习记录仅保存在本机，登录后同步到观澜';
-          return this.readLocal().catch(() => emptyState());
+          return this.readLocal();
         }
-        // 恢复在线：如有待同步本地改动，按观澜权威合并（远端为准，本地缺失项补推）。
+        // 恢复在线：如有待同步本地改动，按已确认基线重放本机变更，保留冲突草稿。
         const pending = await this.readPending();
-        let merged = remote;
-        if (pending) {
-          merged = await this.mergePending(remote, pending);
-          await this.writePending(null);
+        const result = pending ? await this.mergePending(remote, pending) : { state: remote, conflicts: false };
+        const merged = result.state;
+        // Compare and commit atomically: another tab may save while network replay waits.
+        const committed = await accessRecord(this.localName, 'study', PENDING_KEY, 'readwrite', (current, store) => {
+          if (JSON.stringify(current ?? null) !== JSON.stringify(pending)) return false;
+          store.put(merged, 'state');
+          if (!result.conflicts) {
+            store.put({ bookmarks: merged.bookmarks, notes: merged.notes }, BASE_KEY);
+            store.delete(PENDING_KEY);
+          }
+          return true;
+        });
+        if (!committed) {
+          this.status.mode = 'local'; this.status.pendingSync = true;
+          this.status.warning = '其他页面有较新的本机记录，已保留，等待下次同步';
+          return this.readLocal();
         }
-        await this.writeLocal(merged).catch(() => undefined);
         this.status.mode = 'online';
-        this.status.pendingSync = false;
-        this.status.warning = null;
-        await this.writeBase({ bookmarks: merged.bookmarks, notes: merged.notes });
+        this.status.pendingSync = result.conflicts;
+        this.status.warning = result.conflicts ? '同步冲突：本机笔记已保留，可导出备份；线上笔记未覆盖' : null;
+        this.lastSavedLocal = { bookmarks: [...merged.bookmarks], notes: { ...merged.notes } };
         return merged;
       } catch (error) {
         this.assertCurrent();
-        const local = await this.readLocal().catch(() => emptyState());
+        const local = await this.readLocal();
         if (this.status.mode !== 'auth') {
           this.status.mode = 'local';
-          this.status.warning = '观澜不可用，本地保存，联网后同步';
+          this.status.warning = error instanceof Error && error.message.includes('20000') ? error.message : '观澜不可用，本地保存，联网后同步';
         }
         this.status.pendingSync = true;
         return local;
       }
-    });
   }
 
-  /** 观澜权威合并：远端为准；本地待同步中远端缺失的收藏/笔记补推回去。 */
-  private async mergePending(remote: StudyState, pending: { bookmarks: string[]; notes: Record<string, string>; view: ViewState | null }): Promise<StudyState> {
-    const bookmarks = new Set(remote.bookmarks);
-    for (const id of pending.bookmarks) {
-      if (!bookmarks.has(id)) {
-        await this.putFavorite(id, true);
-        bookmarks.add(id);
+  /** 以已确认基线比较本地与远端，逐项记录成功写入，冲突不覆盖任何一方。 */
+  private async mergePending(remote: StudyState, pending: { bookmarks: string[]; notes: Record<string, string>; view: ViewState | null }): Promise<{ state: StudyState; conflicts: boolean }> {
+    const base = await this.readBase();
+    const nextBookmarks = new Set(pending.bookmarks);
+    for (const id of nextBookmarks) {
+      if (!remote.bookmarks.includes(id) && !base.bookmarks.includes(id)) {
+        await this.putFavorite(id, true); base.bookmarks.push(id); await this.writeBase(base);
       }
     }
-    const notes = { ...remote.notes };
-    for (const [id, content] of Object.entries(pending.notes)) {
-      if (!(id in notes)) {
-        await this.postNote(id, content);
-        notes[id] = content;
+    for (const id of [...base.bookmarks]) {
+      if (!nextBookmarks.has(id) && remote.bookmarks.includes(id)) {
+        await this.putFavorite(id, false); base.bookmarks = base.bookmarks.filter(value => value !== id); await this.writeBase(base);
       }
     }
-    return validateStudyState({ version: 1, bookmarks: [...bookmarks], notes, attempts: remote.attempts, view: remote.view ?? pending.view });
+    const conflicts: string[] = [];
+    for (const id of new Set([...Object.keys(base.notes), ...Object.keys(pending.notes)])) {
+      const before = base.notes[id] ?? '';
+      const after = pending.notes[id] ?? '';
+      if (before === after) continue;
+      const existing = this.remote?.notes.get(id);
+      // Retry-safe: apply a local change only while the server still matches its base.
+      // Changes from another device remain authoritative.
+      if ((existing?.content ?? '') !== before && (existing?.content ?? '') !== after) { conflicts.push(id); continue; }
+      if ((existing?.content ?? '') !== after) {
+        if (!after.trim()) { if (existing) await this.deleteNote(existing.id); }
+        else if (existing) await this.patchNote(existing.id, after);
+        else await this.postNote(id, after);
+      }
+      if (after.trim()) base.notes[id] = after; else delete base.notes[id];
+      await this.writeBase(base);
+    }
+    await this.postViewProgress(pending.view);
+    const fresh = await this.fetchRemote();
+    for (const id of conflicts) { if (id in pending.notes) fresh.notes[id] = pending.notes[id]; else delete fresh.notes[id]; }
+    return { state: validateStudyState({ version: 1, bookmarks: fresh.bookmarks, notes: fresh.notes, attempts: remote.attempts, view: fresh.view ?? pending.view }), conflicts: conflicts.length > 0 };
   }
 
   // ---------- 写操作 ----------
@@ -286,86 +318,62 @@ export class GuanlanStudyRepository implements StudyRepository {
     await this.request('/api/v1/study/favorites', { method: 'PUT', body: JSON.stringify({ targetType: 'history_event', targetId, title: targetId, url: `/history/?event=${encodeURIComponent(targetId)}`, favorited }) });
   }
   private async postNote(targetId: string, content: string): Promise<void> {
-    await this.request('/api/v1/study/notes', { method: 'POST', body: JSON.stringify({ targetType: 'history_event', targetId, title: targetId, content: content.slice(0, 20000) }) });
+    if (content.length > 20000) throw new Error('笔记超过 20000 字，完整内容已保存在本机；缩短后可同步');
+    await this.request('/api/v1/study/notes', { method: 'POST', body: JSON.stringify({ targetType: 'history_event', targetId, title: targetId, content }) });
   }
   private async patchNote(id: number | string, content: string): Promise<void> {
-    await this.request(`/api/v1/study/notes/${encodeURIComponent(String(id))}`, { method: 'PATCH', body: JSON.stringify({ content: content.slice(0, 20000) }) });
+    if (content.length > 20000) throw new Error('笔记超过 20000 字，完整内容已保存在本机；缩短后可同步');
+    await this.request(`/api/v1/study/notes/${encodeURIComponent(String(id))}`, { method: 'PATCH', body: JSON.stringify({ content }) });
   }
   private async deleteNote(id: number | string): Promise<void> {
-    await this.request(`/api/v1/study/notes/${encodeURIComponent(String(id))}`, { method: 'DELETE' }, true);
+    const response = await this.request(`/api/v1/study/notes/${encodeURIComponent(String(id))}`, { method: 'DELETE' }, true);
+    if (!response.ok && response.status !== 404) throw new Error(`笔记删除失败：HTTP ${response.status}`);
   }
   private async postViewProgress(view: ViewState | null): Promise<void> {
     if (!view) return;
-    await this.request('/api/v1/study/progress', { method: 'POST', body: JSON.stringify({ scope: 'history', ref: 'view:timeline', label: JSON.stringify(view), status: 'reading', progress: 0 }) }, true).catch(() => undefined);
+    await this.request('/api/v1/study/progress', { method: 'POST', body: JSON.stringify({ scope: 'history', ref: 'view:timeline', label: JSON.stringify(view), status: 'reading', progress: 0 }) });
   }
 
-  async save(state: StudyState): Promise<void> {
-    const snapshot = validateStudyState(state);
+  async save(state: StudyState): Promise<StudyState> {
+    const input = validateStudyState(state);
     return this.enqueue(async () => {
-      // attempts 始终本地保存，不触发任何远端写。
-      const localBefore = await this.readLocal().catch(() => emptyState());
-      await this.writeLocal({ ...snapshot, attempts: snapshot.attempts.length ? snapshot.attempts : localBefore.attempts });
-      // 卸载时UI仍会flush防抖中的编辑。只保留到原分区，不再发起网络同步。
-      if (this.controller.signal.aborted || this.config.isCurrent?.() === false) {
-        await this.writePending({ bookmarks: snapshot.bookmarks, notes: snapshot.notes, view: snapshot.view });
-        this.assertCurrent();
+      const snapshot = validateStudyState(input);
+      // Reconcile against the current record in the write transaction, including other tabs.
+      await accessRecord(this.localName, 'study', 'state', 'readwrite', (value, store) => {
+      const localBefore = value === undefined ? emptyState() : validateStudyState(value);
+      // Preserve reconciled fields that a queued UI snapshot has not edited.
+      if (this.lastSavedLocal) {
+        for (const id of new Set([...Object.keys(snapshot.notes), ...Object.keys(localBefore.notes), ...Object.keys(this.lastSavedLocal.notes)])) {
+          if ((snapshot.notes[id] ?? '') === (this.lastSavedLocal.notes[id] ?? '')) {
+            if (id in localBefore.notes) snapshot.notes[id] = localBefore.notes[id]; else delete snapshot.notes[id];
+          }
+        }
+        const desired = new Set(snapshot.bookmarks);
+        for (const id of new Set([...snapshot.bookmarks, ...localBefore.bookmarks, ...this.lastSavedLocal.bookmarks])) {
+          if (desired.has(id) === this.lastSavedLocal.bookmarks.includes(id)) {
+            if (localBefore.bookmarks.includes(id)) desired.add(id); else desired.delete(id);
+          }
+        }
+        snapshot.bookmarks = [...desired];
       }
-      const headers = await this.headers().catch(() => undefined);
+      const attempts = new Map(localBefore.attempts.map(attempt => [attempt.id, attempt]));
+      for (const attempt of snapshot.attempts) if (!attempts.has(attempt.id)) attempts.set(attempt.id, attempt);
+      snapshot.attempts = [...attempts.values()];
+        store.put(validateStudyState(snapshot), 'state');
+        store.put({ bookmarks: snapshot.bookmarks, notes: snapshot.notes, view: snapshot.view, revision: `${Date.now()}-${Math.random()}` }, PENDING_KEY);
+      });
+      this.assertCurrent();
+      const headers = await this.headers();
+      this.status.pendingSync = true;
       if (!this.hasToken(headers) || this.status.mode === 'auth') {
+        this.lastSavedLocal = { bookmarks: [...input.bookmarks], notes: { ...input.notes } };
         this.status.mode = this.status.mode === 'auth' ? 'auth' : 'local';
-        this.status.pendingSync = true;
         this.status.warning = this.status.mode === 'auth' ? this.status.warning : '本地保存，登录后同步';
-        await this.writePending({ bookmarks: snapshot.bookmarks, notes: snapshot.notes, view: snapshot.view });
-        return;
+        return snapshot;
       }
-      try {
-        if (!this.remote) {
-          try {
-            await this.fetchRemote();
-          } catch (snapshotError) {
-            // 拉不到远端基线：无法安全做增量写，降级本地保存并标待同步（auth 模式保持）。
-            if (this.status.mode === 'online') { this.status.mode = 'local'; this.status.warning = '观澜不可用，本地保存，联网后同步'; }
-            else if (this.status.mode === 'local') { this.status.warning = '观澜不可用，本地保存，联网后同步'; }
-            this.status.pendingSync = true;
-            await this.writePending({ bookmarks: snapshot.bookmarks, notes: snapshot.notes, view: snapshot.view });
-            return;
-          }
-        }
-        const remote = this.remote!;
-        const previous = this.lastSavedLocal ?? await this.readBase();
-        // 收藏增量：一律用幂等 PUT（重试安全，不会意外取消）。
-        const nextBookmarks = new Set(snapshot.bookmarks);
-        for (const id of nextBookmarks) if (!remote.bookmarks.has(id) || !previous.bookmarks.includes(id)) await this.putFavorite(id, true);
-        for (const id of remote.bookmarks) if (!nextBookmarks.has(id) && previous.bookmarks.includes(id)) await this.putFavorite(id, false);
-        // 笔记增量：新建 POST、编辑 PATCH（以远端 updatedAt 新者为准）、清空 DELETE。
-        for (const [id, content] of Object.entries(snapshot.notes)) {
-          const existing = remote.notes.get(id);
-          const changed = (previous.notes[id] ?? '') !== content;
-          if (!changed) continue;
-          if (!content.trim()) { if (existing) await this.deleteNote(existing.id); continue; }
-          if (existing) {
-            // 冲突：远端 updatedAt 比本地快照新则以远端为准，不覆盖。
-            if (existing.content !== content) await this.patchNote(existing.id, content);
-          } else {
-            await this.postNote(id, content);
-          }
-        }
-        for (const id of Object.keys(previous.notes)) {
-          if (!(id in snapshot.notes) && remote.notes.has(id)) await this.deleteNote(remote.notes.get(id)!.id);
-        }
-        await this.postViewProgress(snapshot.view);
-        await this.fetchRemote(); // 刷新远端快照
-        await this.writeBase({ bookmarks: snapshot.bookmarks, notes: snapshot.notes });
-        await this.writePending(null);
-        this.status.mode = 'online';
-        this.status.pendingSync = false;
-        this.status.warning = null;
-      } catch (error) {
-        this.status.pendingSync = true;
-        await this.writePending({ bookmarks: snapshot.bookmarks, notes: snapshot.notes, view: snapshot.view });
-        if (this.status.mode === 'online') { this.status.mode = 'local'; this.status.warning = '观澜不可用，本地保存，联网后同步'; }
-        throw error;
-      }
+      const merged = await this.loadPendingSnapshot();
+      this.lastSavedLocal = { bookmarks: [...input.bookmarks], notes: { ...input.notes } };
+      return merged;
     }, true);
   }
 

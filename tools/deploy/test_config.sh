@@ -69,19 +69,8 @@ MYSQL_LINE="$(grep -n 'compose exec -T mysql' "$DEPLOY_DIR/restore.sh" | head -n
 [ -n "$SAFETY_LINE" ] && [ -n "$MYSQL_LINE" ] && [ "$SAFETY_LINE" -lt "$MYSQL_LINE" ] \
   || fail "restore.sh must run a safety backup before touching MySQL"
 
-# --- update.sh 契约断言 ---
-grep -q 'git rev-parse HEAD' "$DEPLOY_DIR/update.sh" \
-  || fail "update.sh must record git rev-parse HEAD"
-grep -q 'git pull --ff-only origin main' "$DEPLOY_DIR/update.sh" \
-  || fail "update.sh must pull with --ff-only origin main"
-grep -q 'git reset --hard "$OLD_SHA"' "$DEPLOY_DIR/update.sh" \
-  || fail "update.sh must restore the old SHA on failure"
-grep -q 'healthcheck.sh' "$DEPLOY_DIR/update.sh" \
-  || fail "update.sh must health-check before completing"
-UPDATE_BACKUP_LINE="$(grep -n '"$SCRIPT_DIR/backup.sh"' "$DEPLOY_DIR/update.sh" | head -n 1 | cut -d: -f1)"
-UPDATE_PULL_LINE="$(grep -n 'git pull --ff-only origin main' "$DEPLOY_DIR/update.sh" | head -n 1 | cut -d: -f1)"
-[ -n "$UPDATE_BACKUP_LINE" ] && [ -n "$UPDATE_PULL_LINE" ] && [ "$UPDATE_BACKUP_LINE" -lt "$UPDATE_PULL_LINE" ] \
-  || fail "update.sh must back up before git pull --ff-only origin main"
+# --- Artifact release behavior, including automatic and explicit rollback ---
+python3 "$DEPLOY_DIR/test_release.py"
 
 # --- Docker 相关断言（Task 2 保留） ---
 if ! command -v docker >/dev/null 2>&1; then

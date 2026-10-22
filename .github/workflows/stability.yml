@@ -1,0 +1,31 @@
+name: Stability regression
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+        working-directory: apps/web
+      - run: python3 tools/test_stability.py
+      - run: bash tools/deploy/test_config.sh
+      - run: npm run build
+        working-directory: apps/web
+      - run: npm ci
+        working-directory: tools/tests
+      - run: npx playwright install --with-deps chromium
+        working-directory: tools/tests
+      - name: Production preview with isolated API fixtures
+        run: node tools/tests/run-dev29-browser.cjs
+      - name: Isolated real Docker release rehearsal
+        run: python3 tools/deploy/rehearse_release.py

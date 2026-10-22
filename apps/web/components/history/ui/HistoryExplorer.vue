@@ -39,27 +39,42 @@ let saveTimer: ReturnType<typeof setTimeout> | undefined;
 let messageTimer: ReturnType<typeof setTimeout> | undefined;
 let saveChain: Promise<void> = Promise.resolve();
 let saveRevision = 0;
+let reconnecting = false, applyingSaved = false;
+let unsavedReconnect = false;
+function savedLabel(fallback: string): string {
+  if (!(studyRepository instanceof GuanlanStudyRepository)) return fallback;
+  const status = studyRepository.status;
+  if ((status.warning?.includes('冲突') || status.warning?.includes('20000'))) return status.warning;
+  return status.mode === 'online' && !status.pendingSync ? '已同步到账号' : status.mode === 'auth' ? '登录失效 · 本机记录待同步' : status.pendingSync ? '已保存在本机 · 待同步' : fallback;
+}
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
 function notify(text: string) { message.value = text; clearTimeout(messageTimer); messageTimer = setTimeout(() => { message.value = ''; }, 5000); }
 function currentView(): ViewState { return { ...windowRange.value, selectedId: selectedId.value, topicIds: [...topicIds.value], query: query.value, compareIds: [...compareIds.value], archive: archive.value }; }
-function flushSave(): Promise<void> {
+function flushSave(force = false): Promise<void> {
   clearTimeout(saveTimer);
-  if (!ready.value || !studyWritable.value) return saveChain;
+  if (!ready.value || (!studyWritable.value && !force)) return saveChain;
   const snapshot = clone(study.value), revision = ++saveRevision;
   saveStatus.value = '正在保存…';
   saveChain = saveChain.catch(() => {}).then(async () => {
-    try { if (!studyWritable.value) return; await studyRepository.save(snapshot); if (revision === saveRevision) saveStatus.value = '已保存在本机'; }
+    try {
+      if (!studyWritable.value && !force) return;
+      const reconciled = await studyRepository.save(snapshot);
+      if (revision === saveRevision && JSON.stringify(study.value) === JSON.stringify(snapshot)) {
+        if (reconciled) { applyingSaved = true; study.value = reconciled; await nextTick(); applyingSaved = false; }
+        saveStatus.value = savedLabel('已保存在本机');
+      }
+    }
     catch (error) { saveStatus.value = '保存失败'; notify(`学习记录保存失败：${error instanceof Error ? error.message : '请检查浏览器存储空间'}`); throw error; }
   });
   void saveChain.catch(() => {});
   return saveChain;
 }
-function scheduleSave() { if (!ready.value || !studyWritable.value) return; saveStatus.value = '正在保存…'; clearTimeout(saveTimer); saveTimer = setTimeout(() => { void flushSave(); }, 250); }
+function scheduleSave() { if (applyingSaved || !ready.value || !studyWritable.value) return; ++saveRevision; saveStatus.value = '正在保存…'; clearTimeout(saveTimer); saveTimer = setTimeout(() => { void flushSave(); }, 250); }
 async function restoreStudy(): Promise<StudyState | null> {
   studyWritable.value = false; restoringStudy.value = true; clearTimeout(saveTimer);
   try {
     const saved = await studyRepository.load();
-    studyRestoreError.value = ''; saveStatus.value = '已恢复本机记录'; studyWritable.value = true;
+    studyRestoreError.value = ''; saveStatus.value = savedLabel('已恢复本机记录'); studyWritable.value = true;
     return saved;
   } catch (error) {
     studyRestoreError.value = error instanceof Error ? error.message : '存储读取不可用';
@@ -67,13 +82,21 @@ async function restoreStudy(): Promise<StudyState | null> {
     return null;
   } finally { restoringStudy.value = false; }
 }
-async function retryStudyRestore() {
+async function retryStudyRestore(options: { notifyUser?: boolean } = {}) {
   if (restoringStudy.value) return;
+  if (unsavedReconnect) {
+    try { await flushSave(true); unsavedReconnect = false; }
+    catch (error) {
+      studyRestoreError.value = error instanceof Error ? error.message : '本地记录未保存';
+      saveStatus.value = '保存失败 · 当前草稿尚未持久保存';
+      return;
+    }
+  }
   const saved = await restoreStudy();
   if (!saved) return;
   study.value = saved;
   if (saved.view) applyView(saved.view);
-  notify('原有学习记录已恢复，可以继续保存');
+  if (options.notifyUser !== false) notify('原有学习记录已恢复，可以继续保存');
 }
 function canEditStudy(): boolean {
   if (studyWritable.value) return true;
@@ -145,7 +168,31 @@ function handleKeyboard(event: KeyboardEvent) {
   if (event.key === '/' && !(event.target as HTMLElement).closest('input,textarea,[contenteditable]') && nav.value === 'explore') { event.preventDefault(); document.querySelector<HTMLInputElement>('.history-archive .hr-search input')?.focus(); }
 }
 function handlePageHide() { void flushSave(); }
-function handleNetwork() { sourcesOffline.value = !navigator.onLine; }
+async function handleNetwork() {
+  sourcesOffline.value = !navigator.onLine;
+  if (!navigator.onLine) {
+    if (ready.value && studyWritable.value) {
+      // Only report a local save after its transaction has completed.
+      try { await flushSave(); } catch { /* flushSave keeps the failure visible. */ }
+    }
+    return;
+  }
+  if (!ready.value || reconnecting || restoringStudy.value) return;
+  reconnecting = true;
+  studyWritable.value = false;
+  saveStatus.value = '正在恢复同步…';
+  try {
+    // Finish local persistence before reloading; load() owns replay and remote refresh.
+    await flushSave(true);
+    unsavedReconnect = false;
+    await retryStudyRestore({ notifyUser: false });
+  } catch (error) {
+    unsavedReconnect = true;
+    studyWritable.value = false;
+    studyRestoreError.value = error instanceof Error ? error.message : '本地记录未保存';
+    saveStatus.value = '保存失败 · 当前草稿尚未持久保存';
+  } finally { reconnecting = false; }
+}
 let unlistenRouter: (() => void) | undefined;
 onMounted(() => { void initialize(); unlistenRouter = router.listen(readHash); window.addEventListener('keydown', handleKeyboard); window.addEventListener('pagehide', handlePageHide); window.addEventListener('offline', handleNetwork); window.addEventListener('online', handleNetwork); });
 onBeforeUnmount(() => { clearTimeout(saveTimer); clearTimeout(messageTimer); void flushSave(); unlistenRouter?.(); window.removeEventListener('keydown', handleKeyboard); window.removeEventListener('pagehide', handlePageHide); window.removeEventListener('offline', handleNetwork); window.removeEventListener('online', handleNetwork); });

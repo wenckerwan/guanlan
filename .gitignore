@@ -20,3 +20,7 @@ tools/deploy/*.tar.gz
 
 # Local browser verification artifacts.
 output/playwright/
+
+# Host-specific deployment overlays (may contain environment overrides).
+/compose.ui-release.yml
+/compose.release-images.yml

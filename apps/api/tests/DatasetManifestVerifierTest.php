@@ -147,6 +147,16 @@ try {
         }
 
         $runBody = $matches['body'];
+        // Guarded content importers verify inside the maintenance callback before data access.
+        if (basename($seederPath) !== 'MistakeSeeder.php') {
+            if (! str_contains($runBody, 'ContentMaintenance::import(') || ! str_contains($runBody, '$this->importDataset();')) {
+                throw new RuntimeException('missing guarded import in ' . basename($seederPath));
+            }
+            if (! preg_match('/private function importDataset\(\): void\s*\{(?<body>.*?)\n    \}/s', $source, $matches)) {
+                throw new RuntimeException('missing import callback in ' . basename($seederPath));
+            }
+            $runBody = $matches['body'];
+        }
         $verificationPosition = strpos($runBody, '(new DatasetManifestVerifier())->verify();');
         if ($verificationPosition === false) {
             throw new RuntimeException('missing dataset verification in ' . basename($seederPath));

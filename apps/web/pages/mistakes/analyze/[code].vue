@@ -1,6 +1,7 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { renderReportMarkdown } from '~/utils/report-markdown.mjs'
+import { consumeReportStream, ReportStreamError } from '~/utils/report-stream.mjs'
 import { ArrowLeft, Upload, Sparkles, Settings, FileText, Download } from 'lucide-vue-next'
 import type { MistakeStudent } from '~/types/api'
 
@@ -247,49 +248,11 @@ async function streamAnalysis(): Promise<void> {
     }),
   })
 
-  const contentType = response.headers.get('content-type') || ''
-  if (!response.ok || !contentType.includes('text/event-stream')) {
-    let message = `HTTP ${response.status}`
-    try {
-      const body = await response.json()
-      if (body?.message) message = body.message
-    } catch {
-      // 错误体不是 JSON，保留 HTTP 状态码提示
-    }
-    throw new Error(message)
-  }
-
-  const reader = response.body?.getReader()
-  if (!reader) throw new Error('当前浏览器不支持流式读取')
-  const decoder = new TextDecoder()
-  let buffer = ''
-  let finished = false
-
-  while (!finished) {
-    const { value, done } = await reader.read()
-    if (done) break
-    buffer += decoder.decode(value, { stream: true })
-    let sep: number
-    while ((sep = buffer.indexOf('\n\n')) >= 0) {
-      const event = buffer.slice(0, sep)
-      buffer = buffer.slice(sep + 2)
-      const dataLine = event.split('\n').find((line) => line.startsWith('data: '))
-      if (!dataLine) continue
-      const payload = JSON.parse(dataLine.slice(6))
-      if (payload.importing) importNote.value = '正在解析错题并加入错题本…'
-      if (payload.import) importNote.value = formatImportNote(payload.import)
-      if (payload.delta) analysisResult.value += payload.delta
-      if (payload.error) throw new Error(payload.error)
-      if (payload.done) {
-        finished = true
-        if (payload.content) analysisResult.value = payload.content
-      }
-    }
-  }
-
-  if (!finished && !analysisResult.value) {
-    throw new Error('连接中断，未收到分析内容')
-  }
+  analysisResult.value = await consumeReportStream(response, (payload: any) => {
+    if (payload.importing) importNote.value = '正在解析错题并加入错题本…'
+    if (payload.import) importNote.value = formatImportNote(payload.import)
+    if (typeof payload.delta === 'string') analysisResult.value += payload.delta
+  })
 }
 
 // 开始分析：优先走 SSE 流式（边生成边渲染），流式不可用时回退非流式接口
@@ -320,10 +283,12 @@ async function analyzeWithAI() {
   analysisResult.value = ''
   importNote.value = ''
 
+  let completed = false
   try {
     await streamAnalysis()
+    completed = true
   } catch (error: any) {
-    if (!analysisResult.value) {
+    if (!analysisResult.value && error instanceof ReportStreamError && error.canFallback) {
       try {
         const data = await request<{ content: string; usage: Record<string, unknown>; import?: ImportStats }>(
           `/mistakes/students/${code}/ai-analysis`,
@@ -336,16 +301,18 @@ async function analyzeWithAI() {
             },
           },
         )
+        if (typeof data.content !== 'string' || !data.content.trim()) throw new Error('分析未返回有效内容')
         analysisResult.value = data.content
+        completed = true
         if (data.import) importNote.value = formatImportNote(data.import)
       } catch (fallbackError: any) {
         analysisError.value = fallbackError?.data?.message || fallbackError?.message || 'AI 分析失败，请检查配置或使用「测试连接」排查'
       }
     } else {
-      analysisError.value = `分析中断（已保留已生成部分）：${error?.message || '未知错误'}`
+      analysisError.value = analysisResult.value ? `分析中断（已保留已生成部分，未自动保存）：${error?.message || '未知错误'}` : (error?.message || 'AI 分析失败，请重试')
     }
   } finally {
-    if (analysisResult.value && isLoggedIn.value) {
+    if (completed && analysisResult.value && isLoggedIn.value) {
       await saveReport()
     }
     analyzing.value = false

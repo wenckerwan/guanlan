@@ -154,33 +154,32 @@ ss -tlnp | grep 8080   # 期望只出现 127.0.0.1:8080
 
 ## 9. 更新、恢复、日志、健康检查与回滚
 
+日常更新使用预构建镜像，不在生产机器构建、不自动导入内容或执行迁移。
+先在独立构建环境用相同提交构建 API/Web 镜像并验证，传送至服务器后 `docker load`。
+Web 可在匹配运行时的 Linux 构建机执行 `npm ci && npm run build`，再在 apps/web 目录执行
+`docker build -f ../../tools/deploy/web-artifact.Dockerfile -t guanlan-web:<sha> .`。
+镜像标签需对应已验证提交；脚本会固定实际 image ID，调用者负责确认构建来源。
+
 ```bash
 cd /www/wwwroot/guanlan
-
-# 日常更新：备份 → ff-only 拉取 main → 重建 → 健康检查；失败自动回滚到旧 SHA
-./tools/deploy/update.sh
-
-# 健康检查（HTTP 200/401 断言 + 服务状态）
+# 唯一版本 ID；准备阶段保存数据库快照、配置副本、运行镜像和内容摘要。
+./tools/deploy/update.sh prepare dev29-<sha> --api-image guanlan-api:<sha> --web-image guanlan-web:<sha>
+# 检查备份目录 release.json 为 PREPARED 后切换。健康检查失败自动回退镜像。
+./tools/deploy/update.sh activate dev29-<sha>
+# 显式回退；不恢复旧数据库、不删除新学习记录。
+./tools/deploy/update.sh rollback dev29-<sha>
 ./tools/deploy/healthcheck.sh
-
-# 查看近 30 分钟日志
-docker compose --env-file .env.production -f compose.production.yml logs --since 30m --tail 100
-
-# 列出备份
-ls -l /www/backup/guanlan
-
-# 恢复：必须显式传入归档；先自动做安全备份，再 DROP/CREATE 后灌入 database.sql
-./tools/deploy/restore.sh /www/backup/guanlan/guanlan-YYYYMMDD-HHMMSS.tar.gz
-
-# 回滚到上一提交（人工场景）
-git log --oneline -5
-git reset --hard <旧 SHA>
-./tools/deploy/deploy.sh
 ```
 
-`update.sh` 拒绝脏工作树，拉取失败、构建/健康检查失败都会自动 `git reset --hard` 到旧 SHA
-并重建旧镜像；`restore.sh` 先校验归档内嵌 `SHA256SUMS`，恢复前再生成一份安全备份，
-使用 `DROP DATABASE IF EXISTS` + `CREATE DATABASE` 保证是替换而非累加。
+默认备份目录 `/www/backup/guanlan/releases/<id>` 权限 0700。环境文件仅记录 SHA256，不复制明文。
+准备后配置、环境、当前镜像或提交变化会拒绝激活。回退若遇配置变化，应人工核对并恢复匹配配置后重试，
+不允许绕过校验。数据库、Redis、马原容器必须保持原 ID；七个服务健康且匿名边界检查通过才判成功。
+状态 `ROLLBACK_FAILED` 表示回退未完成，必须查看服务状态，不能当作恢复成功。
+
+该工具适用于无数据库迁移的兼容发布；涉及迁移需另行规划前后兼容性。备份供人工灾难恢复使用，
+不会因镜像回退自动导入。`restore.sh` 会替换数据库，仅用于明确的数据恢复请求。
+旧版 `update.sh [env-file]` 不再适用；环境参数使用 `--env-file`。
+隔离容器演练：`python3 tools/deploy/rehearse_release.py`，使用合成 SQL/内容夹具，不连接生产数据库。
 
 ## 10. 故障排查
 

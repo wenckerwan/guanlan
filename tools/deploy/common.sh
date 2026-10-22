@@ -26,5 +26,10 @@ resolve_env_file() {
 
 # 统一的生产 Compose 包装：始终携带环境文件与生产编排文件。
 compose() {
-  docker compose --env-file "$ENV_FILE" -f "$REPO_ROOT/compose.production.yml" "$@"
+  local override
+  local files=(-f "$REPO_ROOT/compose.production.yml")
+  for override in compose.ui-release.yml compose.release-images.yml; do
+    [[ ! -f "$REPO_ROOT/$override" ]] || files+=(-f "$REPO_ROOT/$override")
+  done
+  docker compose --env-file "$ENV_FILE" "${files[@]}" "$@"
 }
