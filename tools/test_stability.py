@@ -67,9 +67,12 @@ def main():
                  *[str(p.relative_to(web)) for p in sorted((web / 'tests').glob('*.test.mjs'))]], cwd=web)
         if args.suite in ('all', 'backend'):
             for name in PHP_TESTS:
-                run([args.php, '-n', '-d', 'zend.assertions=1', '-d', 'assert.exception=1',
+                # Only the mailer replaces native Swoole classes. Other tests need
+                # the configured PHP extensions (for example ctype on Ubuntu).
+                isolated_ini = ['-n'] if name == 'MailerTransportTest' else []
+                run([args.php, *isolated_ini, '-d', 'zend.assertions=1', '-d', 'assert.exception=1',
                      str(ROOT / f'apps/api/tests/{name}.php')])
-            run([args.php, '-n', str(ROOT / 'apps/api/bin/verify-dataset.php'), str(ROOT)])
+            run([args.php, str(ROOT / 'apps/api/bin/verify-dataset.php'), str(ROOT)])
         if args.suite in ('all', 'backend', 'release'):
             run([sys.executable, '-X', 'utf8', str(ROOT / 'tools/tests/test_stability.py')])
             run([sys.executable, '-X', 'utf8', str(ROOT / 'tools/deploy/test_release.py')])
