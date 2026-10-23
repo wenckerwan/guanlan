@@ -1,0 +1,23 @@
+regression	UNKNOWN STEP	2026-10-22T12:11:56.7474551Z ℹ tests 95
+regression	UNKNOWN STEP	2026-10-22T12:11:56.7475616Z ℹ pass 95
+regression	UNKNOWN STEP	2026-10-22T12:11:56.7475980Z ℹ fail 0
+regression	UNKNOWN STEP	2026-10-22T12:11:56.7997718Z AccountIdTest: PASS
+regression	UNKNOWN STEP	2026-10-22T12:11:56.8652889Z AIAnalysisTest: PASS
+regression	UNKNOWN STEP	2026-10-22T12:11:56.9067579Z AiOutboundPolicyTest: PASS (35 checks)
+regression	UNKNOWN STEP	2026-10-22T12:11:56.9496333Z Bugs1022Test: PASS
+regression	UNKNOWN STEP	2026-10-22T12:11:56.9893777Z ContentStatusTest: PASS
+regression	UNKNOWN STEP	2026-10-22T12:11:57.0301911Z DatasetManifestVerifierTest: PASS
+regression	UNKNOWN STEP	2026-10-22T12:11:57.0526203Z PASS SMTP TLS initialization, upgrade, delayed response and credential protection
+regression	UNKNOWN STEP	2026-10-22T12:11:57.0860183Z MistakeAccessTest: PASS
+regression	UNKNOWN STEP	2026-10-22T12:11:57.1297956Z MistakeImportAccessTest: PASS (including 12 controller outbound rejection cases)
+regression	UNKNOWN STEP	2026-10-22T12:11:57.1705363Z PASS article authorization and email-code client IP boundaries
+regression	UNKNOWN STEP	2026-10-22T12:11:57.2251809Z VisitWindowTest: PASS
+regression	UNKNOWN STEP	2026-10-22T12:11:57.3017801Z Dataset integrity OK: 8 files
+regression	UNKNOWN STEP	2026-10-22T12:11:57.4903921Z Ran 3 tests in 0.057s
+regression	UNKNOWN STEP	2026-10-22T12:11:57.6131827Z Ran 11 tests in 0.037s
+regression	UNKNOWN STEP	2026-10-22T12:11:57.8220633Z Ran 11 tests in 0.037s
+regression	UNKNOWN STEP	2026-10-22T12:11:58.1688064Z PASS: deployment scripts and production compose config valid
+regression	UNKNOWN STEP	2026-10-22T12:12:15.8623547Z └  ✨ Build complete!
+regression	UNKNOWN STEP	2026-10-22T12:12:40.5205482Z PASS AI complete/partial/unsupported/401/history/sanitization
+regression	UNKNOWN STEP	2026-10-22T12:12:44.5255872Z PASS history offline edit/reconnect/401/pending replay/account switch; no page errors
+regression	UNKNOWN STEP	2026-10-22T12:13:19.8298894Z PASS real Docker: activate, explicit rollback, failed activation auto rollback; four unchanged containers; synthetic backup preserved
