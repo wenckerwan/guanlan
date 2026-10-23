@@ -11,7 +11,7 @@ use Psr\Http\Message\ResponseInterface;
 
 class SearchController
 {
-    private const TYPES = ['question', 'paper', 'analysis', 'hotspot', 'prediction', 'mock', 'mistake'];
+    private const TYPES = ['question', 'paper', 'analysis', 'hotspot', 'prediction', 'mock', 'mistake', 'concept', 'history'];
 
     public function __construct(
         private SearchService $service,
@@ -37,6 +37,6 @@ class SearchController
         $limit = (int) $this->request->input('limit', 40);
         $limit = max(1, min(100, $limit ?: 40));
 
-        return ApiResponse::data($this->service->search($keyword, $type, $limit));
+        return ApiResponse::data($this->service->search($keyword, $type, $limit))->withHeader('Cache-Control', 'no-store');
     }
 }

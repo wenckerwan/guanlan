@@ -56,3 +56,49 @@ test('resolveHitUrl keeps server routes and rejects anything off-site', () => {
   assert.equal(resolveHitUrl({ title: '遵义会议' }), '/search?q=%E9%81%B5%E4%B9%89%E4%BC%9A%E8%AE%AE')
   assert.equal(resolveHitUrl(null), '/search?q=')
 })
+const searchPage = await import('node:fs/promises').then(fs => fs.readFile(new URL('../pages/search.vue', import.meta.url), 'utf8'))
+test('search uses a reactive URL and restores keyword and type from navigation', () => {
+  assert.match(searchPage, /const requestPath = computed/)
+  assert.match(searchPage, /useApiFetch<SearchResult>\(\s*requestPath/)
+  assert.match(searchPage, /route.query.type/)
+  assert.match(searchPage, /activeType.value = String\(route.query.type/)
+})
+test('search distinguishes loading and errors before the no-results state', () => {
+  assert.match(searchPage, /v-if="pending"/)
+  assert.match(searchPage, /v-else-if="error"/)
+  assert.match(searchPage, /result.truncated/)
+  assert.equal(typeLabel('concept'), '马原概念')
+  assert.equal(typeLabel('history'), '史纲事件')
+})
+
+test('live search script updates requests for submit, filter and browser navigation', async () => {
+  const { transform } = await import('esbuild')
+  const { reactive, ref, computed, watch, nextTick } = await import('vue')
+  const route = reactive({ query: {} })
+  const history = []
+  const router = { push(location) { history.push(location); route.query = location.query } }
+  let requestPath
+  const api = async (path, fallback) => {
+    requestPath = path
+    return { data: ref(fallback), pending: ref(false), error: ref(null), refresh() {} }
+  }
+  const script = searchPage.match(/<script setup lang="ts">([\s\S]*?)<\/script>/)[1].replace(/^import .*$/gm, '')
+  const compiled = await transform(script, { loader: 'ts', target: 'es2022' })
+  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
+  const create = new AsyncFunction('computed', 'ref', 'watch', 'useRoute', 'useRouter', 'useApiFetch', 'useHead', 'withQuery', 'SEARCH_TYPES', 'normalizeKeyword', compiled.code + '\nreturn { keyword, activeType, submitted, submit, pickType }')
+  const ui = await create(computed, ref, watch, () => route, () => router, api, () => {},
+    (path, params) => path + '?' + new URLSearchParams(params), SEARCH_TYPES, normalizeKeyword)
+  ui.keyword.value = ' 矛盾 '
+  ui.submit(); await nextTick()
+  assert.equal(new URL(requestPath.value, 'https://test').searchParams.get('q'), '矛盾')
+  ui.pickType('concept'); await nextTick()
+  assert.equal(new URL(requestPath.value, 'https://test').searchParams.get('type'), 'concept')
+  // Router popstate restores both query fields, including removing an old filter.
+  route.query = history[0].query; await nextTick()
+  assert.equal(ui.activeType.value, '')
+  assert.equal(new URL(requestPath.value, 'https://test').searchParams.get('type'), '')
+  route.query = { q: '遵义会议', type: 'history' }; await nextTick()
+  assert.equal(ui.keyword.value, '遵义会议')
+  assert.equal(ui.activeType.value, 'history')
+  assert.equal(new URL(requestPath.value, 'https://test').searchParams.get('q'), '遵义会议')
+})

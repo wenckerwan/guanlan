@@ -4,6 +4,8 @@
  */
 
 export const SEARCH_TYPES = [
+  { value: 'concept', label: '马原概念' },
+  { value: 'history', label: '史纲事件' },
   { value: 'question', label: '真题' },
   { value: 'paper', label: '试卷' },
   { value: 'analysis', label: '真题分析' },

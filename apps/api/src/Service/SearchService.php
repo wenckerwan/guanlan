@@ -12,6 +12,8 @@ use App\Model\Paper;
 use App\Model\Prediction;
 use App\Model\Question;
 use App\Support\ContentStatus;
+use App\Support\Auth;
+use App\Support\KnowledgeSearch;
 use App\Support\MistakeAccess;
 
 /**
@@ -26,7 +28,7 @@ use App\Support\MistakeAccess;
  */
 class SearchService
 {
-    private const PER_TYPE = 12;
+    public function __construct(private HistoryService $history, private MayuanSearchSource $mayuan) {}
 
     /** @return array{items: array<int, array<string, string>>, total: int, groups: array<string, int>} */
     public function search(string $keyword, string $type = '', int $limit = 40): array
@@ -36,10 +38,10 @@ class SearchService
             return ['items' => [], 'total' => 0, 'groups' => []];
         }
 
-        $like = '%' . $keyword . '%';
+        $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $keyword) . '%';
 
         $items = array_merge(
-            $this->questions($like),
+            Auth::user() ? $this->questions($like) : [],
             $this->papers($like),
             $this->articles(AnalysisArticle::query(), 'analysis', $like),
             $this->articles(Hotspot::query(), 'hotspot', $like),
@@ -48,20 +50,17 @@ class SearchService
             $this->mistakes($like),
         );
 
-        $groups = [];
-        foreach ($items as $item) {
-            $groups[$item['type']] = ($groups[$item['type']] ?? 0) + 1;
+        $sources = ['concept' => 'login_required', 'history' => 'login_required'];
+        if (Auth::user()) {
+            $mayuan=[];$history=[];
+            try { $mayuan=$this->mayuan->published() ?? []; $sources['concept']=$mayuan ? 'available' : 'unpublished'; }
+            catch (\Throwable) { $sources['concept']='unavailable'; }
+            try { $history=$this->history->latestPublished() ?? []; $sources['history']=$history ? 'available' : 'unpublished'; }
+            catch (\Throwable) { $sources['history']='unavailable'; }
+            $items=array_merge($items,KnowledgeSearch::project($mayuan,$history));
         }
-
-        if ($type !== '') {
-            $items = array_values(array_filter($items, fn (array $i) => $i['type'] === $type));
-        }
-
-        $items = array_slice($items, 0, max(1, $limit));
-
-        return ['items' => $items, 'total' => count($items), 'groups' => $groups];
+        return KnowledgeSearch::select($items,$keyword,$type,$limit) + ['sources'=>$sources];
     }
-
     /** @return array<int, array<string, string>> */
     private function questions(string $like): array
     {
@@ -74,7 +73,6 @@ class SearchService
             })
             ->orderBy('year', 'desc')
             ->orderBy('no')
-            ->limit(self::PER_TYPE)
             ->get();
 
         $out = [];
@@ -84,7 +82,8 @@ class SearchService
                 sprintf('%d 年第 %d 题', (int) $row->year, (int) $row->no),
                 (string) $row->stem,
                 sprintf('/papers/%s#q%d', rawurlencode((string) $row->pid), (int) $row->no),
-                trim((string) $row->module_name, ' ') ?: (string) $row->type_cn
+                trim((string) $row->module_name, ' ') ?: (string) $row->type_cn,
+                implode(' ', [(string) $row->material, (string) $row->analysis, (string) $row->kaodian])
             );
         }
         return $out;
@@ -98,7 +97,6 @@ class SearchService
                 $q->where('pid', 'like', $like)->orWhere('label', 'like', $like);
             })
             ->orderBy('sort_order')
-            ->limit(self::PER_TYPE)
             ->get();
 
         $out = [];
@@ -122,18 +120,17 @@ class SearchService
      */
     private function articles($query, string $type, string $like): array
     {
-        // 热点与分析有发布状态：hidden 的内容不进搜索（预测是数据集只读内容，无状态列）
-        if (in_array($type, ['analysis', 'hotspot'], true)) {
+        // 与前台文章服务一致：所有文章类型均排除 hidden。
+        if (in_array($type, ['analysis', 'hotspot', 'prediction'], true)) {
             $query->where('status', '<>', ContentStatus::HIDDEN);
         }
 
         $rows = $query
             ->where(function ($q) use ($like) {
                 $q->where('title', 'like', $like)
-                    ->orWhere('summary', 'like', $like)
-                    ->orWhere('html', 'like', $like);
+                    ->orWhere('summary', 'like', $like);
+                if (Auth::user()) $q->orWhere('html', 'like', $like);
             })
-            ->limit(self::PER_TYPE)
             ->get();
 
         $prefix = ['analysis' => '/analysis/', 'hotspot' => '/hotspots/', 'prediction' => '/predictions/'][$type];
@@ -149,7 +146,8 @@ class SearchService
                 (string) $row->title,
                 (string) $row->summary,
                 $prefix . rawurlencode((string) $row->slug),
-                $meta
+                $meta,
+                Auth::user() ? (string) $row->html : ''
             );
         }
         return $out;
@@ -162,7 +160,6 @@ class SearchService
             ->where(function ($q) use ($like) {
                 $q->where('title', 'like', $like)->orWhere('slug', 'like', $like);
             })
-            ->limit(self::PER_TYPE)
             ->get();
 
         $out = [];
@@ -193,13 +190,12 @@ class SearchService
                     ->orWhere('kaodian', 'like', $like)
                     ->orWhere('chapter', 'like', $like);
             })
-            ->limit(self::PER_TYPE)
             ->get();
 
         $out = [];
         foreach ($rows as $row) {
             $code = (string) ($row->student?->code ?? '');
-            if ($code === '') {
+            if ($code === '' || !MistakeAccess::canViewCode($code)) {
                 continue;
             }
             $out[] = $this->item(
@@ -214,12 +210,14 @@ class SearchService
     }
 
     /** @return array<string, string> */
-    private function item(string $type, string $title, string $snippet, string $url, string $meta): array
+    private function item(string $type, string $title, string $snippet, string $url, string $meta, string $body = ''): array
     {
         return [
+            '_candidate' => true,
+            'body' => $body,
             'type' => $type,
-            'title' => mb_substr(trim($title), 0, 120),
-            'snippet' => mb_substr(preg_replace('/\s+/u', ' ', trim(strip_tags($snippet))) ?? '', 0, 160),
+            'title' => trim($title),
+            'snippet' => preg_replace('/\s+/u', ' ', trim(strip_tags($snippet))) ?? '',
             'url' => $url,
             'meta' => trim($meta),
         ];

@@ -362,7 +362,7 @@ export type AdminAttempt = {
   createdAt: string
 }
 
-export type SearchHitType = 'question' | 'paper' | 'analysis' | 'hotspot' | 'prediction' | 'mock' | 'mistake'
+export type SearchHitType = 'question' | 'paper' | 'analysis' | 'hotspot' | 'prediction' | 'mock' | 'mistake' | 'concept' | 'history'
 
 export type SearchHit = {
   type: SearchHitType
@@ -370,10 +370,15 @@ export type SearchHit = {
   snippet: string
   url: string
   meta: string
+  subject?: string
+  matchLocation?: 'title' | 'alias' | 'summary' | 'body'
 }
 
 export type SearchResult = {
   items: SearchHit[]
   total: number
   groups: Record<string, number>
+  returned?: number
+  truncated?: boolean
+  sources?: Record<string, 'available' | 'unavailable' | 'unpublished' | 'login_required'>
 }
