@@ -108,14 +108,38 @@ function applyView(view: ViewState) {
 }
 function readHash() {
   const parsed = router.parse();
+  const current = currentView();
+  // Host route subscriptions also echo our own writes. Preserve active filtering
+  // when the URL already represents this exact state, including rounded bounds.
+  if (ready.value && parsed.nav === nav.value && parsed.selectedId === selectedId.value
+    && parsed.view.start === Number(current.start.toFixed(4)) && parsed.view.end === Number(current.end.toFixed(4))
+    && (parsed.view.query || '') === current.query
+    && JSON.stringify(parsed.view.topicIds || []) === JSON.stringify(current.topicIds)
+    && JSON.stringify(parsed.view.compareIds || []) === JSON.stringify(current.compareIds)
+    && !!parsed.view.archive === current.archive) return;
   if (parsed.nav && navigation.some(item => item.id === parsed.nav)) nav.value = parsed.nav as Nav;
   const view = parsed.view;
   if (view.start !== undefined && view.end !== undefined) setWindow({ start: view.start, end: view.end });
-  if (parsed.selectedId !== null && parsed.selectedId !== undefined) selectedId.value = parsed.selectedId;
+  selectedId.value = parsed.selectedId || null;
+  if (selectedId.value && dataset.value) {
+    const target = dataset.value.events.find(event => event.id === selectedId.value && event.publication !== 'pending');
+    if (!target) {
+      selectedId.value = null; notify('链接中的事件不存在或尚未发布');
+    } else if (!parsed.nav) {
+      nav.value = 'explore'; query.value = ''; topicIds.value = []; archive.value = !!target.isGroup;
+      setWindow(dataset.value.range);
+    }
+  }
   if (view.compareIds) compareIds.value = view.compareIds.slice(0, 3);
   if (view.query !== undefined) query.value = view.query;
   if (view.topicIds) topicIds.value = view.topicIds;
   if (view.archive !== undefined) archive.value = !!view.archive;
+  // Browser history can carry filters belonging to a different selected event.
+  if (selectedId.value && dataset.value && parsed.nav === 'explore' && !visible.value.some(event => event.id === selectedId.value)) {
+    const target = dataset.value.events.find(event => event.id === selectedId.value);
+    query.value = ''; topicIds.value = []; archive.value = !!target?.isGroup;
+    setWindow(dataset.value.range);
+  }
 }
 function writeHash(push = false) {
   if (!ready.value) return;
@@ -209,7 +233,7 @@ onBeforeUnmount(() => { clearTimeout(saveTimer); clearTimeout(messageTimer); voi
         <div v-if="loading" class="ha-loading" role="status"><span class="ha-loading-line" /><h1>正在打开历史档案</h1><p>读取事件与本机学习记录…</p></div>
         <div v-else-if="loadError" class="ha-empty" role="alert"><h1>档案暂时无法打开</h1><p>{{ loadError }}</p><button class="ha-primary" @click="initialize">重新加载</button></div>
         <template v-else-if="dataset">
-          <HistoryReader v-if="nav === 'explore'" :dataset="dataset" :events="visible" :repository="repository" :study="study" :selected-id="selectedId" v-model:query="query" v-model:topic-ids="topicIds" v-model:archive="archive" :window-range="windowRange" :study-read-only="!studyWritable" :save-status="saveStatus" :sources-offline="sourcesOffline" :compare-ids="compareIds" @window="setWindow" @select="selectEvent" @bookmark="bookmark" @compare="compare" @note="updateNote" @flush="flushSave" />
+          <HistoryReader v-if="nav === 'explore'" :dataset="dataset" :events="visible" :repository="repository" :study="study" :selected-id="selectedId" v-model:query="query" v-model:topic-ids="topicIds" v-model:archive="archive" :window-range="windowRange" :study-read-only="!studyWritable" :save-status="saveStatus" :sources-offline="sourcesOffline" :compare-ids="compareIds" :event-url="router.eventUrl" @window="setWindow" @select="selectEvent" @bookmark="bookmark" @compare="compare" @note="updateNote" @flush="flushSave" />
           <section v-else-if="nav === 'compare'" class="ha-document-page"><div class="ha-page-intro"><span class="ha-eyebrow">READ SIDE BY SIDE</span><h1>并置事件，分辨时间</h1><p>选择 2—3 项比较日期与原文；待审核的日期对照独立陈列。</p></div><div class="ha-practice-tabs"><button :class="{ active: compareTab === 'events' }" @click="compareTab = 'events'">事件比较 <span>{{ compared.length }}/3</span></button><button :class="{ active: compareTab === 'dates' }" @click="compareTab = 'dates'">待审核日期对照 <span>{{ dataset.comparisons.length }}</span></button></div>
             <p v-if="!sourcesOffline" class="ha-document-service-note ha-compare-service-note">原页需要文档服务可用；静态部署未提供 PDF 时无法打开</p><template v-if="compareTab === 'events'"><div v-if="compared.length < 2" class="ha-comparison-hint"><p>在事件阅读卡片中「加入比较」，即可并排阅读。</p><button class="ha-primary" @click="navigate('explore')">去选择事件 <ArchiveIcon name="arrow" /></button></div><div v-if="compared.length" class="ha-comparison-grid" :style="{ '--compare-count': compared.length }"><article v-for="event in compared" :key="event.id"><header><span>{{ event.isGroup ? '原表合并组' : '独立事件' }}</span><button class="ha-icon-button" :aria-label="`移出${event.title}`" @click="compare(event)"><ArchiveIcon name="close" /></button></header><h2>{{ event.title }}</h2><div class="ha-compare-date">{{ getPrimaryDate(event)?.label || '日期未知' }}<small class="ha-brief-source">{{ briefDateSource(getPrimaryDate(event), dataset.sources) }}</small></div><p>{{ event.content }}</p><section class="ha-dates"><div v-for="kind in (['textbook', 'original'] as const)" :key="kind" class="ha-date-assertion"><span class="ha-field-label">{{ kind === 'textbook' ? '教材时间' : '原 PDF 时间' }}</span><template v-if="event.dates[kind]"><strong>{{ event.dates[kind]!.label }}</strong><a v-if="sourceLink(event.dates[kind]!)" :href="sourceLink(event.dates[kind]!)!" target="_blank" rel="noopener">{{ sourceAnnotation(event.dates[kind]!) }}<ArchiveIcon name="source" /></a><span v-else>{{ sourceAnnotation(event.dates[kind]!) }} · 原页暂不可用</span></template><span v-else>{{ kind === 'textbook' ? '未找到可靠教材定位' : '原表未单列' }}</span></div></section><p v-if="event.note" class="ha-review-note">{{ event.note }}</p><button class="ha-text-button" @click="selectEvent(event); navigate('explore')">打开档案 <ArchiveIcon name="arrow" /></button></article></div></template>
             <div v-else class="ha-pending-comparisons"><div class="ha-pending-notice">以下事项保持待审核状态，不进入正式时间轴或练习答案。</div><article v-for="item in dataset.comparisons" :key="item.id"><h2>{{ item.title }}</h2><div class="ha-pending-date"><strong>{{ item.textbook.label }}</strong><a v-if="sourceLink(item.textbook)" :href="sourceLink(item.textbook)!" target="_blank" rel="noopener">{{ sourceAnnotation(item.textbook) }}<ArchiveIcon name="source" /></a><span v-else>{{ sourceAnnotation(item.textbook) }} · 原页暂不可用</span></div><div class="ha-pending-date"><template v-if="item.original"><strong>{{ item.original.label }}</strong><a v-if="sourceLink(item.original)" :href="sourceLink(item.original)!" target="_blank" rel="noopener">{{ sourceAnnotation(item.original) }}<ArchiveIcon name="source" /></a><span v-else>{{ sourceAnnotation(item.original) }} · 原页暂不可用</span></template><span v-else>原表未单列</span></div></article></div>

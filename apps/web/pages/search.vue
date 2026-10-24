@@ -98,7 +98,7 @@ const matchLabel = (location?: string) => ({ title: '标题', alias: '别名', s
         <ul v-else-if="items.length" class="result-list">
           <li v-for="(item, index) in items" :key="`${item.type}-${index}-${item.url}`">
             <span class="record-type">{{ typeLabel(item.type) }}</span>
-            <NuxtLink :to="item.url" class="record-title">{{ item.title }}</NuxtLink>
+            <NuxtLink :to="item.url" :external="item.url.startsWith('/mayuan/')" class="record-title">{{ item.title }}</NuxtLink>
             <p v-if="item.snippet" class="record-snippet">{{ item.snippet }}</p>
             <span v-if="item.meta" class="record-tag">{{ item.subject || item.meta }} · 命中{{ matchLabel(item.matchLocation) }}</span>
           </li>

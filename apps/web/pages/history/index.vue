@@ -63,17 +63,33 @@ function resolveSourceUrl(sourceId: string, page?: number | null): string | null
   return `/documents/${sourceId}.pdf${page == null ? '' : `#page=${page}`}`
 }
 
-// Nuxt 路由薄封装：query 用 getter 保证 parse() 每次读到最新值；push/replace 写回 query。
+// Nuxt 路由薄封装：完成 push 后再处理响应式 watcher 的 replace，避免取消历史入栈。
+let routeWriteChain: Promise<void> = Promise.resolve()
+let ownRouteWrite: { path: string; query: Record<string, unknown>; hash: string } | null = null
+function isOwnRouteEcho() {
+  if (!ownRouteWrite || route.path !== ownRouteWrite.path || (route.hash || '') !== ownRouteWrite.hash) return false
+  const keys = Object.keys(ownRouteWrite.query)
+  return keys.length === Object.keys(route.query).length && keys.every(key => JSON.stringify(route.query[key]) === JSON.stringify(ownRouteWrite!.query[key]))
+}
+function queueRouteWrite(q: Record<string, string>, replace: boolean) {
+  const path = route.path
+  routeWriteChain = routeWriteChain.then(async () => {
+    if (disposed || route.path !== path) return
+    const query = { ...route.query, ...q }
+    const keys = Object.keys(query)
+    if (keys.length === Object.keys(route.query).length && keys.every(key => String(query[key] ?? '') === String(route.query[key] ?? ''))) return
+    ownRouteWrite = { path, query, hash: route.hash || '' }
+    try {
+      await navigateTo(ownRouteWrite, { replace })
+      await nextTick()
+    } finally { ownRouteWrite = null }
+  }).catch(error => { console.warn('史纲导航写入失败', error) })
+}
 const routeAdapter = {
-  get query() {
-    return route.query as Record<string, unknown>
-  },
-  push(q: Record<string, string>) {
-    void navigateTo({ path: route.path, query: { ...route.query, ...q } }, { replace: false })
-  },
-  replace(q: Record<string, string>) {
-    void navigateTo({ path: route.path, query: { ...route.query, ...q } }, { replace: true })
-  },
+  listen(callback: () => void) { return watch(() => route.fullPath, () => { if (!isOwnRouteEcho()) callback() }) },
+  get query() { return route.query as Record<string, unknown> },
+  push(q: Record<string, string>) { queueRouteWrite(q, false) },
+  replace(q: Record<string, string>) { queueRouteWrite(q, true) },
 }
 
 async function mountHistory() {

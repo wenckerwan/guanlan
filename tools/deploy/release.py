@@ -84,23 +84,28 @@ class Release:
             raise ValueError('image reference contains unsupported characters')
         return reference
 
-    def prepare(self, release_id, api_image, web_image):
+    def prepare(self, release_id, api_image, web_image, mayuan_web_image=None):
         folder = self.folder(release_id)
         if folder.exists():
             raise FileExistsError('release backup already exists')
         self.image_reference(api_image); self.image_reference(web_image)
         candidates = {'api': self.image(api_image), 'web': self.image(web_image)}
+        if mayuan_web_image is not None:
+            self.image_reference(mayuan_web_image)
+            candidates['mayuan-web'] = self.image(mayuan_web_image)
         if not self.env.is_file():
             raise RuntimeError('production environment file is missing')
         self.compose('config', '--quiet')
         folder.mkdir(parents=True, mode=0o700)
         os.chmod(folder, 0o700)
+        managed = SERVICES + (('mayuan-web',) if mayuan_web_image is not None else ())
         data = {'status': 'PREPARING', 'id': release_id, 'root': str(self.root), 'env': str(self.env),
                 'env_sha256': hashlib.sha256(self.env.read_bytes()).hexdigest(),
                 'sha': self.run(['git', 'rev-parse', 'HEAD']), 'configs': self.fingerprints(),
-                'old': {}, 'new': {}, 'image_ids': {}, 'unchanged': {s: self.container(s) for s in UNCHANGED}}
+                'old': {}, 'new': {}, 'image_ids': {},
+                'unchanged': {s: self.container(s) for s in UNCHANGED if s not in candidates}}
         self.write(folder, data)
-        for service in SERVICES:
+        for service in managed:
             previous = self.run(['docker', 'inspect', '--format', '{{.Image}}', self.container(service)])
             old_tag = f'guanlan-{service}:rollback-{release_id}'
             new_tag = f'guanlan-{service}:release-{release_id}'
@@ -147,6 +152,8 @@ class Release:
                 '    command: ["sh", "-c", "php bin/verify-dataset.php && exec php bin/hyperf.php start"]\n'
                 '    environment:\n      TRUSTED_PROXY_IPS: "' + ip + '"\n'
                 '  web:\n    image: ' + images['web'] + '\n  gateway:\n    image: ' + images['gateway'] + '\n')
+        if 'mayuan-web' in images:
+            text += '  mayuan-web:\n    image: ' + images['mayuan-web'] + '\n'
         temp = self.overlay.with_suffix('.tmp')
         temp.write_text(text)
         temp.replace(self.overlay)
@@ -158,9 +165,12 @@ class Release:
         return str(ipaddress.IPv4Address(values[0]))
 
     def switch(self, images):
+        managed = tuple(s for s in ('api', 'web') if s in images)
+        if 'mayuan-web' in images:
+            managed += ('mayuan-web',)
         self.write_images(images, self.gateway_ip())
         self.compose('config', '--quiet')
-        self.compose('up', '-d', '--no-build', '--pull', 'never', '--no-deps', 'api', 'web')
+        self.compose('up', '-d', '--no-build', '--pull', 'never', '--no-deps', *managed)
         self.compose('up', '-d', '--no-build', '--pull', 'never', '--no-deps', '--force-recreate', 'gateway')
         self.write_images(images, self.gateway_ip())
         self.compose('up', '-d', '--no-build', '--pull', 'never', '--no-deps', 'api')
@@ -175,7 +185,7 @@ class Release:
         if data['status'] not in ('PREPARED', 'ROLLED_BACK'):
             raise RuntimeError('release is not prepared for activation')
         self.validate(data, {**{s + '-old': v for s, v in data['old'].items()}, **data['new']})
-        for service in SERVICES:
+        for service in data['old']:
             current = self.run(['docker', 'inspect', '--format', '{{.Image}}', self.container(service)])
             if current != data['image_ids'][data['old'][service]]:
                 raise RuntimeError('running images changed after preparation')
@@ -200,7 +210,7 @@ class Release:
             raise RuntimeError('activation failed; previous images restored') from error
 
     def check_unchanged(self, data):
-        if {s: self.container(s) for s in UNCHANGED} != data['unchanged']:
+        if {s: self.container(s) for s in UNCHANGED if s not in data['old']} != data['unchanged']:
             raise RuntimeError('database/Redis/Mayuan containers changed unexpectedly')
 
     def rollback(self, release_id):
@@ -213,7 +223,7 @@ class Release:
         if hashlib.sha256((folder / 'database.sql').read_bytes()).hexdigest() != data['database_sha256']:
             raise RuntimeError('database backup checksum mismatch')
         if data['status'] == 'ACTIVE':
-            for service in SERVICES:
+            for service in data['new']:
                 current = self.run(['docker', 'inspect', '--format', '{{.Image}}', self.container(service)])
                 if current != data['image_ids'][data['new'][service]]:
                     raise RuntimeError('running images changed after activation')
@@ -249,7 +259,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['prepare', 'activate', 'rollback'])
     parser.add_argument('release_id')
-    parser.add_argument('--api-image'); parser.add_argument('--web-image')
+    parser.add_argument('--api-image'); parser.add_argument('--web-image'); parser.add_argument('--mayuan-web-image')
     parser.add_argument('--env-file', default='.env.production')
     parser.add_argument('--backup-root', default='/www/backup/guanlan/releases')
     args = parser.parse_args()
@@ -264,7 +274,7 @@ def main():
     with (manager.backups / '.release.lock').open('w') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         if args.action == 'prepare':
-            manager.prepare(args.release_id, args.api_image, args.web_image)
+            manager.prepare(args.release_id, args.api_image, args.web_image, args.mayuan_web_image)
         else:
             getattr(manager, args.action)(args.release_id)
     print(f'{args.action}: {args.release_id} complete')

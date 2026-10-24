@@ -112,4 +112,27 @@ class Tests(unittest.TestCase):
         self.assertIn('php bin/verify-dataset.php', overlay)
         self.assertLess(overlay.index('php bin/verify-dataset.php'), overlay.index('php bin/hyperf.php start'))
 
+    def test_optional_mayuan_web_is_managed_when_image_is_provided(self):
+        folder = self.manager.prepare('dev30-test', 'new-api', 'new-web', 'new-mayuan-web')
+        data = self.manager.read(folder)
+        self.assertIn('mayuan-web', data['old'])
+        self.assertNotIn('mayuan-web', data['unchanged'])
+        self.assertIn('mayuan-web', data['new'])
+        self.manager.write_images(data['new'], '172.21.0.3')
+        self.assertIn('mayuan-web:', (self.root/'compose.release-images.yml').read_text())
+        self.manager.activate('dev30-test')
+        for service in data['new']:
+            self.fake.current[service] = data['image_ids'][data['new'][service]]
+        self.manager.rollback('dev30-test')
+        rollback_overlay = (self.root/'compose.release-images.yml').read_text()
+        self.assertIn('guanlan-mayuan-web:rollback-dev30-test', rollback_overlay)
+        calls = [' '.join(c) for c in self.fake.calls]
+        self.assertTrue(any(' --no-deps api web mayuan-web' in c for c in calls))
+
+    def test_legacy_release_keeps_mayuan_web_immutable(self):
+        folder = self.prepare()
+        data = self.manager.read(folder)
+        self.assertNotIn('mayuan-web', data['old'])
+        self.assertIn('mayuan-web', data['unchanged'])
+
 if __name__=='__main__':unittest.main()

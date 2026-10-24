@@ -78,6 +78,7 @@ export function createHashRouter(): HistoryRouter {
 export interface GuanlanRouterLike {
   /** 当前路由 query（Nuxt useRoute().query 同名字段，值为 string | string[]）。 */
   query: Record<string, unknown>;
+  listen?(callback: () => void): () => void;
   /** 写回路由；对应 Nuxt navigateTo({ query }, { replace: !push })。 */
   push(query: Record<string, string>): void;
   replace(query: Record<string, string>): void;
@@ -114,9 +115,9 @@ export function createGuanlanRouter(options: GuanlanRouterOptions): HistoryRoute
       params.forEach((value, key) => { query[key] = value; });
       if (push) options.route.push(query); else options.route.replace(query);
     },
-    listen() {
+    listen(callback) {
       // Nuxt 的 route.query 是响应式的，宿主可用 watch 触发组件刷新；此处无需订阅。
-      return () => undefined;
+      return options.route.listen?.(callback) ?? (() => undefined);
     },
     eventUrl: eventId => `${basePath}?event=${encodeURIComponent(eventId)}`,
   };

@@ -23,3 +23,12 @@ python3 tools/deploy/rehearse_release.py
 prepare 记录旧/新镜像、数据库快照、配置与只读数据集摘要；activate 拒绝输入漂移，API 先执行只读数据集校验再启动。健康检查失败触发旧镜像回退，不恢复数据库、不执行迁移、不在宿主构建。ROLLBACK_FAILED 必须人工排查，不能当作成功。
 
 完整参数、兼容性限制与备份位置见 ../deployment.md。本工具不适用于需要数据库迁移的发布。
+
+DEV30 马原前端发布可显式纳入 `mayuan-web`：
+
+```sh
+./tools/deploy/update.sh prepare dev30-<sha> --api-image guanlan-api:<sha> --web-image guanlan-web:<sha> --mayuan-web-image guanlan-mayuan-web:<sha>
+./tools/deploy/update.sh activate dev30-<sha>
+```
+
+仅带 `--mayuan-web-image` 的新清单会备份、切换并回滚 `mayuan-web`；省略该参数时沿用旧清单语义，将其作为不变容器保护。

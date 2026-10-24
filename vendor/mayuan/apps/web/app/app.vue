@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import core from "../lib/core.mjs";
+import { withConceptId, resolveConcept, readerAnchor, readerSectionFromUrl, conceptCitation, copyText } from "./deep-link.mjs";
 import { loadContent } from "../lib/content-session.mjs";
 import { createLocalStateStore, validateLocalStudyState } from "../lib/local-state.mjs";
 import {
@@ -36,6 +37,46 @@ const view = ref("map"),
   busy = ref(false),
   error = ref(""),
   notice = ref("");
+const manualCopy = ref("");
+let resolvingUrl = false;
+async function restoreConcept() {
+  if (!content.value) return;
+  resolvingUrl = true;
+  if (notice.value === "此链接对应的概念不存在或已移除，请搜索其他概念。") notice.value = "";
+  const result = resolveConcept(window.location.href, nodes.value);
+  selected.value = result.node;
+  relation.value = null;
+  manualCopy.value = "";
+  if (result.node) {
+    view.value = "map";
+    query.value = "";
+    chapter.value = "all";
+    event("visit", { nodeId: result.node.id });
+  }
+  if (result.missing) notice.value = "此链接对应的概念不存在或已移除，请搜索其他概念。";
+  resolvingUrl = false;
+  const restoredUrl = window.location.href;
+  const anchor = result.node ? readerSectionFromUrl(restoredUrl, result.node.id) : null;
+  // Dialog focus waits for rendering too; restore the section after that focus.
+  await nextTick();
+  await nextTick();
+  if (anchor && window.location.href === restoredUrl && selected.value?.id === result.node?.id)
+    document.getElementById(anchor)?.scrollIntoView({ block: 'start' });
+}
+watch(() => selected.value?.id, (id) => {
+  manualCopy.value = "";
+  if (resolvingUrl || !import.meta.client) return;
+  const next = withConceptId(window.location.href, id);
+  if (next !== window.location.pathname + window.location.search + window.location.hash)
+    window.history.pushState({}, "", next);
+}, { flush: 'sync' });
+async function shareConcept(citation = false) {
+  if (!selected.value) return;
+  const url = new URL(withConceptId(window.location.href, selected.value.id), window.location.origin).href;
+  const result = await copyText(citation ? conceptCitation(selected.value, content.value, url) : url, navigator.clipboard);
+  manualCopy.value = result.copied ? "" : result.text;
+  notice.value = result.copied ? "已复制。" : "浏览器未允许复制，请在概念详情中选择文本手动复制。";
+}
 const isExploring = computed(() => ["map", "stars"].includes(view.value));
 const webglFailed = ref(false); // 3D 星空 WebGL 失败 → 回退 SVG star 视图
 const pendingAttempt = ref<any>(null);
@@ -205,6 +246,7 @@ async function load() {
     content.value = c;
     if (!state.value) state.value = readLocalState();
     view.value = "map";
+    restoreConcept();
   } catch (e: any) {
     // 题库未加载且无缓存时提示;state 仍可先用本地数据。
     error.value = e.message || "内容载入失败";
@@ -454,11 +496,13 @@ async function confirmImport() {
 onMounted(() => {
   void load();
   window.addEventListener('pagehide', flushLocal);
+  window.addEventListener('popstate', restoreConcept);
   document.addEventListener('visibilitychange', flushWhenHidden);
 });
 onBeforeUnmount(() => {
   localStore.dispose();
   window.removeEventListener('pagehide', flushLocal);
+  window.removeEventListener('popstate', restoreConcept);
   document.removeEventListener('visibilitychange', flushWhenHidden);
 });
 let previousFocus: HTMLElement | null = null;
@@ -1121,11 +1165,14 @@ onUnmounted(() => document.removeEventListener("keydown", trapDialog));
           ×
         </button>
         <p class="eyebrow">CONCEPT NOTE</p>
-        <h2>{{ selected.title }}</h2>
+        <h2 :id="readerAnchor(selected.id, 'title')">{{ selected.title }}</h2>
+        <div class="row"><button @click="shareConcept()">复制链接</button><button @click="shareConcept(true)">复制引用</button></div>
+        <label v-if="manualCopy">手动复制<textarea style="display:block;width:100%;margin:8px 0" :value="manualCopy" readonly rows="5" aria-label="待复制的链接或引用" @focus="($event.target as HTMLTextAreaElement).select()"></textarea></label>
+        <nav aria-label="概念阅读目录"><a :href="'#' + readerAnchor(selected.id, 'principle')">原理</a> · <a :href="'#' + readerAnchor(selected.id, 'usage')">运用</a> · <a :href="'#' + readerAnchor(selected.id, 'relations')">联系</a> · <a :href="'#' + readerAnchor(selected.id, 'sources')">来源</a></nav>
         <p class="summary">{{ selected.summary }}</p>
-        <h3>理解原理</h3>
+        <h3 :id="readerAnchor(selected.id, 'principle')">理解原理</h3>
         <p>{{ selected.detail }}</p>
-        <h3>怎么运用</h3>
+        <h3 :id="readerAnchor(selected.id, 'usage')">怎么运用</h3>
         <p>{{ selected.method }}</p>
         <p class="boundary">易错点：{{ selected.trap }}</p>
         <p>例子：{{ selected.example }}</p>
@@ -1144,7 +1191,7 @@ onUnmounted(() => document.removeEventListener("keydown", trapDialog));
             {{ label }}
           </button>
         </div>
-        <h3>相关联系</h3>
+        <h3 :id="readerAnchor(selected.id, 'relations')">相关联系</h3>
         <button
           class="relation-button"
           v-for="r in content.relations.filter(
@@ -1158,7 +1205,11 @@ onUnmounted(() => document.removeEventListener("keydown", trapDialog));
         <div class="neighbor-list">
           <button v-for="n in nodes.filter((n: any) => n.id !== selected.id && content.relations.some((r: any) => (r.from === selected.id && r.to === n.id) || (r.to === selected.id && r.from === n.id)))" :key="n.id" @click="openNode(n)">{{ n.title }} <span>→</span></button>
         </div>
-        <h3>来源与核验说明</h3>
+        <h3 :id="readerAnchor(selected.id, 'sources')">来源与核验说明</h3>
+        <p class="fineprint" v-if="content.contentVersion">内容版本：{{ content.contentVersion }}</p>
+        <p class="fineprint" v-if="selected.updatedAt">概念更新：{{ selected.updatedAt }}</p>
+        <p class="fineprint" v-if="content.updatedAt">内容更新：{{ content.updatedAt }}</p>
+        <p class="fineprint" v-if="!selected.sources?.length">当前概念暂无来源记录。</p>
         <p class="fineprint" v-for="s in selected.sources">
           {{ s.label }}<br />{{ s.locator }}
         </p>
