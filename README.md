@@ -141,6 +141,7 @@ powershell -ExecutionPolicy Bypass -File tools/verify.ps1
 | `REDIS_HOST`、`REDIS_PORT` | 容器内 Redis 地址，通常为 `redis:6379` |
 | `ADMIN_EMAIL`、`ADMIN_PASSWORD`、`ADMIN_DISPLAY_NAME` | 首次启动管理员信息；生产密码至少 12 位 |
 | `NUXT_PUBLIC_API_BASE`、`NUXT_API_INTERNAL_BASE` | 主站浏览器与服务端 API 地址；生产编排已设置同源和内网地址 |
+| `COMMENTS_ENABLED`、`NUXT_PUBLIC_COMMENTS_ENABLED` | 评论区总开关；当前默认关闭，恢复时将两项显式设为 `true` 并重新部署 |
 | `NUXT_PUBLIC_MAYUAN_BASE`、`NUXT_PUBLIC_HISTORY_BASE` | 主站两个学习模块入口，默认 `/mayuan/` 与 `/history/` |
 | `MAYUAN_ORIGINS` | 马原 API 允许的精确站点来源，不带尾斜杠 |
 

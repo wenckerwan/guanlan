@@ -29,6 +29,11 @@ class CommentService
         'prediction' => Prediction::class,
     ];
 
+    public function enabled(): bool
+    {
+        return getenv('COMMENTS_ENABLED') === 'true';
+    }
+
     /** 文章的评论模式；文章不存在返回 null */
     public function mode(string $articleType, string $slug): ?string
     {

@@ -6,6 +6,7 @@ export default defineNuxtConfig({
     apiInternalBase: process.env.NUXT_API_INTERNAL_BASE || 'http://api:9501/api/v1',
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || '/api/v1',
+      commentsEnabled: process.env.NUXT_PUBLIC_COMMENTS_ENABLED === 'true',
       mayuanBase: process.env.NUXT_PUBLIC_MAYUAN_BASE || '/mayuan/',
       historyBase: process.env.NUXT_PUBLIC_HISTORY_BASE || '/history/',
     },

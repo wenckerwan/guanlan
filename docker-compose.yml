@@ -3,6 +3,7 @@ services:
     build: ./apps/api
     environment:
       APP_ENV: local
+      COMMENTS_ENABLED: "false"
       ADMIN_EMAIL: admin@guanlan.local
       ADMIN_PASSWORD: guanlan2027
       ADMIN_DISPLAY_NAME: 管理员
@@ -23,6 +24,7 @@ services:
     command: sh -c "npm ci && npm run build && node .output/server/index.mjs"
     environment:
       NUXT_PUBLIC_API_BASE: /api/v1
+      NUXT_PUBLIC_COMMENTS_ENABLED: "false"
     volumes:
       - ./apps/web:/app
     depends_on: [api]

@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { MessageSquare, Pin, Send, Trash2 } from 'lucide-vue-next'
 import UserGroupBadge from '~/components/UserGroupBadge.vue'
+import { isCommentsEnabled } from '~/utils/comments.mjs'
 
 const props = defineProps<{
   articleType: 'analysis' | 'hotspot' | 'prediction'
@@ -9,6 +10,8 @@ const props = defineProps<{
 }>()
 
 const { isLoggedIn, request, user } = useAuth()
+const config = useRuntimeConfig()
+const commentsEnabled = computed(() => isCommentsEnabled(config.public.commentsEnabled))
 
 type CommentUser = { id: number; name: string; role: string; userGroup: string }
 type CommentRow = {
@@ -116,12 +119,12 @@ const canComment = computed(() => mode.value !== 'closed')
 const modeLabel = computed(() => (mode.value === 'review' ? '本板块评论需审核后展示' : ''))
 
 onMounted(async () => {
-  if (isLoggedIn.value) await load()
+  if (commentsEnabled.value && isLoggedIn.value) await load()
 })
 </script>
 
 <template>
-  <section class="comment-section">
+  <section v-if="commentsEnabled" class="comment-section">
     <template v-if="isLoggedIn">
       <header class="comment-head">
         <h2><MessageSquare :size="16" />评论 <small>共 {{ totalFloors }} 楼</small></h2>
@@ -198,6 +201,10 @@ onMounted(async () => {
       <p>登录后可查看和发表评论。</p>
       <NuxtLink class="primary-button small" to="/login">去登录</NuxtLink>
     </div>
+  </section>
+  <section v-else class="comment-section comment-disabled" aria-live="polite">
+    <MessageSquare :size="16" />
+    <p>评论区暂时停用。</p>
   </section>
 </template>
 
@@ -404,6 +411,17 @@ onMounted(async () => {
 }
 
 .comment-login-hint p {
+  margin: 0;
+}
+
+.comment-disabled {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-muted);
+}
+
+.comment-disabled p {
   margin: 0;
 }
 </style>

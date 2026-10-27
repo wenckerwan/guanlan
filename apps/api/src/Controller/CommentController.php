@@ -25,6 +25,9 @@ class CommentController
     /** 评论列表（仅登录用户；游客由路由中间件 401 拦截） */
     public function index(): ResponseInterface
     {
+        if (! $this->service->enabled()) {
+            return ApiResponse::message('评论区暂时停用', 503);
+        }
         $user = Auth::user();
         $articleType = (string) $this->request->input('articleType', '');
         $slug = trim((string) $this->request->input('slug', ''));
@@ -46,6 +49,9 @@ class CommentController
     /** 发表评论 / 回复（仅登录用户） */
     public function store(): ResponseInterface
     {
+        if (! $this->service->enabled()) {
+            return ApiResponse::message('评论区暂时停用', 503);
+        }
         $user = Auth::user();
         $articleType = (string) $this->request->input('articleType', '');
         $slug = trim((string) $this->request->input('slug', ''));
@@ -83,6 +89,9 @@ class CommentController
     /** 删除评论：本人或管理员 */
     public function destroy(int $id): ResponseInterface
     {
+        if (! $this->service->enabled()) {
+            return ApiResponse::message('评论区暂时停用', 503);
+        }
         $user = Auth::user();
 
         $comment = Comment::query()->find($id);
