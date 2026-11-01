@@ -42,8 +42,10 @@ jobs:
 
       - name: Build and push Web image
         run: |
+          mkdir -p /tmp/web-context/.output
+          cp -a apps/web/.output/. /tmp/web-context/.output/
           docker build -f tools/deploy/web-artifact.Dockerfile \
             -t ghcr.io/wenckerwan/guanlan-web:${{ inputs.tag }} \
-            -t ghcr.io/wenckerwan/guanlan-web:${{ github.sha }} apps/web
+            -t ghcr.io/wenckerwan/guanlan-web:${{ github.sha }} /tmp/web-context
           docker push ghcr.io/wenckerwan/guanlan-web:${{ inputs.tag }}
           docker push ghcr.io/wenckerwan/guanlan-web:${{ github.sha }}
