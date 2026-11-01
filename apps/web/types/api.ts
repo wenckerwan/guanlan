@@ -91,6 +91,7 @@ export type Paper = {
   questionCount: number
   totalScore: number
   answeredCount: number
+  sortOrder?: number
   sections: PaperSection[]
 }
 
@@ -117,6 +118,8 @@ export type Question = {
   accuracy: string
   objective: boolean
 }
+
+export type AdminQuestion = Question & { sortOrder: number; revision: number }
 
 export type PaperDetail = {
   paper: Paper

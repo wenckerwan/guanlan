@@ -19,6 +19,8 @@ class QuestionResource
             'year' => (int) $question->year,
             'label' => (string) $question->label,
             'no' => (int) $question->no,
+            'sortOrder' => (int) $question->sort_order,
+            'revision' => max(1, (int) ($question->revision ?? 1)),
             'type' => (string) $question->type,
             'typeCn' => (string) $question->type_cn,
             'score' => (float) $question->score,

@@ -15,6 +15,8 @@ use App\Service\AdminAuditService;
 use App\Service\AdminService;
 use App\Service\AdminArticleService;
 use App\Service\AdminArticleHistoryService;
+use App\Service\AdminMistakeListService;
+use App\Service\AdminLibraryService;
 use App\Support\ApiResponse;
 use App\Support\Auth;
 use App\Support\Validator;
@@ -28,7 +30,9 @@ class AdminController
         private AdminAuditService $audit,
         private RequestInterface $request,
         private AdminArticleService $articles,
-        private AdminArticleHistoryService $articleHistory
+        private AdminArticleHistoryService $articleHistory,
+        private AdminMistakeListService $mistakeLists,
+        private AdminLibraryService $library
     ) {
     }
 
@@ -72,6 +76,7 @@ class AdminController
             'total' => $result['total'],
             'page' => $result['page'],
             'perPage' => $result['perPage'],
+            'nextNo' => $result['nextNo'],
         ]);
     }
 
@@ -88,10 +93,25 @@ class AdminController
         ]);
     }
 
+    public function mockDetail(string $slug): ResponseInterface
+    {
+        try {
+            [$page, $perPage] = $this->mistakeListPagination();
+            return ApiResponse::data($this->library->mock(rawurldecode($slug), $page, $perPage));
+        } catch (\RuntimeException $e) {
+            if (!in_array($e->getCode(), [403, 404, 422], true)) throw $e;
+            return ApiResponse::message($e->getMessage(), $e->getCode());
+        }
+    }
+
     /** 后台只读：时政预测（分页） */
     public function predictions(): ResponseInterface
     {
-        $result = $this->service->predictions($this->page(), $this->perPage());
+        try { $result = $this->service->predictions($this->page(), $this->perPage()); }
+        catch (\RuntimeException $e) {
+            if ($e->getCode() !== 403) throw $e;
+            return ApiResponse::message($e->getMessage(), 403);
+        }
 
         return ApiResponse::data([
             'items' => ArticleResource::collection($result['items']),
@@ -106,7 +126,7 @@ class AdminController
         try {
             $prediction = $this->service->savePrediction($this->request->all(), $id);
         } catch (\RuntimeException $exception) {
-            return ApiResponse::message($exception->getMessage(), $exception->getCode() === 404 ? 404 : 422);
+            return ApiResponse::message($exception->getMessage(), in_array($exception->getCode(), [403, 404, 422], true) ? $exception->getCode() : 422);
         }
         if (! $prediction) {
             return ApiResponse::message('记录不存在', 404);
@@ -264,27 +284,42 @@ class AdminController
     /** 全部考生（含数据集考生），带计数与绑定账号 */
     public function mistakeStudents(): ResponseInterface
     {
-        return ApiResponse::data($this->service->mistakeStudents());
+        try {
+            $q = $this->request->input('q', '');
+            if (!is_string($q)) throw new \RuntimeException('考生关键词无效', 422);
+            [$page, $perPage] = $this->mistakeListPagination();
+            return ApiResponse::data($this->mistakeLists->students($q, $page, $perPage));
+        } catch (\RuntimeException $e) {
+            if (!in_array($e->getCode(), [403, 422], true)) throw $e;
+            return ApiResponse::message($e->getMessage(), $e->getCode());
+        }
     }
 
     /** 某考生错题条目（分页，只读浏览） */
     public function mistakeItems(string $code): ResponseInterface
     {
-        $student = $this->service->mistakeStudent($code);
-        if (! $student) {
-            return ApiResponse::message('考生不存在', 404);
+        try {
+            $module = $this->request->input('module', '');
+            $errorType = $this->request->input('errorType', '');
+            if (!is_string($module) || !is_string($errorType)) throw new \RuntimeException('错题筛选条件无效', 422);
+            [$page, $perPage] = $this->mistakeListPagination();
+            return ApiResponse::data($this->mistakeLists->items($code, $module, $errorType, $page, $perPage));
+        } catch (\RuntimeException $e) {
+            if (!in_array($e->getCode(), [403, 404, 422], true)) throw $e;
+            return ApiResponse::message($e->getMessage(), $e->getCode());
         }
+    }
 
-        $result = $this->service->mistakeItems($code, $this->page(), $this->perPage());
-
-        return ApiResponse::data([
-            'code' => (string) $student->code,
-            'name' => (string) $student->name,
-            'items' => MistakeResource::items($result['items']),
-            'total' => $result['total'],
-            'page' => $result['page'],
-            'perPage' => $result['perPage'],
-        ]);
+    /** @return array{int, int} */
+    private function mistakeListPagination(): array
+    {
+        $out = [];
+        foreach (['page' => 1, 'perPage' => 20] as $field => $default) {
+            $value = $this->request->input($field, $default);
+            if ((!is_int($value) && !is_string($value)) || !preg_match('/^-?[0-9]+$/D', (string) $value)) throw new \RuntimeException('分页参数无效', 422);
+            $out[] = (int) $value;
+        }
+        return $out;
     }
 
     /** 当前错题分析 Markdown */
@@ -587,12 +622,10 @@ class AdminController
 
     public function updateQuestion(int $id): ResponseInterface
     {
-        $question = $this->service->updateQuestion($id, $this->request->all());
-        if (! $question) {
-            return ApiResponse::message('题目不存在', 404);
+        try { return ApiResponse::data(QuestionResource::make($this->service->updateQuestion($id, $this->request->all()))); }
+        catch (\RuntimeException $e) {
+            $code = in_array($e->getCode(), [403, 404, 409, 422], true) ? $e->getCode() : 500;
+            return ApiResponse::message($code === 500 ? '题目操作失败' : $e->getMessage(), $code);
         }
-
-        $this->audit->log($this->user(), 'question.update', 'question', (string) $id);
-        return ApiResponse::data(QuestionResource::make($question));
     }
 }

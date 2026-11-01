@@ -39,6 +39,7 @@ class ArticleResource
             $base['tag'] = (string) $model->tag;
         } else {
             $base['layer'] = (string) $model->layer;
+            $base['sortOrder'] = (int) $model->sort_order;
             $base['sourceFile'] = (string) $model->source_file;
             $base['wordCount'] = (int) $model->word_count;
         }
