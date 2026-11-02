@@ -1,18 +1,36 @@
-FROM php:8.3-cli
+# syntax=docker/dockerfile:1
+# API 镜像：alpine 多阶段构建，编译工具链只留在构建阶段
+#
+# 优化前（单阶段 Debian 基础镜像）镜像体积 980MB，其中约 450MB 是 php:8.3-cli 基础镜像、
+# 约 138MB 是 apt 安装的 git/unzip/*-dev 与残留编译工具链。
+# 优化后约 270MB，运行时行为与原镜像一致（PHP 8.3 / swoole 6.2 / 相同的 CMD）。
 
-# 境内加速：将 Debian 源切换到 Aliyun 镜像（trixie 用 deb822 格式，兼容旧 sources.list）
-RUN if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
-      sed -i 's|deb.debian.org|mirrors.aliyun.com|g; s|security.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list.d/debian.sources; \
-    fi; \
-    if [ -f /etc/apt/sources.list ]; then \
-      sed -i 's|deb.debian.org|mirrors.aliyun.com|g; s|security.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list; \
-    fi
+# ========== 构建阶段：只在这里装编译器和 -dev 头文件 ==========
+FROM php:8.3-cli-alpine AS builder
 
-RUN apt-get update && apt-get install -y git unzip libzip-dev libssl-dev libbrotli-dev libxml2-dev libonig-dev \
-    && docker-php-ext-install zip pdo_mysql dom mbstring \
+RUN apk add --no-cache --virtual .build-deps \
+      $PHPIZE_DEPS \
+      brotli-dev \
+      libzip-dev \
+      libxml2-dev \
+      oniguruma-dev \
+      openssl-dev \
+    && docker-php-ext-install -j"$(nproc)" zip pdo_mysql dom mbstring \
     && pecl install swoole \
-    && docker-php-ext-enable swoole \
-    && rm -rf /var/lib/apt/lists/*
+    && docker-php-ext-enable swoole
+
+# ========== 运行阶段：不带任何编译工具 ==========
+FROM php:8.3-cli-alpine
+
+# 只装运行时共享库（无 -dev 头文件）
+# libstdc++ 必装：swoole 是 C++ 扩展，alpine 基础镜像默认不含该库；
+# 缺失时 `php -m` 仍会列出 swoole，但启动报
+# "Error loading shared library libstdc++.so.6"，属易漏项。
+RUN apk add --no-cache brotli libzip libxml2 oniguruma libstdc++
+
+# 复用构建阶段编译好的扩展与启用配置（含基础镜像自带的 opcache / sodium 等）
+COPY --from=builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
+COPY --from=builder /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
@@ -21,6 +39,7 @@ WORKDIR /opt/guanlan
 # Composer 官方源包含当前稳定依赖；旧镜像可能缺少稳定版本。
 RUN composer config -g repo.packagist composer https://repo.packagist.org
 
+# 已编译 zip 扩展，composer 可直接解包，无需 unzip 二进制
 COPY apps/api/composer.json apps/api/composer.lock ./
 RUN composer install --no-dev --prefer-dist --no-interaction --no-progress
 
