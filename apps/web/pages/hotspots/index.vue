@@ -2,13 +2,33 @@
 import { Newspaper } from 'lucide-vue-next'
 import type { ArticleSummary } from '~/types/api'
 
-useHead({ title: '时政热点｜观澜考研政治知识库', meta: [{ name: 'description', content: '2026 年 1—9 月考研政治时政考点，按月份与优先级整理。' }] })
-
 const route = useRoute()
 const router = useRouter()
 const { data } = await useApiFetch<ArticleSummary[]>('/hotspots', [])
 const items = computed(() => data.value ?? [])
 const gateOpen = ref(false)
+
+const periodRange = computed(() => {
+  const months = items.value
+    .map((item) => item.period?.match(/(\d{4})年(\d{1,2})月/))
+    .filter((match): match is RegExpMatchArray => Boolean(match))
+  if (!months.length) return '2026 年'
+
+  const years = months.map((match) => Number(match[1]))
+  const firstYear = Math.min(...years)
+  const lastYear = Math.max(...years)
+  if (firstYear !== lastYear) return `${firstYear}—${lastYear} 年`
+
+  const presentMonths = months
+    .filter((match) => Number(match[1]) === firstYear)
+    .map((match) => Number(match[2]))
+  return `${firstYear} 年 1—${Math.max(...presentMonths)} 月`
+})
+
+useHead(() => ({
+  title: '时政热点｜观澜考研政治知识库',
+  meta: [{ name: 'description', content: `${periodRange.value}考研政治时政考点，按月份与优先级整理。` }],
+}))
 
 onMounted(() => {
   if (String(route.query.login ?? '') === '1') {
