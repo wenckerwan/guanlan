@@ -34,13 +34,10 @@ function stopHistory() {
   app = null
 }
 
-function syncCookie() {
-  const current = readAuthToken()
-  if (auth.token.value !== current) {
-    stopHistory()
-    auth.user.value = null
-    auth.token.value = current
-  }
+async function syncCookie() {
+  const previous = auth.user.value?.id
+  await auth.fetchUser()
+  if (previous !== auth.user.value?.id) { stopHistory(); void mountHistory() }
 }
 
 async function exportLegacy() {
@@ -97,26 +94,24 @@ async function mountHistory() {
   if (!target || disposed) return
   const currentGeneration = ++generation
   stopHistory()
-  const sessionToken = readAuthToken()
-  if (!sessionToken) {
+  const verifiedUser = await auth.fetchUser()
+  const sessionGeneration = auth.generation.value
+  if (!verifiedUser) {
     await navigateTo({ path: '/login', query: { redirect: route.fullPath } })
     return
   }
-  const isCurrent = () => !disposed && currentGeneration === generation && readAuthToken() === sessionToken
+  const isCurrent = () => !disposed && currentGeneration === generation && auth.generation.value === sessionGeneration
   mountError.value = ''
   try {
-  if (auth.token.value !== sessionToken) { auth.user.value = null; auth.token.value = sessionToken }
-  // 缓存资料不能决定分库归属，必须先向服务端确认当前账号。
-  const verifiedUser = sessionToken ? await auth.fetchUser() : null
+  // 分库身份来自服务端验证，cookie和bearer永不进入组件。
   if (!isCurrent()) return
-  if (sessionToken && !verifiedUser) throw new Error('暂时无法确认登录身份，请重试；本地记录保持原样')
   const [{ createGuanlanHistoryApp }, { GuanlanHistoryRepository }, { GuanlanStudyRepository }] = await Promise.all([
     import('~/components/history/ui/guanlan-app'),
     import('~/components/history/adapters/history-http'),
     import('~/components/history/adapters/guanlan-study'),
   ])
   if (!isCurrent() || container.value !== target) return
-  const authHeaders = (): HeadersInit => sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {}
+  const authHeaders = (): HeadersInit => ({ 'X-Guanlan-Account': String(verifiedUser.id) })
   // history-events 端点含 apiBase 前缀；study 路径在上游已写死 /api/v1/study/*，故其 apiBase 传空。
   const repository = new GuanlanHistoryRepository({
     fetch: globalThis.fetch.bind(globalThis),
@@ -149,7 +144,7 @@ async function mountHistory() {
 
 // ClientOnly creates its slot after the parent has mounted; wait for the actual element.
 watch(container, () => { void mountHistory() }, { flush: 'post' })
-watch(auth.token, () => { void mountHistory() }, { flush: 'post' })
+watch(auth.generation, () => { void mountHistory() }, { flush: 'post' })
 onMounted(() => {
   window.addEventListener('focus', syncCookie)
   window.addEventListener('pageshow', syncCookie)

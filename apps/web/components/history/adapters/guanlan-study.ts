@@ -20,7 +20,7 @@ export interface GuanlanStudyStatus {
 
 export interface GuanlanStudyConfig {
   fetch: typeof fetch;
-  /** 观澜宿主提供（读 guanlan.token）；返回空/无 Authorization 表示未登录。 */
+  /** 宿主提供账号绑定头；Cookie凭证仅由同源BFF处理，也兼容独立bearer集成。 */
   authHeaders?: () => HeadersInit | Promise<HeadersInit>;
   /** 观澜 API 前缀，默认 ''（相对，同源）；不可带路径以外的 query/hash。 */
   apiBase?: string;
@@ -113,7 +113,8 @@ export class GuanlanStudyRepository implements StudyRepository {
   }
   private hasToken(headers: HeadersInit | undefined): boolean {
     if (!headers) return false;
-    return new Headers(headers).has('Authorization');
+    const values = new Headers(headers);
+    return values.has('Authorization') || values.has('X-Guanlan-Account');
   }
   private async request(path: string, init: RequestInit = {}, allowFail = false): Promise<Response> {
     const headers = new Headers(await this.headers() ?? {});

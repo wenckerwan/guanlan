@@ -30,7 +30,7 @@ export function usePracticeStudy() {
   const message = ref('')
   const error = ref('')
   const generation = ref(0)
-  const identity = computed(() => auth.token.value && auth.user.value?.id ? String(auth.user.value.id) : '')
+  const identity = computed(() => auth.user.value?.id ? String(auth.user.value.id) : '')
   const loggedIn = computed(() => Boolean(identity.value))
   const key = computed(() => bank.value && identity.value ? outboxKey(identity.value, bank.value.bankId, bank.value.contentVersion) : '')
 
@@ -80,7 +80,7 @@ export function usePracticeStudy() {
   }
 
   async function send(event: Event, outbox: string, account: string, epoch: number) {
-    if (readAuthToken() !== auth.token.value) { await reconcileIdentity(); return null }
+    if (!await verifyIdentity()) return null
     try {
       const body: Event = { bankId: event.bankId, questionRef: event.questionRef, questionVersion: event.questionVersion, chosen: event.chosen, eventId: event.eventId }
       const outcome = await auth.request<Outcome>('/study/practice/attempts', { method: 'POST', body })
@@ -109,7 +109,7 @@ export function usePracticeStudy() {
 
   async function submit(question: PracticeQuestion, chosen: string[]) {
     if (!chosen.length || !bank.value) return null
-    if (readAuthToken() !== auth.token.value) { await reconcileIdentity(); return null }
+    if (!await verifyIdentity()) return null
     if (!loggedIn.value) {
       if (!question.answer) { error.value = '试玩题暂不能判分，请稍后重试。'; return null }
       const correct = question.answer.split('').sort().join('')
@@ -133,7 +133,7 @@ export function usePracticeStudy() {
 
   async function retryPending() {
     if (!bank.value || !identity.value) return
-    if (readAuthToken() !== auth.token.value) { await reconcileIdentity(); return }
+    if (!await verifyIdentity()) return
     const account = identity.value
     const epoch = generation.value
     for (const event of [...pending.value]) {
@@ -143,7 +143,7 @@ export function usePracticeStudy() {
   }
 
   function discardPending(eventId: string) {
-    if (!import.meta.client || readAuthToken() !== auth.token.value) { void reconcileIdentity(); return }
+    if (!import.meta.client) return
     const event = pending.value.find(item => item.eventId === eventId)
     if (!event || !bank.value || !identity.value) return
     removeAttempt(localStorage, event.outboxKey, eventId)
@@ -166,15 +166,15 @@ export function usePracticeStudy() {
     } catch { error.value = '收藏未保存，请稍后重试。' }
   }
 
-  async function reconcileIdentity() {
-    const cookieToken = readAuthToken()
-    if (cookieToken === auth.token.value) return
-    clearView()
-    auth.token.value = cookieToken
-    auth.user.value = null
-    if (cookieToken) await auth.fetchUser()
-    await load()
+  async function verifyIdentity() {
+    const previous = identity.value
+    const verified = await auth.fetchUser()
+    if (!verified && previous) return false
+    if (identity.value !== previous) { clearView(); await load(); return false }
+    return true
   }
+
+  async function reconcileIdentity() { await verifyIdentity() }
 
   async function refreshAccountState() {
     if (!identity.value || !bank.value) return

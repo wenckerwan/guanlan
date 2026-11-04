@@ -3,6 +3,7 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css', '~/assets/css/glass.css'],
   typescript: { strict: true, typeCheck: false },
   runtimeConfig: {
+    sessionOrigin: process.env.NUXT_SESSION_ORIGIN || (process.env.NODE_ENV === 'production' ? 'https://guanlan.wencker.top' : ''),
     apiInternalBase: process.env.NUXT_API_INTERNAL_BASE || 'http://api:9501/api/v1',
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || '/api/v1',

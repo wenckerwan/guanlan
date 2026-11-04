@@ -43,7 +43,8 @@ class Auth
         if (stripos($header, 'bearer ') === 0) {
             return trim(substr($header, 7));
         }
-        return (string) $request->input('token', '');
+        // Credentials in URLs/forms leak via history, referrers and request logs.
+        return '';
     }
 
     public static function resolve(string $token): ?User

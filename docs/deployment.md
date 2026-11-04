@@ -118,8 +118,14 @@ X-Forwarded-Proto
 ```
 
 并将代理读取/连接超时设置为 60 秒，避免长请求被提前断开。容器内网关 Nginx
-（`docker/nginx/production.conf`）已保留同名头，并分别把 `/api/` 转发到 `api:9501`、
-其余路径转发到 `web:3000`。
+（`docker/nginx/production.conf`）将 `/api/v1/` 转发到 `web:3000` 的 HttpOnly 会话 BFF，
+由 BFF 转发内部 `api:9501`；`/api/v2/` 仍转发 `mayuan-api:9501`，其他 `/api/` 路径拒绝访问。
+不要恢复 `/api/ → api:9501` 的旧规则，否则浏览器会绕过会话与 CSRF 边界。
+生产环境必须将 `NUXT_SESSION_ORIGIN` 设为实际 HTTPS 站点源（默认 `https://guanlan.wencker.top`），
+它用于精确校验写请求 Origin，不依赖可伪造的转发头。
+
+2026-11-04 的会话迁移、验证码锁表迁移、安全头与联合发布验收见
+[安全加固说明](security-hardening-20261104.md)。
 
 ## 7. 安全组与防火墙端口
 

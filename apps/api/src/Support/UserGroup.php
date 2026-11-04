@@ -17,12 +17,12 @@ class UserGroup
 
     public const ALL = [self::USER, self::VIP, self::SVIP, self::SSSVIP];
 
-    /** 组 → 权益（前端按 features 隐藏/置灰入口） */
+    /** 保留权益响应结构；错题 AI 功能及其日限额已移除。 */
     private const FEATURES = [
-        self::USER => ['aiReportDailyLimit' => 5],
-        self::VIP => ['aiReportDailyLimit' => 20],
-        self::SVIP => ['aiReportDailyLimit' => 50],
-        self::SSSVIP => ['aiReportDailyLimit' => 200],
+        self::USER => [],
+        self::VIP => [],
+        self::SVIP => [],
+        self::SSSVIP => [],
     ];
 
     public static function normalize(?string $group): string

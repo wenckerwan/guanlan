@@ -6,22 +6,17 @@ export default defineNuxtPlugin(() => {
   if (!import.meta.client) return
 
   const INTERVAL = 30_000
-  const config = useRuntimeConfig()
-  const apiBase = config.public.apiBase as string
+  const auth = useAuth()
 
   let timer: ReturnType<typeof setInterval> | null = null
 
   async function report() {
     if (document.visibilityState !== 'visible') return
-    const token = readAuthToken()
-    if (!token) return
+    if (!auth.isLoggedIn.value) return
     try {
-      await $fetch('/stats/heartbeat', {
+      await auth.request('/stats/heartbeat', {
         method: 'POST',
-        baseURL: apiBase,
-        headers: { Authorization: `Bearer ${token}` },
         body: { seconds: 30, path: window.location.pathname },
-        timeout: 10_000,
       })
     } catch {
       // 静默失败：统计上报不影响浏览

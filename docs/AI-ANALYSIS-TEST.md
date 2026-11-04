@@ -1,6 +1,8 @@
-# AI 分析测试指南
+# AI 分析测试指南（历史归档，已下线）
 
-本文档说明如何测试 AI 分析功能并验证与 skills 目录的对接。
+> 2026-11-04：错题 AI 功能已删除。以下内容仅保留历史设计与测试记录，不再适用于当前版本；不要执行其中的测试命令或配置 API Key。当前范围及验收见 [错题 AI 移除报告](mistake-ai-removal-20261104.md) 和 [安全加固说明](security-hardening-20261104.md)。
+
+本文档原用于说明如何测试 AI 分析功能并验证与 skills 目录的对接。
 
 ## 环境准备
 
@@ -208,7 +210,7 @@ AI 分析服务已与 skills 目录对接，系统提示词包含以下关键要
 
 ### 提示词来源
 
-系统提示词位于 [AIAnalysisService.php:151](../apps/api/src/Service/AIAnalysisService.php)，基于以下文档编写：
+系统提示词位于 `apps/api/src/Service/AIAnalysisService.php:151`（已删除），基于以下文档编写：
 
 - `/d/code_files/kaoyan-politics-mistake-analysis/kaoyan-politics-mistake-analysis/SKILL.md`
 - `/d/code_files/kaoyan-politics-mistake-analysis/README.md`
@@ -292,8 +294,8 @@ AI 分析请求失败: maximum context length exceeded
 
 ## 相关文件
 
-- [AIAnalysisService.php](../apps/api/src/Service/AIAnalysisService.php) - AI 分析服务
-- [AIAnalysisTest.php](../apps/api/tests/AIAnalysisTest.php) - 单元测试
-- [test-ai-analysis.php](../apps/api/test-ai-analysis.php) - 命令行测试脚本
-- [MistakeController.php:139](../apps/api/src/Controller/MistakeController.php) - AI 分析 API 接口
+- `apps/api/src/Service/AIAnalysisService.php` - 原 AI 分析服务，已删除
+- `apps/api/tests/AIAnalysisTest.php` - 原单元测试，已删除
+- `apps/api/test-ai-analysis.php` - 原命令行测试脚本，已删除
+- [MistakeController.php](../apps/api/src/Controller/MistakeController.php) - 仅保留普通错题及人工报告接口，原 AI 方法已删除
 - 本地 kaoyan-politics-mistake-analysis Skill（未随本仓库发布） - Skills 文档

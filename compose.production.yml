@@ -35,6 +35,8 @@ services:
     environment:
       NODE_ENV: production
       NUXT_API_INTERNAL_BASE: http://api:9501/api/v1
+      # Exact HTTPS origin for BFF CSRF checks; never infer from forwarded headers.
+      NUXT_SESSION_ORIGIN: ${NUXT_SESSION_ORIGIN:-https://guanlan.wencker.top}
       NUXT_PUBLIC_API_BASE: /api/v1
       NUXT_PUBLIC_COMMENTS_ENABLED: ${NUXT_PUBLIC_COMMENTS_ENABLED:-false}
     depends_on:

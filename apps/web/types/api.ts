@@ -268,7 +268,6 @@ export type User = {
   role: string
   status: string
   userGroup?: UserGroup
-  features?: { aiReportDailyLimit?: number }
   mistakeCode?: string
   createdAt: string
 }
@@ -279,7 +278,6 @@ export type LeaderboardEntry = {
 }
 
 export type AuthPayload = {
-  token: string
   user: User
 }
 

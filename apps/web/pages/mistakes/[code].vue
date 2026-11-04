@@ -1,7 +1,6 @@
 ﻿<script setup lang="ts">
 import { computed, reactive, ref, watch, onMounted } from 'vue'
-import { renderReportMarkdown } from '~/utils/report-markdown.mjs'
-import { ArrowLeft, BookOpen, Check, FileText, RotateCcw, Send, Sparkles, Star, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, BookOpen, Check, RotateCcw, Send, Sparkles, Star, Trash2 } from 'lucide-vue-next'
 import type { Handbook, MistakeItemsPayload, MistakeItem } from '~/types/api'
 import { displayAnswer, isCorrect } from '~/utils/quiz.mjs'
 import { normalizePage } from '~/utils/pagination.mjs'
@@ -49,51 +48,6 @@ onMounted(async () => {
   }
 })
 const showAnalysis = computed(() => !!analysis.value && !analysis.value.isDefault && !!analysis.value.html)
-
-// AI 分析报告：登录后自动展示最新一份，可在历史报告间切换
-type SavedReport = { id: number; title: string; createdAt: string }
-const aiReports = ref<SavedReport[]>([])
-const activeReportId = ref<number | null>(null)
-const reportMarkdown = ref('')
-const reportHtml = computed(() => renderReportMarkdown(reportMarkdown.value))
-
-async function openAiReport(id: number) {
-  try {
-    const data = await request<{ id: number; markdown: string }>(`/mistakes/analysis-reports/${id}`)
-    reportMarkdown.value = data.markdown
-    activeReportId.value = id
-  } catch {
-    reportMarkdown.value = ''
-    activeReportId.value = null
-  }
-}
-
-async function deleteAiReport(id: number) {
-  if (!window.confirm('确定删除这份分析报告？删除后不可恢复。')) return
-  try {
-    await request(`/mistakes/analysis-reports/${id}`, { method: 'DELETE' })
-    aiReports.value = aiReports.value.filter((report) => report.id !== id)
-    if (activeReportId.value === id) {
-      if (aiReports.value.length) await openAiReport(aiReports.value[0].id)
-      else {
-        activeReportId.value = null
-        reportMarkdown.value = ''
-      }
-    }
-  } catch {
-    /* 删除失败保持现状 */
-  }
-}
-
-onMounted(async () => {
-  if (!isLoggedIn.value) return
-  try {
-    aiReports.value = await request<SavedReport[]>(`/mistakes/students/${code}/analysis-reports`)
-    if (aiReports.value.length) await openAiReport(aiReports.value[0].id)
-  } catch {
-    aiReports.value = []
-  }
-})
 
 const redoOpen = reactive<Record<number, boolean>>({})
 const redoChoices = reactive<Record<number, string[]>>({})
@@ -253,28 +207,9 @@ async function submitRedo(item: MistakeItem) {
           <p>共 {{ student.itemCount }} 道错题，按模块与错因归类，配提分手册。</p>
         </div>
         <div class="quiz-head-actions">
-          <NuxtLink class="ghost-button" :to="`/mistakes/analyze/${code}`"><Sparkles :size="15" />AI 分析</NuxtLink>
           <NuxtLink v-if="isLoggedIn" class="primary-button" :to="`/mistakes/${code}/review`"><RotateCcw :size="15" />复习概览</NuxtLink>
           <NuxtLink v-if="handbooks.length" class="primary-button" :to="`/mistakes/${code}/${handbooks[0].id}`"><BookOpen :size="15" />看提分手册</NuxtLink>
         </div>
-      </section>
-
-      <section v-if="aiReports.length" class="ai-reports">
-        <details>
-          <summary><FileText :size="14" />AI 分析报告（更新于 {{ aiReports[0].createdAt.slice(0, 10) }}）</summary>
-          <nav v-if="aiReports.length > 1" class="ai-report-switch">
-            <span
-              v-for="report in aiReports"
-              :key="report.id"
-              class="ai-report-item"
-              :class="{ active: activeReportId === report.id }"
-            >
-              <button type="button" class="ai-report-chip" @click="openAiReport(report.id)">{{ report.title }}</button>
-              <button type="button" class="report-delete" title="删除报告" @click="deleteAiReport(report.id)">×</button>
-            </span>
-          </nav>
-          <div v-if="reportHtml" class="markdown-body" v-html="reportHtml" />
-        </details>
       </section>
 
       <section v-if="showAnalysis" class="mistake-analysis">
@@ -379,76 +314,6 @@ async function submitRedo(item: MistakeItem) {
 
 .mistake-item-actions .danger {
   color: var(--error, #dc2626);
-}
-
-.ai-reports {
-  margin: 1.5rem 0;
-  padding: 1rem 1.25rem;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-}
-
-.ai-reports summary {
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.ai-report-switch {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.375rem;
-  margin: 0.75rem 0;
-}
-
-.ai-report-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.125rem;
-  padding: 0.25rem 0.375rem 0.25rem 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-}
-
-.ai-report-item.active {
-  border-color: var(--primary, #b91c1c);
-  background: var(--primary-light, #fef2f2);
-}
-
-.ai-report-chip {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 0.8125rem;
-  color: var(--text-primary);
-  padding: 0;
-  max-width: 14rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.report-delete {
-  background: none;
-  border: none;
-  color: var(--text-muted, #9ca3af);
-  font-size: 1rem;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0 0.25rem;
-  border-radius: 4px;
-}
-
-.report-delete:hover {
-  color: var(--error, #ef4444);
-}
-
-.ai-reports .markdown-body {
-  margin-top: 0.75rem;
 }
 
 .mistake-analysis {
