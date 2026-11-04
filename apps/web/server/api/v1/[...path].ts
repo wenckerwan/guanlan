@@ -8,6 +8,9 @@ export default defineEventHandler(async event => {
   if (rawPath !== url.pathname) throw createError({ statusCode: 400, statusMessage: 'Noncanonical API path' })
   const path = rawPath.slice('/api/v1'.length)
   const method = event.method.toUpperCase()
+  const visitRoute = (path === '/stats/visits' && method === 'GET') || (path === '/stats/visit' && method === 'POST')
+  const browserCookie = 'guanlan_browser'
+  const validBrowserCookie = (value: string) => value.length === 129 && /^[a-f0-9]{64}\.[a-f0-9]{64}$/.test(value)
   // Production must configure the external origin; never trust arbitrary forwarded headers.
   const origin = config.sessionOrigin || url.origin
   assertSameOrigin(method, getRequestHeader(event, 'origin'), getRequestHeader(event, 'sec-fetch-site'), origin)
@@ -40,12 +43,27 @@ export default defineEventHandler(async event => {
     const identity = await check.json()
     if (String(identity?.data?.user?.id) !== account) throw createError({ statusCode: 409, statusMessage: 'Session account changed; reload required' })
   }
+  // The signed visitor identifier is the sole client cookie accepted by the API,
+  // and only on these exact stats routes (never on the identity check above).
+  const browser = visitRoute ? getCookie(event, browserCookie) : undefined
+  if (browser && validBrowserCookie(browser)) headers.set('Cookie', `${browserCookie}=${browser}`)
   const body = ['GET', 'HEAD'].includes(method) ? undefined : await readRawBody(event, false)
   const response = await fetch(target, { method, headers, body, redirect: 'error' })
   setResponseStatus(event, response.status)
   const type = response.headers.get('content-type')
   if (type) setResponseHeader(event, 'Content-Type', type)
-  // No upstream Set-Cookie, Location, CORS, or arbitrary headers are relayed.
+  // Never relay upstream cookie attributes or arbitrary cookies/headers. Only a
+  // successful trusted stats response may issue a syntactically valid visitor ID.
+  if (visitRoute && response.ok) {
+    for (const cookie of response.headers.getSetCookie()) {
+      const pair = cookie.split(';', 1)[0]
+      const prefix = `${browserCookie}=`
+      if (!pair.startsWith(prefix)) continue
+      const issued = pair.slice(prefix.length)
+      if (validBrowserCookie(issued)) setCookie(event, browserCookie, issued, { ...cookieOptions, maxAge: 60 * 60 * 24 * 365 })
+    }
+  }
+  // No upstream Location, CORS, or arbitrary headers are relayed.
   if (['/auth/login', '/auth/register'].includes(path)) {
     const payload = await response.json()
     if (response.ok) {
