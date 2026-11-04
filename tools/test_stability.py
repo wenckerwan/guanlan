@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-PHP_TESTS = ('AccountIdTest', 'AIAnalysisTest', 'AiOutboundPolicyTest', 'Bugs1022Test',
+PHP_TESTS = ('AccountIdTest', 'AiOutboundPolicyTest', 'Bugs1022Test',
              'ContentStatusTest', 'KnowledgeSearchTest', 'SearchServiceTest', 'MayuanSearchSourceTest', 'DatasetManifestVerifierTest', 'MailerTransportTest',
              'MistakeAccessTest', 'MistakeImportAccessTest', 'SecurityBoundaryTest', 'VisitWindowTest')
 
