@@ -6,6 +6,8 @@ namespace App\Controller;
 
 use App\Resource\UserResource;
 use App\Service\AuthService;
+use App\Service\TurnstileService;
+use App\Support\ClientAddress;
 use App\Support\ApiResponse;
 use App\Support\Auth;
 use App\Support\Validator;
@@ -16,7 +18,8 @@ class AuthController
 {
     public function __construct(
         private AuthService $service,
-        private RequestInterface $request
+        private RequestInterface $request,
+        private TurnstileService $turnstile
     ) {
     }
 
@@ -28,24 +31,10 @@ class AuthController
             return ApiResponse::message('请求校验失败', 422, $validator->errors());
         }
 
-        $serverParams = $this->request->getServerParams();
-        $ip = (string) ($serverParams['remote_addr'] ?? 'unknown');
-        // Only explicitly configured proxy IPs may supply a forwarding chain.
-        $trusted = array_filter(array_map('trim', explode(',', getenv('TRUSTED_PROXY_IPS') ?: '')));
-        if (in_array($ip, $trusted, true)) {
-            $forwarded = $this->request->getHeaderLine('X-Forwarded-For');
-            $chain = $forwarded !== '' ? explode(',', $forwarded) : [$this->request->getHeaderLine('X-Real-IP')];
-            foreach (array_reverse($chain) as $hop) {
-                $hop = trim($hop);
-                if (!filter_var($hop, FILTER_VALIDATE_IP)) {
-                    break;
-                }
-                $ip = $hop;
-                if (!in_array($ip, $trusted, true)) {
-                    break;
-                }
-            }
-        }
+        $ip = $this->clientIp();
+        if ($ip === null) return ApiResponse::message('安全配置暂不可用，请稍后重试', 503);
+        $challenge = $this->turnstile->validate((string) $this->request->input('turnstileToken', ''), $ip);
+        if ($challenge !== null) return ApiResponse::message($challenge['error'], $challenge['status']);
 
         $result = $this->service->sendRegisterCode($validator->string('email'), $ip);
         if (isset($result['error'])) {
@@ -68,12 +57,17 @@ class AuthController
             return ApiResponse::message('请求校验失败', 422, $validator->errors());
         }
 
+        $ip = $this->clientIp();
+        if ($ip === null) return ApiResponse::message('安全配置暂不可用，请稍后重试', 503);
+        $challenge = $this->turnstile->validate((string) $this->request->input('turnstileToken', ''), $ip);
+        if ($challenge !== null) return ApiResponse::message($challenge['error'], $challenge['status']);
         $code = $this->request->input('code');
         $result = $this->service->register(
             $validator->string('email'),
             (string) $this->request->input('password', ''),
             $validator->string('displayName'),
-            $code !== null ? (string) $code : null
+            $code !== null ? (string) $code : null,
+            $ip
         );
 
         if (isset($result['error'])) {
@@ -142,5 +136,16 @@ class AuthController
         Auth::revoke(Auth::tokenFrom($this->request));
 
         return ApiResponse::data(['ok' => true]);
+    }
+
+    private function clientIp(): ?string
+    {
+        return ClientAddress::verify(
+            $this->request->getHeaderLine('X-Guanlan-Client-IP'),
+            $this->request->getHeaderLine('X-Guanlan-Client-Time'),
+            $this->request->getHeaderLine('X-Guanlan-Client-Signature'),
+            strtoupper($this->request->getMethod()),
+            $this->request->getUri()->getPath()
+        );
     }
 }

@@ -53,7 +53,7 @@ export function useAuth() {
     return response.data.user
   }
   const login = (email: string, password: string) => authenticate('login', { email, password })
-  const register = (email: string, password: string, displayName: string, code?: string) => authenticate('register', { email, password, displayName, code })
+  const register = (email: string, password: string, displayName: string, code?: string, turnstileToken?: string) => authenticate('register', { email, password, displayName, code, turnstileToken })
 
   async function logout() {
     const epoch = ++generation.value

@@ -1,5 +1,6 @@
 import { defineEventHandler, getRequestHeader, getRequestURL, getCookie, setCookie, deleteCookie, readRawBody, setResponseHeader, setResponseStatus, sendStream, createError, getRequestIP } from 'h3'
 import { SESSION_COOKIE, LEGACY_COOKIE, SESSION_MAX_AGE, assertSameOrigin, upstreamURL } from '../../utils/session-policy.mjs'
+import { clientAddress, signedAddressHeaders } from '../../utils/client-address.mjs'
 
 export default defineEventHandler(async event => {
   const config = useRuntimeConfig(event)
@@ -12,7 +13,9 @@ export default defineEventHandler(async event => {
   const browserCookie = 'guanlan_browser'
   const validBrowserCookie = (value: string) => value.length === 129 && /^[a-f0-9]{64}\.[a-f0-9]{64}$/.test(value)
   // Production must configure the external origin; never trust arbitrary forwarded headers.
-  const origin = config.sessionOrigin || url.origin
+  const allowedOrigins = String(config.sessionOrigins || '').split(',').map(value => value.trim()).filter(Boolean)
+  const suppliedOrigin = getRequestHeader(event, 'origin')
+  const origin = allowedOrigins.includes(suppliedOrigin || '') ? suppliedOrigin : (config.sessionOrigin || url.origin)
   assertSameOrigin(method, getRequestHeader(event, 'origin'), getRequestHeader(event, 'sec-fetch-site'), origin)
   setResponseHeader(event, 'Cache-Control', 'private, no-store')
   setResponseHeader(event, 'Vary', 'Cookie')
@@ -26,10 +29,13 @@ export default defineEventHandler(async event => {
   const agent = getRequestHeader(event, 'user-agent')
   if (agent) headers.set('User-Agent', agent)
   if (token) headers.set('Authorization', `Bearer ${token}`)
-  // Forward only the actual peer, not an attacker-supplied forwarding chain. The API
-  // should trust this BFF address; the edge must perform rate limiting as well.
-  const peer = getRequestIP(event)
-  if (peer) headers.set('X-Forwarded-For', peer)
+  // Only the configured gateway may provide a visitor IP; never trust arbitrary XFF.
+  // Authenticate this assertion to the API without trusting changing container IPs.
+  const peer = clientAddress(getRequestIP(event), getRequestHeader(event, 'x-real-ip'), config.trustedGatewayIps)
+  if (peer) {
+    headers.set('X-Forwarded-For', peer)
+    for (const [key, value] of Object.entries(signedAddressHeaders(peer, method, rawPath, config.bffProxySecret))) headers.set(key, value)
+  }
   const target = upstreamURL(config.apiInternalBase, path, url.search)
   if (path.startsWith('/auth/')) {
     const allowed: Record<string, string> = { '/auth/login': 'POST', '/auth/register': 'POST', '/auth/email/code': 'POST', '/auth/me': 'GET', '/auth/logout': 'POST' }

@@ -18,7 +18,7 @@ class AuthService
     {
     }
 
-    public function register(string $email, string $password, string $displayName, ?string $code = null): array
+    public function register(string $email, string $password, string $displayName, ?string $code = null, string $ip = ''): array
     {
         if (!Mailer::enabled()) {
             return ['error' => '邮箱验证服务未开启，暂不开放自助注册', 'status' => 503];
@@ -35,6 +35,10 @@ class AuthService
             }
         }
 
+        if ($ip !== '') {
+            $quotaError = (new RegistrationQuotaService())->reserve($ip);
+            if ($quotaError !== null) return ['error' => $quotaError, 'status' => 429];
+        }
         return $this->createAccount($email, $password, $displayName);
     }
 
@@ -105,6 +109,7 @@ class AuthService
             $this->lockVerificationQuota($email, $ip);
             $now = time(); // Waiting for a lock must not shorten the cooldown/expiry.
             $windowStart = date('Y-m-d H:i:s', $now - 3600);
+            $dayStart = date('Y-m-d H:i:s', $now - 86400);
             $last = EmailVerification::query()
                 ->where('email', $email)->where('purpose', 'register')
                 ->orderByDesc('id')->first();
@@ -117,19 +122,26 @@ class AuthService
             if ($emailCount >= 5) {
                 return ['error' => '该邮箱验证码请求过于频繁，请一小时后再试'];
             }
+            $dailyEmailCount = EmailVerification::query()->where('email', $email)->where('purpose', 'register')
+                ->where('created_at', '>=', $dayStart)->count();
+            if ($dailyEmailCount >= 10) return ['error' => '该邮箱今日验证码次数已达上限，请稍后再试'];
             if ($ip !== '') {
                 $ipCount = EmailVerification::query()->where('ip', $ip)
                     ->where('created_at', '>=', $windowStart)->count();
-                if ($ipCount >= 60) {
+                if ($ipCount >= 20) {
                     return ['error' => '请求过于频繁，请稍后再试'];
                 }
+            }
+            $dailyLimit = max(1, (int) (getenv('MAIL_DAILY_LIMIT') ?: 500));
+            if (EmailVerification::query()->where('created_at', '>=', $dayStart)->count() >= $dailyLimit) {
+                return ['error' => '今日验证码发送额度已达上限，请稍后再试'];
             }
             EmailVerification::create([
                 'email' => $email,
                 'purpose' => 'register',
                 'code_hash' => hash('sha256', $code . $email),
                 'attempts' => 0,
-                'expires_at' => date('Y-m-d H:i:s', $now + 600),
+                'expires_at' => date('Y-m-d H:i:s', $now + 300),
                 'ip' => $ip !== '' ? $ip : null,
                 'created_at' => date('Y-m-d H:i:s', $now),
             ]);
@@ -189,6 +201,8 @@ class AuthService
         $keys = [hash('sha256', 'email:register:' . $email)];
         if ($ip !== '') {
             $keys[] = hash('sha256', 'ip:' . $ip);
+            // Shared by all senders so distinct emails/IPs cannot race the budget.
+            $keys[] = hash('sha256', 'global:mail:register');
         }
         sort($keys, SORT_STRING);
         foreach ($keys as $key) {
@@ -206,7 +220,7 @@ class AuthService
             . '<div style="border:1px solid #e5e7eb;border-top:none;padding:28px;border-radius:0 0 12px 12px;">'
             . '<p style="margin:0 0 12px;">你好！你正在注册观澜账号，验证码为：</p>'
             . '<p style="margin:0 0 16px;font-size:32px;font-weight:700;letter-spacing:8px;color:#0f172a;">' . $code . '</p>'
-            . '<p style="margin:0 0 6px;color:#6b7280;font-size:13px;">验证码 10 分钟内有效，请勿泄露给他人。</p>'
+            . '<p style="margin:0 0 6px;color:#6b7280;font-size:13px;">验证码 5 分钟内有效，请勿泄露给他人。</p>'
             . '<p style="margin:0;color:#6b7280;font-size:13px;">如果这不是你的操作，请忽略本邮件。</p>'
             . '</div></div>';
     }

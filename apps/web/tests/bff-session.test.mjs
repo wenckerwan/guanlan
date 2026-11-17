@@ -7,11 +7,11 @@ import { buildSync } from 'esbuild'
 import { createApp, toNodeListener } from 'h3'
 import { assertSameOrigin, upstreamURL } from '../server/utils/session-policy.mjs'
 
-async function visitBff(t, upstream, environment = 'production') {
+async function visitBff(t, upstream, environment = 'production', runtime = {}) {
   const calls = []
   const code = buildSync({ entryPoints: ['server/api/v1/[...path].ts'], bundle: true, write: false, platform: 'node', format: 'cjs', external: ['h3'] }).outputFiles[0].text
   const box = { module: { exports: {} }, exports: {}, require: createRequire(import.meta.url), Headers, URL, process: { env: { NODE_ENV: environment } },
-    useRuntimeConfig: () => ({ apiInternalBase: 'http://api:9501/api/v1', sessionOrigin: 'https://app.test' }),
+    useRuntimeConfig: () => ({ apiInternalBase: 'http://api:9501/api/v1', sessionOrigin: 'https://app.test', ...runtime }),
     fetch: async (url, options) => { calls.push({ url, options: { ...options, headers: new Headers(options.headers) } }); return upstream(url, options) },
   }
   vm.runInNewContext(code, box)
@@ -20,6 +20,35 @@ async function visitBff(t, upstream, environment = 'production') {
   t.after(() => new Promise(resolve => server.close(resolve)))
   return { calls, request: (path, options) => fetch(`http://127.0.0.1:${server.address().port}/api/v1${path}`, options) }
 }
+
+test('BFF authenticates the trusted gateway address and discards incoming signature headers', async t => {
+  const { createHmac } = await import('node:crypto')
+  const secret = 'a'.repeat(64)
+  const { calls, request } = await visitBff(t, () => Response.json({ data: {} }), 'production', {
+    trustedGatewayIps: '127.0.0.1', bffProxySecret: secret,
+  })
+  const response = await request('/auth/email/code', { method: 'POST', headers: {
+    Origin: 'https://app.test', 'X-Real-IP': '198.51.100.9', 'X-Forwarded-For': '203.0.113.123',
+    'X-Guanlan-Client-IP': '203.0.113.124', 'X-Guanlan-Client-Signature': 'attacker',
+  } })
+  assert.equal(response.status, 200); await response.text()
+  const headers = calls.at(-1).options.headers
+  assert.equal(headers.get('X-Forwarded-For'), '198.51.100.9')
+  assert.equal(headers.get('X-Guanlan-Client-IP'), '198.51.100.9')
+  const timestamp = headers.get('X-Guanlan-Client-Time')
+  assert.equal(headers.get('X-Guanlan-Client-Signature'), createHmac('sha256', secret).update(`${timestamp}\nPOST\n/api/v1/auth/email/code\n198.51.100.9`).digest('hex'))
+})
+
+test('BFF accepts a configured second origin but rejects unlisted origins', async t => {
+  const { calls, request } = await visitBff(t, () => Response.json({ data: {} }), 'production', {
+    sessionOrigins: 'https://app.test,https://second.test',
+  })
+  const good = await request('/auth/email/code', { method: 'POST', headers: { Origin: 'https://second.test', 'Sec-Fetch-Site': 'same-origin' } })
+  assert.equal(good.status, 200); await good.text()
+  const count = calls.length
+  const bad = await request('/auth/email/code', { method: 'POST', headers: { Origin: 'https://evil.test', 'Sec-Fetch-Site': 'same-origin' } })
+  assert.equal(bad.status, 403); await bad.text(); assert.equal(calls.length, count)
+})
 
 for (const path of ['/auth/login/', '//auth/login', '/auth/%6cogin', '/auth/login%2f', '/../auth/login', '/auth/./login', '/auth\\login']) {
   test(`reject noncanonical path ${path}`, () => assert.throws(() => upstreamURL('http://api:9501/api/v1', path)))

@@ -101,9 +101,9 @@ namespace {
         }
         Swoole\Coroutine\run(static function () use ($request): void {
             $service = verificationTestService();
-            $result = $request['operation'] === 'verify'
+            $result = $request['operation'] === 'quota' ? (new App\Service\RegistrationQuotaService())->reserve($request['ip']) : ($request['operation'] === 'verify'
                 ? $service->verifyRegisterCode($request['email'], $request['code'])
-                : $service->sendRegisterCode($request['email'], $request['ip']);
+                : $service->sendRegisterCode($request['email'], $request['ip']));
             echo json_encode(['result' => $result], JSON_THROW_ON_ERROR) . PHP_EOL;
         });
         exit(0);
@@ -116,6 +116,7 @@ namespace {
             foreach ([
                 'email_verifications' => ['2026_09_30_000007_create_email_verifications_table.php', 'CreateEmailVerificationsTable'],
                 'email_verification_locks' => ['2026_11_04_000001_create_email_verification_locks_table.php', 'CreateEmailVerificationLocksTable'],
+                'registration_quotas' => ['2026_11_17_000001_create_registration_quotas_table.php', 'CreateRegistrationQuotasTable'],
             ] as $table => [$file, $class]) {
                 $query = $pdo->prepare('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?');
                 $query->execute([$table]);
@@ -130,6 +131,7 @@ namespace {
             $reset = static function () use ($pdo): void {
                 $pdo->exec('DELETE FROM email_verifications');
                 $pdo->exec('DELETE FROM email_verification_locks');
+                $pdo->exec('DELETE FROM registration_quotas');
             };
             $seed = static function (string $email, string $code, int $age = 120, ?string $ip = null) use ($pdo): void {
                 $query = $pdo->prepare('INSERT INTO email_verifications (email,purpose,code_hash,attempts,expires_at,ip,created_at,updated_at) VALUES (?,\'register\',?,0,?,?,?,?)');
@@ -156,10 +158,36 @@ namespace {
             echo "PASS email hourly quota\n";
 
             $reset();
-            for ($i = 0; $i < 59; ++$i) $seed('seed-' . $i . '@example.test', '123456', 120, '192.0.2.10');
+            for ($i = 0; $i < 19; ++$i) $seed('seed-' . $i . '@example.test', '123456', 120, '192.0.2.10');
             $results = verificationTestRace(array_map(static fn ($i) => $send('ip-' . $i . '@example.test', '192.0.2.10'), range(0, 7)));
-            verificationTestCheck($successes($results) === 1 && (int) $pdo->query('SELECT COUNT(*) FROM email_verifications')->fetchColumn() === 60, 'IP quota exceeded sixty');
+            verificationTestCheck($successes($results) === 1 && (int) $pdo->query('SELECT COUNT(*) FROM email_verifications')->fetchColumn() === 20, 'IP quota exceeded twenty');
             echo "PASS shared IP hourly quota\n";
+
+            $reset();
+            for ($i = 0; $i < 10; ++$i) $seed('daily@example.test', '123456', 3700 + $i * 65);
+            verificationTestCheck(isset(verificationTestService()->sendRegisterCode('daily@example.test', '192.0.2.99')['error']), 'Daily email cap bypassed outside hourly window');
+            echo "PASS rolling email daily cap\n";
+
+            $reset(); putenv('MAIL_DAILY_LIMIT=5');
+            for ($i = 0; $i < 4; ++$i) $seed('global-' . $i . '@example.test', '123456', 3700);
+            $results = verificationTestRace(array_map(static fn ($i) => $send('cap-' . $i . '@example.test', '192.0.2.' . ($i + 100)), range(0, 7)));
+            verificationTestCheck($successes($results) === 1 && (int) $pdo->query('SELECT COUNT(*) FROM email_verifications')->fetchColumn() === 5, 'Global daily budget exceeded concurrently');
+            putenv('MAIL_DAILY_LIMIT=500');
+            echo "PASS concurrent global daily budget\n";
+
+            $reset();
+            $quota = new App\Service\RegistrationQuotaService();
+            for ($i = 0; $i < 5; ++$i) verificationTestCheck($quota->reserve('192.0.2.200') === null, 'Registration quota blocked early');
+            verificationTestCheck($quota->reserve('192.0.2.200') !== null, 'Registration cap bypassed');
+            verificationTestCheck($quota->reserve('192.0.2.201') === null, 'Different visitor shared registration quota');
+            $pdo->exec('UPDATE registration_quotas SET expires_at = NOW() - INTERVAL 1 SECOND');
+            verificationTestCheck($quota->reserve('192.0.2.200') === null, 'Registration quota did not expire');
+            echo "PASS registration daily cap and expiry\n";
+
+            $reset();
+            $results = verificationTestRace(array_fill(0, 8, ['operation' => 'quota', 'ip' => '192.0.2.210']));
+            verificationTestCheck(count(array_filter($results, static fn ($row) => $row['result'] === null)) === 5, 'Concurrent registration quota bypassed cap');
+            echo "PASS concurrent registration daily cap\n";
 
             $reset(); $seed('code@example.test', '123456');
             verificationTestRace(array_fill(0, 8, $verify('000000')));

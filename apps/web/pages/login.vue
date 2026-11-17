@@ -19,6 +19,10 @@ const notice = ref('')
 const pending = ref(false)
 const sending = ref(false)
 const countdown = ref(0)
+const turnstileToken = ref('')
+const challengeReset = ref(0)
+const siteKey = computed(() => String(config.public.turnstileSiteKey || ''))
+const challengePending = computed(() => Boolean(siteKey.value) && !turnstileToken.value)
 let timer: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => restore())
@@ -27,7 +31,7 @@ onUnmounted(() => {
   if (timer) clearInterval(timer)
 })
 
-const codeDisabled = computed(() => countdown.value > 0 || sending.value || !/^\S+@\S+\.\S+$/.test(email.value))
+const codeDisabled = computed(() => countdown.value > 0 || sending.value || pending.value || challengePending.value || !/^\S+@\S+\.\S+$/.test(email.value))
 
 // 仅允许站内相对路径，防开放跳转（含 /mayuan/、/history/ 子应用路径）。
 function sanitizeRedirect(target: string): string {
@@ -57,24 +61,27 @@ async function sendCode() {
     await $fetch('/auth/email/code', {
       baseURL: config.public.apiBase as string,
       method: 'POST',
-      body: { email: email.value.trim() },
+      body: { email: email.value.trim(), turnstileToken: turnstileToken.value },
     })
-    notice.value = '验证码已发送，请查收邮件（注意垃圾邮件箱）'
+    notice.value = '若该邮箱符合注册条件，验证码将发送，请检查收件箱及垃圾邮件箱'
     startCountdown()
   } catch (exception) {
     const data = (exception as { data?: { message?: string } })?.data
     error.value = data?.message || '验证码发送失败，请稍后重试'
   } finally {
+    turnstileToken.value = ''
+    ++challengeReset.value
     sending.value = false
   }
 }
 
 async function submit() {
+  if (pending.value || sending.value || (mode.value === 'register' && challengePending.value)) return
   error.value = ''
   pending.value = true
   try {
     if (mode.value === 'register') {
-      await register(email.value.trim(), password.value, displayName.value.trim(), code.value.trim())
+      await register(email.value.trim(), password.value, displayName.value.trim(), code.value.trim(), turnstileToken.value)
     } else {
       await login(email.value.trim(), password.value)
     }
@@ -90,6 +97,7 @@ async function submit() {
     const data = (exception as { data?: { message?: string } })?.data
     error.value = data?.message || '操作失败，请检查邮箱与密码'
   } finally {
+    if (mode.value === 'register') { turnstileToken.value = ''; ++challengeReset.value }
     pending.value = false
   }
 }
@@ -131,10 +139,11 @@ async function submit() {
             <input v-model="password" type="password" required :autocomplete="mode === 'login' ? 'current-password' : 'new-password'" :minlength="mode === 'register' ? 6 : undefined" placeholder="至少 6 位" />
           </label>
 
+          <RegistrationChallenge v-if="mode === 'register' && siteKey" :site-key="siteKey" :reset-key="challengeReset" @token="turnstileToken = $event" />
           <p v-if="notice" class="auth-notice">{{ notice }}</p>
           <p v-if="error" class="auth-error">{{ error }}</p>
 
-          <button class="primary-button wide" type="submit" :disabled="pending">
+          <button class="primary-button wide" type="submit" :disabled="pending || sending || (mode === 'register' && challengePending)">
             {{ pending ? '处理中…' : (mode === 'login' ? '登录' : '注册并登录') }}
           </button>
         </form>

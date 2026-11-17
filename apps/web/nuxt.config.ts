@@ -4,8 +4,12 @@ export default defineNuxtConfig({
   typescript: { strict: true, typeCheck: false },
   runtimeConfig: {
     sessionOrigin: process.env.NUXT_SESSION_ORIGIN || (process.env.NODE_ENV === 'production' ? 'https://guanlan.wencker.top' : ''),
+    sessionOrigins: '',
+    trustedGatewayIps: '',
+    bffProxySecret: '',
     apiInternalBase: process.env.NUXT_API_INTERNAL_BASE || 'http://api:9501/api/v1',
     public: {
+      turnstileSiteKey: '',
       apiBase: process.env.NUXT_PUBLIC_API_BASE || '/api/v1',
       commentsEnabled: process.env.NUXT_PUBLIC_COMMENTS_ENABLED === 'true',
       mayuanBase: process.env.NUXT_PUBLIC_MAYUAN_BASE || '/mayuan/',
