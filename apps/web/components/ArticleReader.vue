@@ -8,12 +8,12 @@ const active = ref('')
 </script>
 
 <template>
-  <div class="reader-layout">
+  <div class="reader-layout" :class="{ 'reader-layout--single': !article.outline?.length }">
     <aside v-if="article.outline?.length" class="reader-toc">
       <div class="section-heading compact"><div><span class="section-kicker">目录</span><h2>本篇结构</h2></div></div>
       <ul>
         <li v-for="(item, index) in article.outline" :key="index">
-          <a :href="`#toc-${index}`" :class="{ active: active === `toc-${index}`, sub: item.level === 3 }" @click="active = `toc-${index}`">{{ item.title }}</a>
+          <a :href="`#toc-${index}`" :aria-current="active === `toc-${index}` ? 'location' : undefined" :class="{ active: active === `toc-${index}`, sub: item.level === 3 }" @click="active = `toc-${index}`">{{ item.title }}</a>
         </li>
       </ul>
     </aside>

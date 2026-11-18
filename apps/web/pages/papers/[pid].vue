@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, nextTick, reactive, ref } from 'vue'
 import { ArrowLeft, Check, RotateCcw, X } from 'lucide-vue-next'
 import type { PaperDetail, Question } from '~/types/api'
 import { displayAnswer, gradePaper, isCorrect, toLetters } from '~/utils/quiz.mjs'
@@ -15,10 +15,14 @@ const { data } = await useApiFetch<PaperDetail>(`/papers/${encodeURIComponent(pi
 const questions = computed<Question[]>(() => data.value?.questions ?? [])
 const answers = reactive<Record<number, string>>({})
 const submitted = ref(false)
+const gradeSummary = ref<HTMLElement | null>(null)
 const collectNotice = ref('')
 
 async function submitPaper() {
+  if (submitted.value || !questions.value.length) return
   submitted.value = true
+  await nextTick()
+  gradeSummary.value?.focus()
   if (!isLoggedIn.value) return
   try {
     const result = await request<{ collected: number }>('/study/attempts/batch', {
@@ -79,11 +83,11 @@ function stateOf(question: Question) {
         </div>
         <div class="quiz-head-actions">
           <button class="ghost-button" type="button" @click="reset"><RotateCcw :size="15" />重做</button>
-          <button class="primary-button" type="button" :disabled="submitted" @click="submitPaper"><Check :size="15" />交卷判分</button>
+          <button class="primary-button" type="button" :disabled="submitted || !questions.length" @click="submitPaper"><Check :size="15" />交卷判分</button>
         </div>
       </section>
 
-      <section v-if="submitted" class="grade-banner">
+      <section v-if="submitted" ref="gradeSummary" class="grade-banner" tabindex="-1" aria-label="判分结果">
         <div><strong>{{ result.score }}</strong><small>得分</small></div>
         <div><strong>{{ result.right }}</strong><small>做对</small></div>
         <div><strong>{{ result.wrong }}</strong><small>做错</small></div>
@@ -113,7 +117,7 @@ function stateOf(question: Question) {
 
           <ul v-if="Object.keys(question.options).length" class="option-list">
             <li v-for="(text, letter) in question.options" :key="letter" :class="{ chosen: toLetters(answers[question.id]).includes(String(letter)) }">
-              <button type="button" :aria-pressed="toLetters(answers[question.id]).includes(String(letter))" @click="toggle(question, String(letter))">
+              <button type="button" :disabled="submitted" :aria-pressed="toLetters(answers[question.id]).includes(String(letter))" @click="toggle(question, String(letter))">
                 <span class="option-letter">{{ letter }}</span>
                 <span class="option-text">{{ text }}</span>
               </button>
@@ -132,6 +136,9 @@ function stateOf(question: Question) {
         </article>
       </section>
 
+      <div v-if="questions.length && !submitted" class="quiz-end-actions">
+        <button class="primary-button" type="button" @click="submitPaper"><Check :size="15" />交卷判分</button>
+      </div>
       <div v-if="!questions.length" class="empty-state">本卷暂无题目数据。</div>
       <NuxtLink class="back-link" to="/papers"><ArrowLeft :size="15" />返回真题列表</NuxtLink>
     </main>
@@ -147,8 +154,12 @@ function stateOf(question: Question) {
 }
 
 .collect-notice {
-  color: var(--accent, #b45309);
+  color: var(--gold);
   font-size: 0.875rem;
   font-weight: 600;
 }
+.quiz-end-actions { display: flex; justify-content: flex-end; margin-top: 24px; }
+.grade-banner { scroll-margin-top: 92px; }
+.option-list button:disabled:hover { border-color: var(--line); }
+.option-list .chosen button:disabled:hover { border-color: var(--red); }
 </style>

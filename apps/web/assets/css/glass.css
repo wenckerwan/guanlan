@@ -194,6 +194,7 @@ h1, h2, h3, .brand strong { font-family: inherit; }
 .article-copy em { color: var(--brand); }
 .priority-mark.b { color: var(--blue); background: var(--blue-soft); }
 .reader-layout { grid-template-columns: 220px minmax(0, 1fr); gap: 32px; }
+.reader-layout--single { grid-template-columns: minmax(0, 880px); justify-content: center; }
 .reader-toc { padding: 20px; border: 1px solid var(--line); border-radius: 20px; background: var(--gl-surface); backdrop-filter: none; }
 .reader-toc h2 { font-size: 16px; }
 .reader-toc a { padding: 9px 10px; border-radius: 9px; line-height: 1.7; }
@@ -208,7 +209,8 @@ h1, h2, h3, .brand strong { font-family: inherit; }
 .markdown-body h3 { font-size: 18px; }
 .markdown-body h4 { font-size: 16px; }
 .markdown-body blockquote { border-radius: 0 12px 12px 0; color: var(--ink); }
-.markdown-body table { display: block; overflow-x: auto; font-size: 14px; }
+.markdown-body table { display: block; max-width: 100%; overflow-x: auto; font-size: 14px; }
+.markdown-body th { min-inline-size: 8ch; }
 .markdown-body img { max-width: 100%; height: auto; border-radius: 10px; }
 .markdown-body :is(h2, h3, h4) { scroll-margin-top: 100px; }
 .filter-search { border: 1px solid var(--line); background: var(--gl-surface); border-radius: 14px; }
@@ -229,7 +231,9 @@ h1, h2, h3, .brand strong { font-family: inherit; }
 .question-stem { font-size: 16px; line-height: 1.85; }
 .question-material, .question-answer p, .note-list p { color: var(--ink); }
 .question-answer p { font-size: 14px; line-height: 1.85; }
-.option-list button { border-radius: 12px; padding: 13px 15px; font-size: 14px; background: var(--gl-surface); color: var(--ink); }
+.option-list button { min-width: 0; min-height: 44px; border-radius: 12px; padding: 13px 15px; font-size: 14px; background: var(--gl-surface); color: var(--ink); }
+.option-list .option-text { min-width: 0; overflow-wrap: anywhere; }
+.quiz-head-actions button { min-height: 44px; }
 .option-list button:hover { border-color: var(--brand); }
 .option-list.static > li, .redo-panel { border-radius: 12px; }
 .student-card header strong, .student-stat b, .stat-cell strong, .handbook-section h2, .quiz-head h1, .grade-banner strong, .auth-card h1 { font-family: inherit; }
