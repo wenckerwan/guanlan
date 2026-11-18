@@ -69,6 +69,21 @@ const mistakePath = '/api/v1/mistakes/students'
 const reviewPath = `${mistakePath}/${student.code}/review-summary`
 const handbook = { id: 1, studentCode: student.code, module: '马原', title: '实践与认识提分手册', sectionCount: 1, sections: [{ title: '复习建议', html: `<p>${paragraph}</p>` }] }
 const previewToken = 'lenso-preview-local'
+const bankId = 'current-affairs-2026'
+const practicePath = `/api/v1/practice/banks/${bankId}`
+const practiceStatePath = `/api/v1/study/practice/banks/${bankId}/state`
+const attemptPath = '/api/v1/study/practice/attempts'
+const favoritesPath = '/api/v1/study/favorites'
+const questionStates = new Map()
+const favoriteIds = new Set()
+const practiceQuestions = Array.from({ length: 8 }, (_, index) => {
+  const { type, stem, options, answer, analysis } = paper.questions[index % paper.questions.length]
+  return {
+    type, stem, options: { ...options, D: '忽略材料中不支持结论的事实' }, answer, analysis,
+    questionRef: `PREVIEW-${index + 1}`, questionVersion: '1',
+    module: index < 4 ? 'xs' : 'sx', event: '本地预览例题', knowledge: paragraph,
+  }
+})
 const data = new Map([
   ...articleLists.flatMap(path => [[`/api/v1${path}`, articlesMode === 'empty' ? [] : articles], [`/api/v1${path}/ui-preview`, article]]),
   ['/api/v1/subjects', subjectsMode === 'empty' ? [] : subjects],
@@ -89,6 +104,36 @@ const api = createServer(async (request, response) => {
   const items = keyword === '实践与认识' ? searchItems.filter(item => !type || item.type === type) : []
   const signedIn = request.headers.authorization === `Bearer ${previewToken}`
   let payload = isSearch ? { items, total: items.length, groups: Object.fromEntries(items.map(item => [item.type, 1])) } : data.get(url.pathname)
+  if (url.pathname === practicePath) {
+    const questions = signedIn ? practiceQuestions.map(({ answer, ...question }) => question) : practiceQuestions.slice(0, 3)
+    payload = { bankId, contentVersion: '1', questionCount: questions.length, questions }
+  }
+  if (signedIn && url.pathname === practiceStatePath) payload = { questions: Object.fromEntries(questionStates) }
+  if (signedIn && url.pathname === favoritesPath) payload = [...favoriteIds].map(targetId => ({ targetId }))
+  const attempt = signedIn && request.method === 'POST' && url.pathname === attemptPath
+  const favorite = signedIn && request.method === 'PUT' && url.pathname === favoritesPath
+  if (attempt || favorite) {
+    try {
+      let body = ''
+      for await (const chunk of request) body += chunk
+      const event = JSON.parse(body)
+      if (attempt) {
+        const question = practiceQuestions.find(item => item.questionRef === event.questionRef)
+        if (!question) throw new Error('Unknown preview question')
+        const isRight = event.chosen.join('') === question.answer
+        const questionState = {
+          attemptCount: (questionStates.get(event.questionRef)?.attemptCount ?? 0) + 1,
+          lastChosen: event.chosen, lastIsRight: isRight, lastCorrect: question.answer,
+        }
+        questionStates.set(event.questionRef, questionState)
+        payload = { isRight, correct: question.answer, duplicate: false, questionState }
+      } else {
+        if (event.favorited) favoriteIds.add(event.targetId)
+        else favoriteIds.delete(event.targetId)
+        payload = { favorited: event.favorited }
+      }
+    } catch { payload = undefined }
+  }
   if (url.pathname === '/api/v1/auth/me' && signedIn) payload = { user: { id: 1, displayName: student.name, role: 'user', status: 'active' } }
   if (url.pathname === mistakePath) payload = signedIn ? [student] : []
   if (signedIn && url.pathname === `${mistakePath}/${student.code}/items`) {
@@ -112,14 +157,14 @@ const api = createServer(async (request, response) => {
   const articleList = articleLists.some(path => url.pathname === `/api/v1${path}`)
   const lockedArticle = articleLists.some(path => url.pathname === `/api/v1${path}/ui-preview-locked`)
   const unavailable = (isSearch && keyword === '请求失败') || (url.pathname === '/api/v1/subjects' && subjectsMode === 'error') || (articleList && articlesMode === 'error')
-  const allowed = (request.method === 'GET' || review) && payload !== undefined
-  const privatePath = url.pathname.startsWith(`${mistakePath}/`) || url.pathname === '/api/v1/mistakes/items/1/review' || url.pathname === '/api/v1/mistakes/handbooks/1'
+  const allowed = (request.method === 'GET' || review || attempt || favorite) && payload !== undefined
+  const privatePath = url.pathname.startsWith(`${mistakePath}/`) || ['/api/v1/mistakes/items/1/review', '/api/v1/mistakes/handbooks/1', practiceStatePath, attemptPath, favoritesPath].includes(url.pathname)
   const status = request.method === 'OPTIONS' ? 204 : unavailable ? 503 : lockedArticle || (privatePath && !signedIn) ? 403 : allowed ? 200 : 404
   response.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Headers': 'authorization, content-type',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
   })
   response.end(JSON.stringify({ data: allowed ? payload : undefined }))
 })
