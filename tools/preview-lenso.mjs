@@ -9,6 +9,8 @@ if (!Number.isInteger(webPort) || webPort < 1024 || webPort > 65535) {
   throw new Error('Pass a preview port between 1024 and 65535.')
 }
 const origin = `http://${host}:${webPort}`
+const subjectsMode = process.argv[3] ?? 'normal'
+if (!['normal', 'empty', 'error'].includes(subjectsMode)) throw new Error('Subjects mode must be normal, empty, or error.')
 const title = '从实践到认识：一道材料题怎样展开'
 const topics = ['提取材料线索', '区分概念', '组织答案']
 const paragraph = '分析材料时，先找出主体、行动与结果，再判断每段对应的原理。作答时用材料里的具体事例支持判断，并用一句话说明事例与原理之间的关系。'
@@ -36,7 +38,21 @@ const paper = {
     analysis: '关键是让判断与材料中的证据对应。',
   })),
 }
+const subjects = [
+  {
+    slug: 'ui-preview', short: '马原', name: '马克思主义基本原理', tone: 'jade',
+    detail: '从实践、认识和社会发展规律梳理概念。', intro: paragraph, hotspots: [],
+    chapters: topics.map((topic, index) => ({
+      id: `preview-${index + 1}`,
+      title: index === 1 ? '区分概念：从认识的来源、发展过程和检验标准理解实践与认识的关系' : topic,
+      summary: paragraph,
+      points: index === 2 ? [] : [{ title: `${topic}的复习要点`, summary: paragraph }],
+    })),
+  },
+  { slug: 'ui-preview-empty', short: '史纲', name: '中国近现代史纲要', tone: 'gold', detail: '本地空章节样板。', intro: '中国近现代史学习资料。', hotspots: [], chapters: [] },
+]
 const data = new Map([
+  ['/api/v1/subjects', subjectsMode === 'empty' ? [] : subjects],
   ['/api/v1/home', { hotspots: [{ ...article, level: 'A', period: '2026-11', url: '/hotspots/ui-preview' }], documents: [], subjects: [], stats: { papers: 1, questions: 3, hotspots: 2 } }],
   ['/api/v1/hotspots/ui-preview', article],
   ['/api/v1/hotspots/ui-preview-no-outline', { ...article, outline: [] }],
@@ -54,7 +70,8 @@ const api = createServer((request, response) => {
   const type = url.searchParams.get('type')
   const items = keyword === '实践与认识' ? searchItems.filter(item => !type || item.type === type) : []
   const payload = isSearch ? { items, total: items.length, groups: Object.fromEntries(items.map(item => [item.type, 1])) } : data.get(url.pathname)
-  const status = isSearch && keyword === '请求失败' ? 503 : request.method === 'GET' && payload !== undefined ? 200 : 404
+  const unavailable = (isSearch && keyword === '请求失败') || (url.pathname === '/api/v1/subjects' && subjectsMode === 'error')
+  const status = unavailable ? 503 : request.method === 'GET' && payload !== undefined ? 200 : 404
   response.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': origin,
