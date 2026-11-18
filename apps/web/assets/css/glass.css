@@ -193,7 +193,7 @@ h1, h2, h3, .brand strong { font-family: inherit; }
 .library-heading p { margin: 0; color: var(--muted); line-height: 1.7; }
 .library-page .breadcrumbs strong { overflow-wrap: anywhere; }
 .library-list, .library-points { margin: 0; padding: 0; list-style: none; border-block: 1px solid var(--line); }
-.library-list li + li, .library-points li + li { border-top: 1px solid var(--line); }
+.library-list > li + li, .library-points > li + li { border-top: 1px solid var(--line); }
 .library-row, .library-toc-link { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 44px; padding: 10px 12px; background: var(--gl-surface); overflow-wrap: anywhere; }
 .library-row:hover strong, .library-toc-link:hover { color: var(--brand); text-decoration: underline; }
 .library-row > svg, .library-toc-link > svg { color: var(--muted); }

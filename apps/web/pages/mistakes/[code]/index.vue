@@ -22,7 +22,7 @@ const itemsPath = computed(() => withQuery(`/mistakes/students/${code}/items`, {
   perPage,
   module: activeModule.value,
 }))
-const { data, error } = await useApiFetch<MistakeItemsPayload | null>(
+const { data, pending, error, refresh } = await useApiFetch<MistakeItemsPayload | null>(
   itemsPath,
   null,
   { watch: [page, activeModule] },
@@ -243,13 +243,13 @@ async function submitRedo(item: MistakeItem) {
 <template>
   <div class="site-shell">
     <SiteHeader />
-    <main class="page-wrap inner-page">
-      <Breadcrumbs />
+    <main class="page-wrap inner-page library-page mistake-book">
+      <Breadcrumbs parent-name="错题分析" parent-path="/mistakes" :subject-name="student?.name" />
 
       <section v-if="student" class="quiz-head">
         <div>
           <span class="section-kicker">考生 {{ student.code }} · {{ student.relation }}</span>
-          <h1>{{ student.name }} 的错题册</h1>
+          <h1>{{ student.name }}的错题册</h1>
           <p>共 {{ student.itemCount }} 道错题，按模块与错因归类，配提分手册。</p>
         </div>
         <div class="quiz-head-actions">
@@ -290,13 +290,19 @@ async function submitRedo(item: MistakeItem) {
         </div>
       </section>
 
-      <nav class="filter-chips">
-        <button type="button" class="chip" :class="{ active: activeModule === '' }" @click="activeModule = ''">全部模块</button>
-        <button v-for="name in modules" :key="name" type="button" class="chip" :class="{ active: activeModule === name }" @click="activeModule = name">{{ name }} · {{ student?.moduleCounts[name] }}</button>
-        <span class="filter-count">当前 {{ items.length }} 道 · 共 {{ total }} 道</span>
-      </nav>
+      <div v-if="student" class="filter-chips" role="group" aria-label="按模块筛选">
+        <button type="button" class="chip" :aria-pressed="activeModule === ''" :class="{ active: activeModule === '' }" @click="activeModule = ''">全部模块</button>
+        <button v-for="name in modules" :key="name" type="button" class="chip" :aria-pressed="activeModule === name" :class="{ active: activeModule === name }" @click="activeModule = name">{{ name }} · {{ student?.moduleCounts[name] }}</button>
+        <span v-if="!pending && !error" class="filter-count">当前 {{ items.length }} 道 · 共 {{ total }} 道</span>
+      </div>
 
-      <section class="quiz-body">
+      <p v-if="pending" class="library-state" role="status">正在加载错题…</p>
+      <div v-else-if="error" class="library-state">
+        <p role="alert">错题暂时加载失败。</p>
+        <button class="ghost-button" type="button" @click="refresh()">重试</button>
+      </div>
+      <p v-else-if="!items.length" class="library-state" role="status">暂无错题。</p>
+      <section v-else class="quiz-body">
         <article v-for="item in items" :key="item.id" class="question-card mistake-card" :class="item.errorType === '既漏又错' ? 'wrong' : ''">
           <header class="question-header">
             <span class="q-no">{{ item.sourceNo }}</span>
@@ -325,7 +331,7 @@ async function submitRedo(item: MistakeItem) {
           </div>
 
           <div class="mistake-item-actions">
-            <button class="ghost-button small" type="button" @click="toggleRedo(item)">
+            <button class="ghost-button small" type="button" :aria-expanded="!!redoOpen[item.id]" :aria-controls="redoOpen[item.id] ? `redo-${item.id}` : undefined" @click="toggleRedo(item)">
               <RotateCcw :size="13" />{{ redoOpen[item.id] ? '收起重练' : '开始重练' }}
             </button>
             <button v-if="isLoggedIn" class="ghost-button small" type="button" :class="{ faved: favMap[item.id] }" @click="toggleFav(item)">
@@ -335,11 +341,11 @@ async function submitRedo(item: MistakeItem) {
               <Trash2 :size="13" />删除
             </button>
           </div>
-          <div v-if="redoOpen[item.id]" class="redo-panel">
+          <div v-if="redoOpen[item.id]" :id="`redo-${item.id}`" class="redo-panel">
             <p class="redo-title">重新作答 · {{ isMulti(item) ? '多选题' : '单选题' }}</p>
             <ul class="option-list redo-options">
               <li v-for="option in item.options" :key="option.label" :class="{ chosen: redoChoices[item.id]?.includes(option.label) }">
-                <button type="button" @click="chooseRedo(item, option.label)">
+                <button type="button" :aria-pressed="!!redoChoices[item.id]?.includes(option.label)" @click="chooseRedo(item, option.label)">
                   <span class="option-letter">{{ option.label }}</span>
                   <span class="option-text">{{ option.text }}</span>
                 </button>
@@ -348,16 +354,15 @@ async function submitRedo(item: MistakeItem) {
             <button class="primary-button small" type="button" :disabled="!redoChoices[item.id]?.length" @click="submitRedo(item)">
               <Send :size="13" />提交答案
             </button>
-            <p v-if="redoResults[item.id] !== null && redoResults[item.id] !== undefined" class="redo-state" :class="redoResults[item.id] ? 'success' : 'failure'">
+            <p v-if="redoResults[item.id] !== null && redoResults[item.id] !== undefined" class="redo-state" role="status" :class="redoResults[item.id] ? 'success' : 'failure'">
               <Check :size="13" />{{ redoResults[item.id] ? '本次答对' : '本次答错' }} · 你的答案 {{ displayAnswer((redoChoices[item.id] ?? []).join('')) }} · 正确答案 {{ displayAnswer(item.correctAnswer) }}
             </p>
-            <p v-if="redoNotices[item.id]" class="redo-notice">{{ redoNotices[item.id] }}</p>
+            <p v-if="redoNotices[item.id]" class="redo-notice" role="status">{{ redoNotices[item.id] }}</p>
           </div>
         </article>
       </section>
 
-      <div v-if="!items.length" class="empty-state">暂无错题。</div>
-      <PaginationControls :page="data?.page ?? page" :total="total" :per-page="data?.perPage ?? perPage" @change="page = $event" />
+      <PaginationControls v-if="!pending && !error" :page="data?.page ?? page" :total="total" :per-page="data?.perPage ?? perPage" @change="page = $event" />
       <NuxtLink class="back-link" to="/mistakes"><ArrowLeft :size="15" />返回考生列表</NuxtLink>
     </main>
     <SiteFooter />
@@ -365,6 +370,15 @@ async function submitRedo(item: MistakeItem) {
 </template>
 
 <style scoped>
+.mistake-book .quiz-head { margin-top: 24px; }
+.mistake-book .quiz-head-actions { flex-wrap: wrap; }
+.mistake-book .quiz-head-actions a, .mistake-book .chip, .mistake-book .small { min-height: 44px; }
+.mistake-book .filter-chips { margin-bottom: 16px; }
+.mistake-card { overflow-wrap: anywhere; }
+.mistake-card .option-list.static > li { flex-wrap: wrap; }
+.mistake-card .option-list.static .option-text { flex: 1 1 min(14ch, 100%); }
+.mistake-card .option-list.static em { white-space: normal; }
+.mistake-action { color: var(--ink); background: var(--gl-secondary); border-radius: var(--gl-radius-control); }
 .mistake-item-actions {
   display: flex;
   flex-wrap: wrap;

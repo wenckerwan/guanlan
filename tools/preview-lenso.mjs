@@ -58,6 +58,17 @@ const articles = [
   { ...article, period: '2026-11', layer: '真题反推', release: true },
   { title: '如何从政策材料中区分政策目标、实施路径与阶段成果', slug: 'ui-preview-locked', summary: paragraph, period: '2026-11', layer: '真题反推', category: article.category, priority: 'S', locked: true },
 ]
+const student = { code: 'ui-preview', name: '样板考生', relation: '本人', itemCount: 1, moduleCounts: { 马原: 1 }, errorTypes: { 概念混淆: 1 } }
+const mistake = {
+  id: 1, module: '马原', chapter: '实践与认识', sourceNo: '样题 01', kaodian: '实践是认识的基础',
+  stem: '结合调查研究的过程，哪一项体现了实践对认识的作用？',
+  options: [{ label: 'A', text: '实地调查为形成和检验认识提供依据', mark: 'missed' }, { label: 'B', text: '判断只依靠已有结论', mark: 'chosen' }],
+  myAnswer: 'B', correctAnswer: 'A', qType: '单选题', errorType: '概念混淆', action: '区分认识的来源与检验标准。',
+}
+const mistakePath = '/api/v1/mistakes/students'
+const reviewPath = `${mistakePath}/${student.code}/review-summary`
+const handbook = { id: 1, studentCode: student.code, module: '马原', title: '实践与认识提分手册', sectionCount: 1, sections: [{ title: '复习建议', html: `<p>${paragraph}</p>` }] }
+const previewToken = 'lenso-preview-local'
 const data = new Map([
   ...articleLists.flatMap(path => [[`/api/v1${path}`, articlesMode === 'empty' ? [] : articles], [`/api/v1${path}/ui-preview`, article]]),
   ['/api/v1/subjects', subjectsMode === 'empty' ? [] : subjects],
@@ -70,22 +81,47 @@ const searchItems = [
   { type: 'hotspot', title, snippet: paragraph, url: '/hotspots/ui-preview', meta: '阅读样板', matchLocation: 'body' },
   { type: 'paper', title: '2026 年考研政治真题（本地样板）', snippet: '单选题、多选题与作答解析。', url: '/papers/ui-preview', meta: '2026', matchLocation: 'summary' },
 ]
-const api = createServer((request, response) => {
+const api = createServer(async (request, response) => {
   const url = new URL(request.url, origin)
   const isSearch = request.method === 'GET' && url.pathname === '/api/v1/search'
   const keyword = url.searchParams.get('q')
   const type = url.searchParams.get('type')
   const items = keyword === '实践与认识' ? searchItems.filter(item => !type || item.type === type) : []
-  const payload = isSearch ? { items, total: items.length, groups: Object.fromEntries(items.map(item => [item.type, 1])) } : data.get(url.pathname)
+  const signedIn = request.headers.authorization === `Bearer ${previewToken}`
+  let payload = isSearch ? { items, total: items.length, groups: Object.fromEntries(items.map(item => [item.type, 1])) } : data.get(url.pathname)
+  if (url.pathname === '/api/v1/auth/me' && signedIn) payload = { user: { id: 1, displayName: student.name, role: 'user', status: 'active' } }
+  if (url.pathname === mistakePath) payload = signedIn ? [student] : []
+  if (signedIn && url.pathname === `${mistakePath}/${student.code}/items`) {
+    const visible = !url.searchParams.get('module') || url.searchParams.get('module') === mistake.module ? [mistake] : []
+    payload = { student, items: visible, total: visible.length, page: 1, perPage: 20 }
+  }
+  if (signedIn && url.pathname === reviewPath) {
+    payload = { total: 1, new: 0, reviewing: 1, mastered: 0, snoozed: 0, dueToday: 0, overdue: 1, accuracy: 0.5, reviewCount: 2 }
+  }
+  if (signedIn && url.pathname === `${mistakePath}/${student.code}/handbooks`) payload = [handbook]
+  if (signedIn && url.pathname === '/api/v1/mistakes/handbooks/1') payload = handbook
+  const review = signedIn && request.method === 'POST' && url.pathname === '/api/v1/mistakes/items/1/review'
+  if (review) {
+    try {
+      let body = ''
+      for await (const chunk of request) body += chunk
+      const isCorrect = JSON.parse(body).chosen === mistake.correctAnswer
+      payload = { isCorrect, nextReviewAt: '2026-11-21', status: 'reviewing', reviewCount: 3, correctCount: isCorrect ? 2 : 1 }
+    } catch { payload = undefined }
+  }
   const articleList = articleLists.some(path => url.pathname === `/api/v1${path}`)
   const lockedArticle = articleLists.some(path => url.pathname === `/api/v1${path}/ui-preview-locked`)
   const unavailable = (isSearch && keyword === '请求失败') || (url.pathname === '/api/v1/subjects' && subjectsMode === 'error') || (articleList && articlesMode === 'error')
-  const status = unavailable ? 503 : lockedArticle ? 403 : request.method === 'GET' && payload !== undefined ? 200 : 404
+  const allowed = (request.method === 'GET' || review) && payload !== undefined
+  const privatePath = url.pathname.startsWith(`${mistakePath}/`) || url.pathname === '/api/v1/mistakes/items/1/review' || url.pathname === '/api/v1/mistakes/handbooks/1'
+  const status = request.method === 'OPTIONS' ? 204 : unavailable ? 503 : lockedArticle || (privatePath && !signedIn) ? 403 : allowed ? 200 : 404
   response.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Headers': 'authorization, content-type',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   })
-  response.end(JSON.stringify({ data: request.method === 'GET' ? payload : undefined }))
+  response.end(JSON.stringify({ data: allowed ? payload : undefined }))
 })
 api.listen(0, host)
 await once(api, 'listening')

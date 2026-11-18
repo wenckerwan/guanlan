@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
-import { ArrowLeft, Calendar, CheckCircle, Clock, RotateCcw, TrendingUp, BookOpen } from 'lucide-vue-next'
+import { ArrowLeft, CheckCircle, Clock, RotateCcw, TrendingUp, BookOpen } from 'lucide-vue-next'
 
 const route = useRoute()
 const code = String(route.params.code)
@@ -35,8 +35,9 @@ async function loadSummary() {
     error.value = ''
     const data = await request<ReviewSummary>(`/mistakes/students/${code}/review-summary`)
     summary.value = data
-  } catch (err: any) {
-    error.value = err.message || '加载失败'
+  } catch (err) {
+    const status = (err as { statusCode?: number } | null)?.statusCode
+    error.value = status === 403 ? '当前账号无法查看这份复习记录。' : '复习概览暂时加载失败。'
   } finally {
     loading.value = false
   }
@@ -50,6 +51,8 @@ const accuracyPercent = computed(() => {
   if (!summary.value) return 0
   return Math.round(summary.value.accuracy * 100)
 })
+const dueCount = computed(() => (summary.value?.dueToday ?? 0) + (summary.value?.overdue ?? 0))
+const bookPath = `/mistakes/${code}`
 
 useHead(() => ({ title: `复习概览 - 考生 ${code}｜观澜` }))
 </script>
@@ -57,27 +60,38 @@ useHead(() => ({ title: `复习概览 - 考生 ${code}｜观澜` }))
 <template>
   <div class="site-shell">
     <SiteHeader />
-    <main class="page-wrap inner-page">
-      <Breadcrumbs />
+    <main class="page-wrap inner-page library-page">
+      <Breadcrumbs parent-name="错题本" :parent-path="bookPath" />
 
-      <section class="page-hero">
-        <div class="eyebrow"><RotateCcw :size="14" />复习系统</div>
+      <section class="library-heading">
         <h1>错题复习概览</h1>
         <p>基于间隔重复算法，帮助你高效掌握每道错题</p>
       </section>
 
-      <div v-if="loading" class="loading-state">加载中...</div>
-      <div v-else-if="error" class="error-state">{{ error }}</div>
+      <p v-if="loading" class="library-state" role="status">正在加载复习概览…</p>
+      <div v-else-if="error" class="library-state">
+        <p role="alert">{{ error }}</p>
+        <button v-if="isLoggedIn" class="ghost-button" type="button" @click="loadSummary"><RotateCcw :size="16" aria-hidden="true" />重试</button>
+        <NuxtLink v-else class="ghost-button" :to="{ path: '/login', query: { redirect: route.fullPath } }">去登录</NuxtLink>
+      </div>
 
-      <section v-else-if="summary" class="review-stats">
+      <template v-else-if="summary">
+      <section class="action-section" aria-labelledby="review-action">
+        <div>
+          <h2 id="review-action">{{ dueCount ? `${dueCount} 道待复习` : '今天没有待复习的错题' }}</h2>
+          <p v-if="summary.overdue" class="warning">{{ summary.dueToday }} 道今日到期 · {{ summary.overdue }} 道已逾期</p>
+        </div>
+        <NuxtLink v-if="dueCount" :to="bookPath" class="primary-button">
+          <RotateCcw :size="15" aria-hidden="true" />前往错题本开始复习
+        </NuxtLink>
+      </section>
+
+      <section class="review-stats" aria-label="复习统计">
         <div class="stat-card primary">
           <div class="stat-icon"><Clock :size="24" /></div>
           <div class="stat-content">
-            <strong>{{ summary.dueToday + summary.overdue }}</strong>
-            <small>今日待复习</small>
-            <p v-if="summary.overdue > 0" class="stat-note warning">
-              其中 {{ summary.overdue }} 道已逾期
-            </p>
+            <strong>{{ dueCount }}</strong>
+            <small>待复习</small>
           </div>
         </div>
 
@@ -108,7 +122,7 @@ useHead(() => ({ title: `复习概览 - 考生 ${code}｜观澜` }))
         </div>
       </section>
 
-      <section v-if="summary" class="status-breakdown">
+      <section class="status-breakdown">
         <h2>复习进度分布</h2>
         <div class="status-grid">
           <div class="status-item">
@@ -134,25 +148,19 @@ useHead(() => ({ title: `复习概览 - 考生 ${code}｜观澜` }))
         </div>
       </section>
 
-      <section v-if="summary && (summary.dueToday + summary.overdue) > 0" class="action-section">
-        <h2>开始复习</h2>
-        <p>今天有 {{ summary.dueToday + summary.overdue }} 道错题需要复习</p>
-        <NuxtLink :to="`/mistakes/${code}`" class="primary-button">
-          <RotateCcw :size="15" />前往错题本开始复习
-        </NuxtLink>
-      </section>
+      </template>
 
-      <div class="help-text">
-        <h3>复习间隔规则</h3>
+      <details class="help-text">
+        <summary>复习间隔规则</summary>
         <ul>
           <li><strong>答错：</strong>1 天后复习</li>
           <li><strong>第 1 次答对：</strong>3 天后复习</li>
           <li><strong>第 2 次答对：</strong>7 天后复习</li>
           <li><strong>第 3 次答对：</strong>14 天后复习，标记为已掌握</li>
         </ul>
-      </div>
+      </details>
 
-      <NuxtLink class="back-link" :to="`/mistakes/${code}`">
+      <NuxtLink class="back-link" :to="bookPath">
         <ArrowLeft :size="15" />返回错题本
       </NuxtLink>
     </main>
@@ -163,18 +171,18 @@ useHead(() => ({ title: `复习概览 - 考生 ${code}｜观澜` }))
 <style scoped>
 .review-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1.5rem;
-  margin: 2rem 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0 28px;
 }
 
 .stat-card {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1.5rem;
+  background: var(--gl-surface);
+  border: 1px solid var(--line);
+  border-radius: var(--gl-radius-card);
+  padding: 14px;
   display: flex;
-  gap: 1rem;
+  gap: 10px;
   align-items: flex-start;
 }
 
@@ -202,7 +210,7 @@ useHead(() => ({ title: `复习概览 - 考生 ${code}｜观澜` }))
 
 .stat-content small {
   display: block;
-  color: var(--text-secondary);
+  color: var(--muted);
   margin-top: 0.25rem;
 }
 
@@ -212,9 +220,7 @@ useHead(() => ({ title: `复习概览 - 考生 ${code}｜观澜` }))
   color: var(--text-muted);
 }
 
-.stat-note.warning {
-  color: var(--warning, #f59e0b);
-}
+.action-section .warning { color: var(--gold); }
 
 .status-breakdown {
   margin: 3rem 0;
@@ -227,14 +233,14 @@ useHead(() => ({ title: `复习概览 - 考生 ${code}｜观澜` }))
 
 .status-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .status-item {
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--gl-radius-control);
   padding: 1rem;
   text-align: center;
 }
@@ -242,7 +248,7 @@ useHead(() => ({ title: `复习概览 - 考生 ${code}｜观澜` }))
 .status-label {
   display: block;
   font-size: 0.875rem;
-  color: var(--text-secondary);
+  color: var(--muted);
   margin-bottom: 0.5rem;
 }
 
@@ -260,37 +266,35 @@ useHead(() => ({ title: `复习概览 - 考生 ${code}｜观澜` }))
 }
 
 .action-section {
-  margin: 3rem 0;
-  text-align: center;
-  padding: 2rem;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 18px;
+  background: var(--gl-surface);
+  border: 1px solid var(--line);
+  border-radius: var(--gl-radius-card);
 }
 
 .action-section h2 {
   font-size: 1.25rem;
-  margin-bottom: 0.5rem;
+  margin: 0;
 }
 
 .action-section p {
-  color: var(--text-secondary);
-  margin-bottom: 1.5rem;
+  margin: 6px 0 0;
 }
 
 .help-text {
-  margin: 3rem 0;
-  padding: 1.5rem;
-  background: var(--info-bg, rgba(59, 130, 246, 0.05));
-  border: 1px solid var(--info-border, rgba(59, 130, 246, 0.2));
-  border-radius: 8px;
+  margin: 24px 0 0;
+  padding: 0 16px;
+  background: var(--gl-surface);
+  border: 1px solid var(--line);
+  border-radius: var(--gl-radius-control);
 }
 
-.help-text h3 {
-  font-size: 1rem;
-  margin-bottom: 1rem;
-  color: var(--text-primary);
-}
+.help-text summary { cursor: pointer; padding-block: 13px; font-weight: 600; }
 
 .help-text ul {
   list-style: none;
@@ -299,18 +303,12 @@ useHead(() => ({ title: `复习概览 - 考生 ${code}｜观澜` }))
 
 .help-text li {
   padding: 0.5rem 0;
-  color: var(--text-secondary);
+  color: var(--muted);
 }
 
-.loading-state,
-.error-state {
-  padding: 3rem;
-  text-align: center;
-  color: var(--text-secondary);
-}
-
-.error-state {
-  color: var(--error, #ef4444);
+@media (max-width: 640px) {
+  .review-stats, .status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat-icon { display: none; }
 }
 </style>
 
