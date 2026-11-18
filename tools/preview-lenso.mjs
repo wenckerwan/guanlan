@@ -28,7 +28,7 @@ const article = {
   }).join(''),
 }
 const paper = {
-  paper: { pid: 'ui-preview', year: 2026, label: '本地样板', questionCount: 3, totalScore: 4, answeredCount: 3 },
+  paper: { pid: 'ui-preview', year: 2026, label: '本地样板', kind: 'modern', questionCount: 3, totalScore: 4, answeredCount: 3 },
   questions: topics.map((topic, index) => ({
     id: index + 1, no: index + 1, type: index === 1 ? 'multi' : 'single',
     typeCn: index === 1 ? '多选题' : '单选题', score: index === 1 ? 2 : 1,
@@ -40,6 +40,16 @@ const paper = {
     analysis: '关键是让判断与材料中的证据对应。',
   })),
 }
+const olderPaper = { ...paper.paper, pid: 'ui-preview-1994', year: 1994, kind: 'split', label: '文科 · 本地样板' }
+const previewMock = {
+  slug: 'ui-preview', title: '考研政治模拟卷 · 本地样板', summary: paragraph,
+  questionCount: 3, totalScore: 13, durationMinutes: 180, answeredCount: 3,
+}
+const mockQuestions = [
+  { ...paper.questions[0], no: 1 },
+  { ...paper.questions[1], no: 17 },
+  { ...paper.questions[2], no: 34, type: 'analyse', typeCn: '分析题', score: 10, options: {}, answer: null },
+]
 const subjects = [
   {
     slug: 'ui-preview', short: '马原', name: '马克思主义基本原理', tone: 'jade',
@@ -90,6 +100,10 @@ const data = new Map([
   ['/api/v1/home', { hotspots: [{ ...article, level: 'A', period: '2026-11', url: '/hotspots/ui-preview' }], documents: [], subjects: [], stats: { papers: 1, questions: 3, hotspots: 2 } }],
   ['/api/v1/hotspots/ui-preview-no-outline', { ...article, outline: [] }],
   ['/api/v1/papers/ui-preview', paper],
+  ['/api/v1/papers/ui-preview-1994', { ...paper, paper: olderPaper }],
+  ['/api/v1/papers/modules', [{ module: 'marx', name: '马原', count: 3 }, { module: 'history', name: '史纲', count: 3 }]],
+  ['/api/v1/mocks', [previewMock]],
+  ['/api/v1/mocks/ui-preview', { mock: previewMock, questions: mockQuestions }],
   ['/api/v1/papers/ui-preview-empty', { paper: { ...paper.paper, questionCount: 0 }, questions: [] }],
 ])
 const searchItems = [
@@ -104,6 +118,10 @@ const api = createServer(async (request, response) => {
   const items = keyword === '实践与认识' ? searchItems.filter(item => !type || item.type === type) : []
   const signedIn = request.headers.authorization === `Bearer ${previewToken}`
   let payload = isSearch ? { items, total: items.length, groups: Object.fromEntries(items.map(item => [item.type, 1])) } : data.get(url.pathname)
+  if (url.pathname === '/api/v1/papers') {
+    const module = url.searchParams.get('module')
+    payload = module === 'marx' ? [paper.paper] : module === 'history' ? [olderPaper] : module ? [] : [paper.paper, olderPaper]
+  }
   if (url.pathname === practicePath) {
     const questions = signedIn ? practiceQuestions.map(({ answer, ...question }) => question) : practiceQuestions.slice(0, 3)
     payload = { bankId, contentVersion: '1', questionCount: questions.length, questions }
