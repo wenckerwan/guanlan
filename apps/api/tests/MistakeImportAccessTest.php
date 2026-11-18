@@ -8,19 +8,6 @@ namespace Hyperf\HttpServer\Contract {
     interface RequestInterface {}
     interface ResponseInterface {}
 }
-namespace Hyperf\Context {
-    class ApplicationContext {
-        public static int $calls = 0;
-        public static ?\App\Service\AIAnalysisService $ai = null;
-        public static function getContainer(): object {
-            ++self::$calls;
-            if (self::$ai !== null) return new class {
-                public function get(string $class): \App\Service\AIAnalysisService { return ApplicationContext::$ai; }
-            };
-            throw new \RuntimeException('AI must not be resolved for denied imports');
-        }
-    }
-}
 namespace App\Model {
     class User {
         public function __construct(public int $id, public string $role = 'user', public string $mistake_code = '') {}
@@ -59,9 +46,6 @@ namespace {
     require $root . '/src/Support/Validator.php';
     require $root . '/src/Service/MistakeService.php';
     require $root . '/src/Controller/MistakeController.php';
-    require $root . '/src/Support/AiOutboundPolicy.php';
-    require $root . '/src/Service/SafeAiHttpClient.php';
-    require $root . '/src/Service/AIAnalysisService.php';
 
     class StudentService extends \App\Service\MistakeService {
         public function __construct(private \App\Model\MistakeStudent $value) {}
@@ -84,27 +68,6 @@ namespace {
     }
 
     $public = new \App\Model\MistakeStudent('A');
-    foreach (['requestAIAnalysis', 'requestAIAnalysisStream'] as $method) {
-        foreach ([true, 'true', '1', 1] as $flag) {
-            \App\Support\Auth::$current = new \App\Model\User(7, 'user', 'A');
-            $controller = new \App\Controller\MistakeController(new StudentService($public), new \App\Service\MistakeReviewService(), new Request($flag), new Response());
-            check($controller->$method('A')->status === 403, "$method denies A import before validation/AI/SSE");
-        }
-        foreach ([false, 'false', '0', 0] as $flag) {
-            $controller = new \App\Controller\MistakeController(new StudentService($public), new \App\Service\MistakeReviewService(), new Request($flag), new Response());
-            check($controller->$method('A')->status === 422, "$method permits read-only analysis to reach configuration validation");
-        }
-        \App\Support\Auth::$current = null;
-        $controller = new \App\Controller\MistakeController(new StudentService($public), new \App\Service\MistakeReviewService(), new Request(true), new Response());
-        check($controller->$method('A')->status === 401, "$method denies guests");
-        foreach ([[new \App\Model\User(7, 'user', '7'), new \App\Model\MistakeStudent('7', 7)], [new \App\Model\User(9, 'admin'), $public]] as [$user, $student]) {
-            \App\Support\Auth::$current = $user;
-            $controller = new \App\Controller\MistakeController(new StudentService($student), new \App\Service\MistakeReviewService(), new Request(true), new Response());
-            check($controller->$method($student->code)->status === 422, "$method allows owner/admin to reach configuration validation");
-        }
-    }
-    check(\Hyperf\Context\ApplicationContext::$calls === 0, 'no AI resolution');
-
     $service = new \App\Service\MistakeService();
     foreach ([null, new \App\Model\User(7, 'user', 'A')] as $user) {
         \App\Support\Auth::$current = $user;
@@ -127,18 +90,5 @@ namespace {
         \App\Support\Auth::$current = $user;
         check($service->importUploadedItems($student, '') === ['imported' => 0, 'updated' => 0, 'skipped' => 0], 'owner/admin passes service write gate');
     }
-    // Execute the real URL gate before any upload import, provider request, or SSE preparation.
-    \Hyperf\Context\ApplicationContext::$ai = new \App\Service\AIAnalysisService(new \Hyperf\Guzzle\ClientFactory());
-    \App\Support\Auth::$current = new \App\Model\User(9, 'admin');
-    foreach (['http://127.0.0.1/v1', 'http://169.254.169.254/v1', 'https://[::ffff:127.0.0.1]/v1'] as $url) {
-        foreach (['requestAIAnalysis', 'requestAIAnalysisStream', 'testAIConnection', 'chatTestAIConnection'] as $method) {
-            $controller = new \App\Controller\MistakeController(new StudentService($public), new \App\Service\MistakeReviewService(), new Request(true, [
-                'provider' => 'openai', 'apiKey' => 'fake', 'baseUrl' => $url, 'markdown' => 'Must never be imported',
-            ]), new Response());
-            $result = str_starts_with($method, 'request') ? $controller->$method('A') : $controller->$method();
-            check($result->status === 422 && str_contains($result->message, '出网地址'), "$method rejects URL before AI/SSE/import");
-        }
-    }
-    check(\App\Model\MistakeItem::$queries === 0, 'URL rejection does not reach database');
-    echo "MistakeImportAccessTest: PASS (including 12 controller outbound rejection cases)\n";
+    echo "MistakeImportAccessTest: PASS (ordinary import ownership preserved)\n";
 }

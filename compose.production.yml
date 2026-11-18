@@ -35,6 +35,12 @@ services:
     environment:
       NODE_ENV: production
       NUXT_API_INTERNAL_BASE: http://api:9501/api/v1
+      # Exact HTTPS origin for BFF CSRF checks; never infer from forwarded headers.
+      NUXT_SESSION_ORIGIN: ${NUXT_SESSION_ORIGIN:-https://guanlan.wencker.top}
+      NUXT_SESSION_ORIGINS: ${NUXT_SESSION_ORIGINS:-https://guanlan.wencker.top,https://guanlan.wencker.pro}
+      NUXT_TRUSTED_GATEWAY_IPS: ${NUXT_TRUSTED_GATEWAY_IPS:-}
+      NUXT_BFF_PROXY_SECRET: ${BFF_PROXY_SECRET:-}
+      NUXT_PUBLIC_TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:-}
       NUXT_PUBLIC_API_BASE: /api/v1
       NUXT_PUBLIC_COMMENTS_ENABLED: ${NUXT_PUBLIC_COMMENTS_ENABLED:-false}
     depends_on:
@@ -67,6 +73,12 @@ services:
       COMMENTS_ENABLED: ${COMMENTS_ENABLED:-false}
       APP_NAME: guanlan-api
       TRUSTED_PROXY_IPS: ${TRUSTED_PROXY_IPS:-}
+      BFF_PROXY_SECRET: ${BFF_PROXY_SECRET:-}
+      TURNSTILE_ENABLED: ${TURNSTILE_ENABLED:-false}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+      TURNSTILE_HOSTNAMES: guanlan.wencker.top,guanlan.wencker.pro
+      MAIL_DAILY_LIMIT: ${MAIL_DAILY_LIMIT:-500}
+      REGISTRATION_IP_DAILY_LIMIT: ${REGISTRATION_IP_DAILY_LIMIT:-5}
       APP_KEY: ${APP_KEY:?APP_KEY is required}
       DB_HOST: mysql
       DB_PORT: 3306

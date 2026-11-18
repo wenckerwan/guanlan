@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 const route = useRoute()
-const { request, restore, token, user, invalidateToken } = useAuth()
+const { request, restore, generation: sessionGeneration, user, invalidateSession } = useAuth()
 const checking = ref(true), verified = ref(false), denied = ref(false), loginRequired = ref(false), failure = ref('')
 const loginLink = computed(() => ({ path: '/login', query: { redirect: route.fullPath } }))
 let generation = 0, alive = true
@@ -15,28 +15,28 @@ async function verify() {
   checking.value = true; verified.value = false; denied.value = false; loginRequired.value = false; failure.value = ''
   await restore()
   if (current !== generation || !alive) return
-  if (!token.value) { loginRequired.value = true; checking.value = false; return }
-  const expectedToken = token.value
+  if (!user.value) { loginRequired.value = true; checking.value = false; return }
+  const expectedToken = sessionGeneration.value
   try {
     const result = await request<{ user: typeof user.value }>('/auth/me')
-    if (current !== generation || !alive || token.value !== expectedToken) return
+    if (current !== generation || !alive || sessionGeneration.value !== expectedToken) return
     if (!result.user || !Number.isInteger(result.user.id) || result.user.id < 1) throw new Error('Invalid identity')
     user.value = result.user
     try { localStorage.setItem('guanlan.user', JSON.stringify(result.user)) } catch {}
     verified.value = result.user.role === 'admin' && result.user.status === 'active'
     denied.value = !verified.value
   } catch (exception) {
-    if (current !== generation || !alive || token.value !== expectedToken) return
+    if (current !== generation || !alive || sessionGeneration.value !== expectedToken) return
     const error = exception as { status?: number; statusCode?: number }
     const status = error.status ?? error.statusCode
-    if (status === 401) { invalidateToken(expectedToken); loginRequired.value = true }
+    if (status === 401) { invalidateSession(expectedToken); loginRequired.value = true }
     else if (status === 403) denied.value = true
     else failure.value = '后台身份验证暂时失败，请重试。'
   } finally { if (current === generation && alive) checking.value = false }
 }
 onMounted(verify)
 watch(() => route.path, verify)
-watch(token, verify)
+watch(sessionGeneration, verify)
 onBeforeUnmount(() => { alive = false; ++generation })
 </script>
 
