@@ -62,10 +62,11 @@ async function handleLogout() {
       </NuxtLink>
 
       <nav class="desktop-nav" aria-label="主导航">
-        <NuxtLink v-for="item in navItems" :key="item.to" :to="item.to" :class="{ active: isActive(item.to) }">{{ item.label }}</NuxtLink>
+        <NuxtLink v-for="item in navItems" :key="item.to" :to="item.to" :class="{ active: isActive(item.to) }" :aria-current="isActive(item.to) ? 'page' : undefined">{{ item.label }}</NuxtLink>
       </nav>
 
       <div class="topbar-actions">
+        <AppearanceControl />
         <form class="topbar-search" role="search" @submit.prevent="submitSearch">
           <Search :size="14" aria-hidden="true" />
           <input v-model="query" type="search" aria-label="站内搜索" placeholder="搜索" />
@@ -94,9 +95,12 @@ async function handleLogout() {
         <NuxtLink v-for="item in drawerItems" :key="item.to" :to="item.to" :class="{ active: isActive(item.to) }" @click="closeMenu"><component :is="item.icon" :size="17" />{{ item.label }}</NuxtLink>
       </nav>
       <div class="drawer-account">
+        <AppearanceControl />
         <NuxtLink v-if="!isLoggedIn" to="/login" @click="closeMenu">登录 / 注册</NuxtLink>
         <template v-else>
           <NuxtLink to="/me" @click="closeMenu">个人中心</NuxtLink>
+          <NuxtLink to="/me/favorites" @click="closeMenu">收藏</NuxtLink>
+          <NuxtLink to="/me/progress" @click="closeMenu">学习记录</NuxtLink>
           <NuxtLink v-if="isAdmin" to="/admin" @click="closeMenu">管理后台</NuxtLink>
           <button type="button" @click="handleLogout">退出登录</button>
         </template>

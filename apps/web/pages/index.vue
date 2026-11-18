@@ -64,12 +64,12 @@ function submitSearch() {
 </script>
 
 <template>
-  <div class="site-shell">
+  <div class="site-shell home-page">
     <SiteHeader />
     <main id="top" class="page-wrap">
-      <section class="hero-block">
+      <section class="hero-block" aria-labelledby="home-title">
         <div class="eyebrow"><Sparkles :size="14" />2027 考研政治</div>
-        <h1>从可靠资料中，<br class="mobile-only" />快速找到答案</h1>
+        <h1 id="home-title">从可靠资料中，<br class="mobile-only" />快速找到答案<span class="hero-period">。</span></h1>
         <p class="hero-copy">
           真题 {{ stats?.questions ?? 0 }} 道 · 试卷 {{ stats?.papers ?? 0 }} 份 · 时政 {{ stats?.hotspots ?? 0 }} 期 · 错题 {{ stats?.mistakes ?? 0 }} 道
         </p>

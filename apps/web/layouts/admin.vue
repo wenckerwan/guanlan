@@ -62,7 +62,7 @@ onBeforeUnmount(() => { alive = false; ++generation })
 .admin-toolbar { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
 .admin-nav { flex: 1; min-width: 0; }
 .admin-nav .router-link-exact-active { border-color: var(--brand); color: var(--brand); background: var(--brand-soft); }
-.admin-return { padding: 8px 12px; border: 1px solid var(--line); border-radius: 6px; background: white; font-size: 13px; }
+.admin-return { padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--gl-radius-control); background: var(--gl-surface); font-size: 13px; }
 .admin-page { min-height: 55vh; }
 .admin-page :deep(.admin-table) { width: 100%; }
 .admin-page :deep(pre) { white-space: pre-wrap; overflow-wrap: anywhere; }

@@ -37,12 +37,12 @@ const year = new Date().getFullYear()
 </template>
 
 <style scoped>
-.site-footer { margin-top: 72px; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--paper) 80%, #fff); }
+.site-footer { margin-top: 48px; border-top: 1px solid var(--line); background: var(--paper); }
 .site-footer__inner { padding-top: 34px; padding-bottom: 40px; }
 .site-footer__heading { display: block; margin-bottom: 14px; color: var(--muted); font-size: 11px; letter-spacing: 2px; }
 .site-footer__links ul { display: flex; flex-wrap: wrap; gap: 12px; margin: 0; padding: 0; list-style: none; }
-.site-footer__link { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border: 1px solid var(--line); border-radius: 4px; background: #fff; color: var(--ink); font-size: 13px; text-decoration: none; transition: border-color .15s, transform .15s; }
-.site-footer__link:hover { border-color: var(--red); transform: translateY(-1px); }
+.site-footer__link { display: inline-flex; align-items: center; gap: 8px; padding: 11px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--gl-surface); color: var(--ink); font-size: 13px; text-decoration: none; transition: border-color .15s; }
+.site-footer__link:hover { border-color: var(--red); }
 .site-footer__link.sponsor { color: var(--red); }
 .site-footer__link.sponsor svg { color: var(--red); flex: none; }
 .site-footer__link svg { color: var(--muted); flex: none; }
