@@ -43,9 +43,19 @@ const data = new Map([
   ['/api/v1/papers/ui-preview', paper],
   ['/api/v1/papers/ui-preview-empty', { paper: { ...paper.paper, questionCount: 0 }, questions: [] }],
 ])
+const searchItems = [
+  { type: 'hotspot', title, snippet: paragraph, url: '/hotspots/ui-preview', meta: '阅读样板', matchLocation: 'body' },
+  { type: 'paper', title: '2026 年考研政治真题（本地样板）', snippet: '单选题、多选题与作答解析。', url: '/papers/ui-preview', meta: '2026', matchLocation: 'summary' },
+]
 const api = createServer((request, response) => {
-  const payload = data.get(new URL(request.url, origin).pathname)
-  response.writeHead(request.method === 'GET' && payload !== undefined ? 200 : 404, {
+  const url = new URL(request.url, origin)
+  const isSearch = request.method === 'GET' && url.pathname === '/api/v1/search'
+  const keyword = url.searchParams.get('q')
+  const type = url.searchParams.get('type')
+  const items = keyword === '实践与认识' ? searchItems.filter(item => !type || item.type === type) : []
+  const payload = isSearch ? { items, total: items.length, groups: Object.fromEntries(items.map(item => [item.type, 1])) } : data.get(url.pathname)
+  const status = isSearch && keyword === '请求失败' ? 503 : request.method === 'GET' && payload !== undefined ? 200 : 404
+  response.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': origin,
   })
