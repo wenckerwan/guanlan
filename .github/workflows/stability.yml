@@ -19,7 +19,12 @@ jobs:
       - run: npm ci
         working-directory: apps/web
       - run: python3 tools/test_stability.py
-      - run: python3 -m unittest tools.ingest.test_build_articles tools.ingest.test_dataset_manifest
+      - name: Install dataset test dependency
+        run: |
+          python3 -m venv "$RUNNER_TEMP/guanlan-ingest"
+          "$RUNNER_TEMP/guanlan-ingest/bin/python" -m pip install 'Markdown==3.11.3'
+      - name: Test dataset generation
+        run: '"$RUNNER_TEMP/guanlan-ingest/bin/python" -m unittest tools.ingest.test_build_articles tools.ingest.test_dataset_manifest'
       - run: bash tools/deploy/test_config.sh
       - run: npm run build
         working-directory: apps/web
