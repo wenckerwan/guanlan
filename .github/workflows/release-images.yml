@@ -29,7 +29,6 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-          fetch-depth: 0 # The release gate reads a pinned pre-release data fixture.
 
       - uses: actions/setup-node@v7
         with:

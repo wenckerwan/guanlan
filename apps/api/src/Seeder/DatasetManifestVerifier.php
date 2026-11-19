@@ -21,16 +21,10 @@ final class DatasetManifestVerifier
         'stats.json',
     ];
 
-    /** @var array<string, true> */
-    private array $verifiedBasePaths = [];
-
-    public function verify(string $basePath = BASE_PATH): void
+    /** @return array{verified: int, skipped: list<string>} */
+    public function verify(string $basePath = BASE_PATH): array
     {
         $absoluteBasePath = $this->absolutePath($basePath);
-        if (isset($this->verifiedBasePaths[$absoluteBasePath])) {
-            return;
-        }
-
         $errors = [];
         $manifestPath = $absoluteBasePath . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'dataset-manifest.json';
         $manifest = null;
@@ -48,7 +42,6 @@ final class DatasetManifestVerifier
         if (! is_array($manifest)) {
             $errors[] = 'storage/dataset-manifest.json: expected a JSON object';
             $this->throwIfInvalid($errors);
-            return;
         }
 
         $this->compareField($errors, 'manifest.schema_version', 1, $manifest['schema_version'] ?? null, array_key_exists('schema_version', $manifest));
@@ -61,23 +54,42 @@ final class DatasetManifestVerifier
 
         $totalBytes = 0;
         $totalItems = 0;
-        $availableFiles = 0;
+        $manifestFiles = 0;
+        $verified = 0;
+        $skipped = [];
 
         foreach (self::REQUIRED_DATASETS as $name) {
             $expected = $datasets[$name] ?? null;
-            if (! is_array($expected)) {
-                $errors[] = $name . ': missing manifest entry';
-                $expected = [];
+            if (array_key_exists($name, $datasets)) {
+                ++$manifestFiles;
+                if (! is_array($expected) || ! is_int($expected['bytes'] ?? null)
+                    || ! is_int($expected['items'] ?? null) || ! is_array($expected['groups'] ?? null)
+                    || ! is_string($expected['sha256'] ?? null)
+                    || ! preg_match('/\A[a-f0-9]{64}\z/', $expected['sha256'])) {
+                    $errors[] = $name . ': invalid manifest entry';
+                    $expected = null;
+                } else {
+                    $totalBytes += $expected['bytes'];
+                    $totalItems += $expected['items'];
+                }
             }
 
             $path = $absoluteBasePath . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'dataset' . DIRECTORY_SEPARATOR . $name;
+            clearstatcache(true, $path);
             if (! is_file($path)) {
-                $errors[] = $name . ': missing file';
+                if (file_exists($path) || is_link($path)) {
+                    $errors[] = $name . ': not a regular file';
+                } else {
+                    $skipped[] = $name;
+                }
+                continue;
+            }
+            if ($expected === null) {
+                $errors[] = $name . ': missing valid manifest entry';
                 continue;
             }
 
-            $availableFiles++;
-            clearstatcache(true, $path);
+            ++$verified;
             $bytes = filesize($path);
             $sha256 = hash_file('sha256', $path);
             if ($bytes === false || $sha256 === false) {
@@ -85,13 +97,11 @@ final class DatasetManifestVerifier
                 continue;
             }
 
-            $totalBytes += $bytes;
             $this->compareField($errors, $name . '.bytes', $expected['bytes'] ?? null, $bytes, array_key_exists('bytes', $expected));
             $this->compareField($errors, $name . '.sha256', $expected['sha256'] ?? null, $sha256, array_key_exists('sha256', $expected));
 
             try {
                 [$items, $groups] = $this->describeDataset($this->decodeJson($path));
-                $totalItems += $items;
                 $this->compareField($errors, $name . '.items', $expected['items'] ?? null, $items, array_key_exists('items', $expected));
                 $this->compareField($errors, $name . '.groups', $expected['groups'] ?? null, $groups, array_key_exists('groups', $expected));
             } catch (RuntimeException $exception) {
@@ -138,12 +148,12 @@ final class DatasetManifestVerifier
             $errors[] = 'manifest.totals: missing';
         } else {
             $this->compareField($errors, 'totals.bytes', $totals['bytes'] ?? null, $totalBytes, array_key_exists('bytes', $totals));
-            $this->compareField($errors, 'totals.files', $totals['files'] ?? null, $availableFiles, array_key_exists('files', $totals));
+            $this->compareField($errors, 'totals.files', $totals['files'] ?? null, $manifestFiles, array_key_exists('files', $totals));
             $this->compareField($errors, 'totals.items', $totals['items'] ?? null, $totalItems, array_key_exists('items', $totals));
         }
 
         $this->throwIfInvalid($errors);
-        $this->verifiedBasePaths[$absoluteBasePath] = true;
+        return ['verified' => $verified, 'skipped' => $skipped];
     }
 
     private function absolutePath(string $basePath): string

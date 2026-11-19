@@ -78,10 +78,20 @@ class DatasetManifestTest(unittest.TestCase):
             after["datasets"]["questions.json"]["sha256"],
         )
 
-    def test_rejects_missing_dataset(self):
+    def test_skips_missing_dataset(self):
+        before = dataset_manifest.build_manifest(self.dataset_dir, self.source_path)
         (self.dataset_dir / "stats.json").unlink()
-        with self.assertRaisesRegex(FileNotFoundError, "stats.json"):
-            dataset_manifest.build_manifest(self.dataset_dir, self.source_path)
+        manifest = dataset_manifest.build_manifest(self.dataset_dir, self.source_path)
+        self.assertNotIn("stats.json", manifest["datasets"])
+        self.assertEqual(manifest["totals"]["files"], 7)
+        self.assertEqual(dataset_manifest.verify_manifest(self.dataset_dir, self.source_path, before), ["stats.json"])
+
+    def test_rejects_hash_mismatch_for_existing_dataset(self):
+        manifest = dataset_manifest.build_manifest(self.dataset_dir, self.source_path)
+        path = self.dataset_dir / "stats.json"
+        path.write_bytes(path.read_bytes().replace(b'"id": 1', b'"id": 2'))
+        with self.assertRaisesRegex(ValueError, "stats.json.*sha256"):
+            dataset_manifest.verify_manifest(self.dataset_dir, self.source_path, manifest)
 
     def test_atomic_writer_is_byte_stable(self):
         manifest = dataset_manifest.build_manifest(self.dataset_dir, self.source_path)

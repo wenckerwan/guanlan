@@ -29,7 +29,7 @@ class BuildArticlesTest(unittest.TestCase):
             (self.out / name).write_bytes(b'[{"unchanged": true}]\r\n')
         for name in [
             *build_articles.ANALYSIS_CATEGORY,
-            "选择题绝对错误选项规律.md",
+            "选择题绝对错误选项规律v2_发行版.md",
             "选择题绝对错误选项规律v2.md",
             "README.md",
             "unlisted.md",
@@ -57,6 +57,10 @@ class BuildArticlesTest(unittest.TestCase):
             set(build_articles.ANALYSIS_CATEGORY),
         )
         self.assertEqual(len(payload), 11)
+        release = [item for item in payload if item["release"]]
+        self.assertEqual([(item["source_file"], item["slug"]) for item in release], [
+            (build_articles.LEGACY_RELEASE_SOURCE, "2012-2026-649d1f95"),
+        ])
         self.assertEqual(
             sum(item["category"] == "选择题规律" for item in payload), 4
         )

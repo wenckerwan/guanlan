@@ -24,3 +24,9 @@ output/playwright/
 # Host-specific deployment overlays (may contain environment overrides).
 /compose.ui-release.yml
 /compose.release-images.yml
+
+# 文章正文不进仓库：真题分析 / 时政热点 / 时政预测由部署时同步 storage/ 提供。
+# 源稿在 storage/raw/（已忽略），渲染产物即下面三份；题库类数据集（questions/papers/stats 等）仍进仓库。
+storage/dataset/analysis_articles.json
+storage/dataset/hotspots.json
+storage/dataset/predictions.json

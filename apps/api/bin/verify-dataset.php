@@ -20,8 +20,10 @@ if (! class_exists(DatasetManifestVerifier::class)) {
 $basePath = $argv[1] ?? BASE_PATH;
 
 try {
-    (new DatasetManifestVerifier())->verify($basePath);
-    fwrite(STDOUT, "Dataset integrity OK: 8 files\n");
+    $report = (new DatasetManifestVerifier())->verify($basePath);
+    $skipped = $report['skipped'];
+    fwrite(STDOUT, sprintf("Dataset integrity OK: %d verified, %d skipped%s\n",
+        $report['verified'], count($skipped), $skipped ? ' (' . implode(', ', $skipped) . ')' : ''));
     exit(0);
 } catch (Throwable $exception) {
     fwrite(STDERR, $exception->getMessage() . PHP_EOL);

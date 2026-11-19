@@ -1,10 +1,10 @@
 {
   "datasets": {
     "analysis_articles.json": {
-      "bytes": 317347,
+      "bytes": 314911,
       "groups": {},
       "items": 11,
-      "sha256": "0e6ee5067373aa7727b9a6a263bf3d191ba4dc6825a41baeb6aad10d8be6ca5b"
+      "sha256": "cb8f7135d477aac7482e1b012f423674f9178be066ad2064384a3fe8caf80566"
     },
     "hotspots.json": {
       "bytes": 237214,
@@ -73,7 +73,7 @@
     "sha256": "0a790455b203627c61eb7ac89d49fb66eb11d02f31c06596cc998cde3c964e3c"
   },
   "totals": {
-    "bytes": 4479374,
+    "bytes": 4476938,
     "files": 8,
     "items": 1826
   }

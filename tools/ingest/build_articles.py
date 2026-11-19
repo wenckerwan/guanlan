@@ -28,11 +28,11 @@ SOURCE_MANIFEST = OUT.parent / "import-manifest.json"
 DATASET_MANIFEST = OUT.parent / "dataset-manifest.json"
 
 # 只有列在这里的源稿才会进入 analysis_articles.json。
-# 「选择题绝对错误选项规律.md」（初稿）与「…v2.md」（工作稿，正文与发行版重复 96.6%）
-# 已被 发行版 取代，不再上站；三份源稿仍保留在 storage/raw 供追溯，只是不参与生成。
+LEGACY_RELEASE_SOURCE = "选择题绝对错误选项规律.md"
+LEGACY_RELEASE_SLUG = "2012-2026-649d1f95"
 ANALYSIS_CATEGORY = {
     "选择题分析.md": "选择题规律",
-    "选择题绝对错误选项规律v2_发行版.md": "选择题规律",
+    LEGACY_RELEASE_SOURCE: "选择题规律",
     "错项核对_2024-2026.md": "选择题规律",
     "分析题分析.md": "分析题规律",
     "综合结论.md": "综合结论",
@@ -99,11 +99,10 @@ def build_analysis_articles() -> list[dict]:
             continue
         text = read_text(path)
         title = next((t for lvl, t, _ in split_all_headings(text) if lvl == 1), path.stem)
-        # 「发行版」与工作稿标题相同，slug 必须区分，否则唯一约束会合并掉发布稿
-        slug_source = title if "_发行版" not in path.name else f"{title} 发行版"
+        is_release = path.name == LEGACY_RELEASE_SOURCE
         items.append({
-            "slug": slugify(slug_source, "analysis"),
-            "release": "_发行版" in path.name,
+            "slug": LEGACY_RELEASE_SLUG if is_release else slugify(title, "analysis"),
+            "release": is_release,
             "title": title,
             "category": ANALYSIS_CATEGORY[path.name],
             "priority": star_priority(text, "A"),

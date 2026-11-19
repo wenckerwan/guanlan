@@ -6,13 +6,13 @@
 
 本次上线使用 `analysis:publish-release`。不要运行 `ArticleSeeder` 或清零 `content_maintenance.maintained`；文章 Seeder 也会重写热点和预测。
 
-镜像推送前，`Release images` 工作流在隔离 MySQL 库中用固定的 13 篇旧版快照验证定向发布、事务失败、回退和版本冲突，再用新空库和生产 Nginx 路由检查同一组候选镜像。已构建镜像时，也可以在带完整 Git 历史的 Linux Docker 主机运行：
+镜像推送前，`Release images` 工作流在隔离 MySQL 库中用 13 篇合成文章验证定向发布、事务失败、回退和版本冲突，再通过生产 Nginx 路由检查发布后的状态。文章正文文件不再由 Git 跟踪；生产环境通过只读 `storage` 挂载提供这三份文件及对应清单。已构建镜像时，也可以在 Linux Docker 主机运行：
 
 ```sh
 bash tools/deploy/check_analysis_images.sh API_IMAGE WEB_IMAGE
 ```
 
-该命令仅向隔离的空库装载测试数据；线上发布仍用定向命令。部署后可以对实际网关执行只读验收：`python3 tools/deploy/check_analysis_gateway.py BASE_URL`。
+该命令只在隔离库中写入合成文章。部署后可以对实际网关执行只读验收：`python3 tools/deploy/check_analysis_gateway.py BASE_URL`。
 
 以下命令从服务部署目录运行，示例使用 `compose.production.yml`。应先验证新镜像启动和挂载的 `storage` 清单一致，再发布文章。实际生产写入须经授权。
 

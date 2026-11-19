@@ -49,6 +49,8 @@ def build_manifest(dataset_dir: Path, source_manifest_path: Path) -> dict:
 
     for name in REQUIRED_DATASETS:
         path = dataset_dir / name
+        if not path.exists() and not path.is_symlink():
+            continue
         payload = json.loads(path.read_text(encoding="utf-8"))
         items, groups = describe_payload(payload)
         size = path.stat().st_size
@@ -72,10 +74,23 @@ def build_manifest(dataset_dir: Path, source_manifest_path: Path) -> dict:
         },
         "totals": {
             "bytes": total_bytes,
-            "files": len(REQUIRED_DATASETS),
+            "files": len(datasets),
             "items": total_items,
         },
     }
+
+
+def verify_manifest(dataset_dir: Path, source_manifest_path: Path, manifest: dict) -> list[str]:
+    """Compare existing files with a recorded manifest; return missing names."""
+    actual = build_manifest(dataset_dir, source_manifest_path)
+    if actual["source_manifest"] != manifest["source_manifest"]:
+        raise ValueError("source manifest does not match")
+    for name, found in actual["datasets"].items():
+        expected = manifest["datasets"].get(name, {})
+        for key, value in found.items():
+            if expected.get(key) != value:
+                raise ValueError(f"{name}: {key} does not match manifest")
+    return [name for name in REQUIRED_DATASETS if name not in actual["datasets"]]
 
 
 def write_manifest(output: Path, manifest: dict) -> None:

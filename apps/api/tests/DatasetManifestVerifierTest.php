@@ -126,6 +126,19 @@ try {
     $verifier = new DatasetManifestVerifier();
     $verifier->verify($fixtureRoot);
 
+    unlink($datasetRoot . '/analysis_articles.json');
+    $report = $verifier->verify($fixtureRoot);
+    assert($report === ['verified' => 7, 'skipped' => ['analysis_articles.json']]);
+
+    file_put_contents($datasetRoot . '/analysis_articles.json', '[{"id":99}]');
+    try {
+        (new DatasetManifestVerifier())->verify($fixtureRoot);
+        throw new RuntimeException('expected hash failure after restoring dataset');
+    } catch (RuntimeException $exception) {
+        assert(str_contains($exception->getMessage(), 'analysis_articles.json'));
+        assert(str_contains($exception->getMessage(), 'sha256'));
+    }
+
     file_put_contents($fixtureRoot . '/storage/dataset/questions.json', '[{"id":99}]');
     try {
         (new DatasetManifestVerifier())->verify($fixtureRoot);
