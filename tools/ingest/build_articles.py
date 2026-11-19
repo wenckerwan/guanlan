@@ -84,17 +84,11 @@ def summary_of(text: str, limit: int = 120) -> str:
     return body[:limit]
 
 
-def outline_of(text: str) -> list[dict]:
-    """正文目录：只收 H2/H3，跳过文档大标题。
-
-    源稿的 H1 就是文章标题本身：收进来会让列表页「N 个章节」+1，
-    阅读页目录也会把顶部标题重复一遍。三类文章（分析/热点/预测）
-    共用同一套列表与阅读组件，所以口径统一在这里。
-    """
+def outline_of(text: str, *, min_level: int = 1) -> list[dict]:
     return [
         {"level": lvl, "title": clean(title)}
         for lvl, title, _ in split_all_headings(text)
-        if 2 <= lvl <= 3
+        if min_level <= lvl <= 3
     ]
 
 
@@ -115,7 +109,7 @@ def build_analysis_articles() -> list[dict]:
             "priority": star_priority(text, "A"),
             "summary": summary_of(text),
             "html": md_to_html(body_without_h1(text)),
-            "outline": outline_of(text),
+            "outline": outline_of(text, min_level=2),
             "source_file": path.name,
             "word_count": len(text),
             "sort_order": order,

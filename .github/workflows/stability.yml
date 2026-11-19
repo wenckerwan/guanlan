@@ -19,6 +19,7 @@ jobs:
       - run: npm ci
         working-directory: apps/web
       - run: python3 tools/test_stability.py
+      - run: python3 -m unittest tools.ingest.test_build_articles tools.ingest.test_dataset_manifest
       - run: bash tools/deploy/test_config.sh
       - run: npm run build
         working-directory: apps/web

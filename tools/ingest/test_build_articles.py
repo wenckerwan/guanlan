@@ -98,6 +98,19 @@ class BuildArticlesTest(unittest.TestCase):
         self.assertEqual(json.loads((self.out / "predictions.json").read_bytes()), [{"prediction": 1}])
         self.assertFalse(self.manifest.exists())
 
+    def test_full_build_keeps_h1_in_hotspot_and_prediction_outlines(self):
+        source = self.analysis / "选择题分析.md"
+        with mock.patch.multiple(build_articles, HOTSPOT_FILES=[source], PREDICTION_FILES=[source]):
+            build_articles.main()
+        for filename in ("hotspots.json", "predictions.json"):
+            with self.subTest(filename=filename):
+                rows = json.loads((self.out / filename).read_bytes())
+                self.assertEqual(rows[0]["outline"], [
+                    {"level": 1, "title": "Document"},
+                    {"level": 2, "title": "Section"},
+                    {"level": 3, "title": "Detail"},
+                ])
+
     def test_unknown_target_is_rejected_before_writing(self):
         before = (self.out / "analysis_articles.json").read_bytes()
         with mock.patch("sys.stderr", new=io.StringIO()), self.assertRaises(SystemExit) as error:

@@ -1,12 +1,17 @@
 services:
   mysql:
     image: mysql:8.4
+    # The rollback test creates a failure-injection trigger as the fixture user.
+    command: ["--skip-log-bin"]
     environment:
       MYSQL_ROOT_PASSWORD: fixture-root
       MYSQL_DATABASE: guanlan_analysis_test
       MYSQL_USER: fixture
       MYSQL_PASSWORD: fixture-password
     tmpfs: [/var/lib/mysql]
+    networks:
+      default:
+        aliases: [analysis-qa-db]
     healthcheck:
       test: [CMD, mysql, -h127.0.0.1, -ufixture, -pfixture-password, -Dguanlan_analysis_test, -e, "SELECT 1"]
       interval: 2s

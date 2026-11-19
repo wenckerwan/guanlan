@@ -6,7 +6,7 @@
 
 本次上线使用 `analysis:publish-release`。不要运行 `ArticleSeeder` 或清零 `content_maintenance.maintained`；文章 Seeder 也会重写热点和预测。
 
-镜像推送前，`Release images` 工作流使用隔离的 MySQL、Redis 与生产 Nginx 路由验证同一组候选镜像。已构建镜像时，也可以在 Linux Docker 主机运行：
+镜像推送前，`Release images` 工作流在隔离 MySQL 库中用固定的 13 篇旧版快照验证定向发布、事务失败、回退和版本冲突，再用新空库和生产 Nginx 路由检查同一组候选镜像。已构建镜像时，也可以在带完整 Git 历史的 Linux Docker 主机运行：
 
 ```sh
 bash tools/deploy/check_analysis_images.sh API_IMAGE WEB_IMAGE
