@@ -85,6 +85,9 @@ def write_manifest(output: Path, manifest: dict) -> None:
         with tempfile.NamedTemporaryFile(
             mode="w",
             encoding="utf-8",
+            # 必须显式 LF：Windows 上默认会把 \n 翻成 \r\n，
+            # 而 manifest 记的是文件字节的 sha256，换行一变校验就全错。
+            newline="\n",
             dir=output.parent,
             prefix=f".{output.name}.",
             suffix=".tmp",

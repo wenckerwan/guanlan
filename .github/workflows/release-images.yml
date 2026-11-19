@@ -1,6 +1,15 @@
 name: Release images
 
 on:
+  pull_request:
+    paths:
+      - '.github/workflows/release-images.yml'
+      - 'apps/api/**'
+      - 'apps/web/**'
+      - 'storage/**'
+      - 'docker/nginx/production.conf'
+      - 'tools/deploy/*analysis*'
+      - 'tools/deploy/web-artifact.Dockerfile'
   workflow_dispatch:
     inputs:
       tag:
@@ -18,6 +27,9 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0 # The release gate reads a pinned pre-release data fixture.
 
       - uses: actions/setup-node@v7
         with:
@@ -29,23 +41,33 @@ jobs:
         run: npm ci && npm run build
         working-directory: apps/web
 
-      - name: Log in to GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-
-      - name: Build and push API image
+      - name: Build candidate API image
         run: |
-          docker build -f apps/api/Dockerfile \
-            -t ghcr.io/wenckerwan/guanlan-api:${{ inputs.tag }} \
-            -t ghcr.io/wenckerwan/guanlan-api:${{ github.sha }} .
-          docker push ghcr.io/wenckerwan/guanlan-api:${{ inputs.tag }}
-          docker push ghcr.io/wenckerwan/guanlan-api:${{ github.sha }}
+          docker build -f apps/api/Dockerfile -t guanlan-api:release-check .
 
-      - name: Build and push Web image
+      - name: Build candidate Web image
         run: |
           mkdir -p /tmp/web-context/.output
           cp -a apps/web/.output/. /tmp/web-context/.output/
           docker build -f tools/deploy/web-artifact.Dockerfile \
-            -t ghcr.io/wenckerwan/guanlan-web:${{ inputs.tag }} \
-            -t ghcr.io/wenckerwan/guanlan-web:${{ github.sha }} /tmp/web-context
-          docker push ghcr.io/wenckerwan/guanlan-web:${{ inputs.tag }}
-          docker push ghcr.io/wenckerwan/guanlan-web:${{ github.sha }}
+            -t guanlan-web:release-check /tmp/web-context
+
+      - name: Check candidate images through production gateway rules
+        run: bash tools/deploy/check_analysis_images.sh guanlan-api:release-check guanlan-web:release-check
+
+      - name: Publish verified images
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_SHA: ${{ github.sha }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          [[ "$RELEASE_TAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]
+          printf '%s\n' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          for service in api web; do
+            for tag in "$RELEASE_TAG" "$RELEASE_SHA"; do
+              remote="ghcr.io/wenckerwan/guanlan-$service:$tag"
+              docker tag "guanlan-$service:release-check" "$remote"
+              docker push "$remote"
+            done
+          done

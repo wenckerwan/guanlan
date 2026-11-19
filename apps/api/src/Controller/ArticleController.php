@@ -10,6 +10,7 @@ use App\Model\Prediction;
 use App\Resource\ArticleResource;
 use App\Service\ArticleService;
 use App\Support\ApiResponse;
+use App\Support\AnalysisRelease;
 use App\Support\GuestQuota;
 use Hyperf\HttpServer\Contract\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -42,6 +43,19 @@ class ArticleController
     {
         $article = $this->service->analysisBySlug($slug);
         if (! $article) {
+            if (in_array($slug, AnalysisRelease::RETIRED_SLUGS, true)) {
+                $payload = [
+                    'code' => 'ANALYSIS_VERSION_ARCHIVED',
+                    'message' => '此版本已下架。历史评论保留在旧稿关联下，当前发行版不展示。',
+                ];
+                // Resolve through the normal visibility filter; never disclose a hidden release.
+                if ($this->service->analysisBySlug(AnalysisRelease::RELEASE_SLUG)) {
+                    $payload['replacementSlug'] = AnalysisRelease::RELEASE_SLUG;
+                }
+
+                // The link opens the normal detail endpoint, including its guest quota check.
+                return ApiResponse::json($payload, 410);
+            }
             return ApiResponse::message('文章不存在', 404);
         }
 

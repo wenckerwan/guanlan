@@ -43,6 +43,8 @@ namespace Mayuan {
 namespace {
     require __DIR__ . '/../src/Controller/ArticleController.php';
     require __DIR__ . '/../src/Controller/AuthController.php';
+    require __DIR__ . '/../src/Support/ClientAddress.php';
+    require __DIR__ . '/../src/Service/TurnstileService.php';
     $failures = [];
     $check = function ($ok, $label) use (&$failures) { if (!$ok) $failures[] = $label; };
     $controller = (new ReflectionClass(App\Controller\ArticleController::class))->newInstanceWithoutConstructor();
@@ -52,19 +54,33 @@ namespace {
         $check($detail->invoke($controller, $items, $slug, $items[3])->status === 403, 'locked article bypass: '.$slug);
     }
     $check($detail->invoke($controller, $items, 'A', $items[0])->status === 200, 'free article remains readable');
-    putenv('TRUSTED_PROXY_IPS');
+    $secret = str_repeat('a', 64);
+    putenv('BFF_PROXY_SECRET=' . $secret);
+    putenv('TURNSTILE_ENABLED=false');
     $request = new class implements Hyperf\HttpServer\Contract\RequestInterface {
+        public array $headers = ['X-Real-IP' => '192.0.2.1', 'X-Forwarded-For' => '192.0.2.2'];
         public function all() { return []; }
-        public function getServerParams() { return ['remote_addr' => '198.51.100.2']; }
-        public function getHeaderLine($name) { return $name === 'X-Real-IP' ? '1.2.3.4' : '5.6.7.8'; }
+        public function input($key, $default = null) { return $default; }
+        public function getMethod() { return 'POST'; }
+        public function getUri() {
+            return new class {
+                public function getPath() { return '/api/v1/auth/email/code'; }
+            };
+        }
+        public function getHeaderLine($name) { return $this->headers[$name] ?? ''; }
     };
     $service = new App\Service\AuthService();
-    (new App\Controller\AuthController($service, $request))->sendCode();
-    $check($service->ip === '198.51.100.2', 'untrusted peer must not spoof rate-limit IP');
-    putenv('TRUSTED_PROXY_IPS=198.51.100.2');
-    (new App\Controller\AuthController($service, $request))->sendCode();
-    $check($service->ip === '5.6.7.8', 'explicit trusted proxy may forward client IP');
-    putenv('TRUSTED_PROXY_IPS');
+    $auth = new App\Controller\AuthController($service, $request, new App\Service\TurnstileService());
+    $check($auth->sendCode()->status === 503 && $service->ip === '', 'unsigned forwarding must not reach email-code service');
+
+    $ip = '198.51.100.8';
+    $timestamp = (string) time();
+    $request->headers['X-Guanlan-Client-IP'] = $ip;
+    $request->headers['X-Guanlan-Client-Time'] = $timestamp;
+    $request->headers['X-Guanlan-Client-Signature'] = hash_hmac('sha256', "$timestamp\nPOST\n/api/v1/auth/email/code\n$ip", $secret);
+    $check($auth->sendCode()->status === 200 && $service->ip === $ip, 'verified BFF address must be used for rate limiting');
+    putenv('BFF_PROXY_SECRET');
+    putenv('TURNSTILE_ENABLED');
     require __DIR__ . '/../config/routes.php';
     foreach (['/api/v1/history/events', '/api/v1/stats/leaderboard', '/api/v1/questions', '/api/v1/questions/{id:\d+}', '/api/v1/papers/{pid}', '/api/v1/mocks/{slug}'] as $path) {
         $middleware = Hyperf\HttpServer\Router\Router::$routes[$path]['middleware'] ?? [];

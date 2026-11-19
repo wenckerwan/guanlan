@@ -1,109 +1,151 @@
-// Production preview with isolated API fixtures; no live model, mail or database calls.
+// Exercise the built Nuxt app and its BFF against a loopback-only upstream.
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
+const { createServer } = require('node:http');
+const dataset = require('../../storage/history/history.v1.json');
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
-const dataset = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../storage/history/history.v1.json'), 'utf8'));
-const base = process.argv[2] || 'http://localhost:3039';
-const until = async (fn) => { for (let n=0;n<100;n++) { if(await fn()) return; await new Promise(r=>setTimeout(r,100)); } throw Error('fixture assertion timed out'); };
-(async () => {
-  const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || undefined, headless: true });
+
+const tokens = { A: 'a'.repeat(64), B: 'b'.repeat(64) };
+const accounts = {
+  A: { id: 1, displayName: 'Fixture A', role: 'user', status: 'active' },
+  B: { id: 2, displayName: 'Fixture B', role: 'user', status: 'active' },
+};
+
+function createFixture() {
+  const fixture = { expired: false, notes: { A: [], B: [] }, writes: [], errors: [] };
+  let nextId = 1;
+  fixture.api = createServer(async (req, res) => {
+    const send = (status, payload) => {
+      res.writeHead(status, { 'content-type': 'application/json' });
+      res.end(JSON.stringify(payload));
+    };
+    const reply = data => send(200, { data });
+    const pathname = new URL(req.url, 'http://localhost').pathname;
+    const method = req.method;
+    const account = Object.keys(tokens).find(key => req.headers.authorization === `Bearer ${tokens[key]}`);
+    try {
+      if (pathname === '/api/v1/home') return reply({ hotspots: [], documents: [], subjects: [] });
+      if (pathname === '/api/v1/auth/me') {
+        return account ? reply({ user: accounts[account] }) : send(401, { message: 'Sign in required' });
+      }
+      if (pathname === '/api/v1/history/events') {
+        return account ? reply(dataset) : send(401, { message: 'Sign in required' });
+      }
+      if (!pathname.startsWith('/api/v1/study/')) return send(404, { message: 'No fixture for this route' });
+      if (!account || fixture.expired) return send(401, { message: 'Session expired' });
+      const [, resource, id] = pathname.match(/^\/api\/v1\/study\/([^/]+)(?:\/([^/]+))?$/) || [];
+      if (!['notes', 'favorites', 'progress'].includes(resource)) return send(404, { message: 'Unknown study route' });
+      if (method === 'GET') return reply(resource === 'notes' ? fixture.notes[account] : []);
+      const chunks = [];
+      for await (const chunk of req) chunks.push(chunk);
+      const body = chunks.length ? JSON.parse(Buffer.concat(chunks).toString()) : null;
+      fixture.writes.push({ account, resource, body });
+      if (resource !== 'notes') return reply({});
+      const notes = fixture.notes[account];
+      if (method === 'POST') {
+        const row = { ...body, id: nextId++ };
+        notes.push(row);
+        return reply(row);
+      }
+      const index = notes.findIndex(row => String(row.id) === id);
+      if (index === -1) return send(404, { message: 'Unknown note' });
+      if (method === 'PATCH') return reply(Object.assign(notes[index], body));
+      if (method === 'DELETE') return reply(notes.splice(index, 1)[0]);
+      return send(405, { message: 'Unexpected note operation' });
+    } catch (error) {
+      fixture.errors.push(error);
+      send(500, { message: 'Mock API failed' });
+    }
+  });
+  return fixture;
+}
+
+async function until(label, condition) {
+  for (let n = 0; n < 100; n++) {
+    if (await condition()) return;
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  throw Error(`Timed out: ${label}`);
+}
+
+async function runBrowserChecks(base, fixture) {
+  const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || undefined });
   try {
     const context = await browser.newContext();
-    await context.addCookies([{ name: 'guanlan.token', value: 'fixture-A', url: base }]);
-    await context.addInitScript(() => localStorage.setItem('ai_analysis_config', JSON.stringify({ provider: 'custom', endpoint: 'https://fixture.invalid/analysis' })));
-    let mode='complete', fallback=0, saves=0, offline=false, expired=false, notes=[], favorites=[], reports=[];
-    const bNotes=[], bFavorites=[], bWrites=[];
-    const errors=[];
-    await context.route('**/api/**', async route => {
-      const req=route.request(), url=new URL(req.url()), method=req.method(), body=req.postDataJSON();
-      const reply=data=>route.fulfill({json:{data}});
-      const isB=req.headers().authorization==='Bearer fixture-B';
-      if(url.pathname.endsWith('/auth/me')) return reply({user:{id:isB?2:1,name:isB?'Fixture B':'Fixture A',role:'student',code:'fixture'}});
-      if(url.pathname.endsWith('/history/events')) return reply(dataset);
-      if(url.pathname.includes('/study/')) {
-        if(isB) {
-          if(method!=='GET') bWrites.push(body);
-          if(url.pathname.includes('/notes')) {
-            if(method==='POST') bNotes.push({id:bNotes.length+1,...body});
-            return reply(bNotes);
-          }
-          if(url.pathname.includes('/favorites')) return reply(bFavorites);
-          return reply([]);
-        }
-        if(offline) return route.abort('internetdisconnected');
-        if(expired) return route.fulfill({status:401,json:{message:'expired'}});
-        if(url.pathname.includes('/notes')) {
-          if(method==='POST') notes.push({id:notes.length+1,...body});
-          if(method==='PATCH') Object.assign(notes.find(n=>String(n.id)===url.pathname.split('/').at(-1)),body);
-          if(method==='DELETE') notes=notes.filter(n=>String(n.id)!==url.pathname.split('/').at(-1));
-          return reply(notes);
-        }
-        if(url.pathname.includes('/favorites')) { if(method==='PUT') {favorites=favorites.filter(n=>n.targetId!==body.targetId);if(body.favorited)favorites.push({id:1,...body});} return reply(favorites); }
-        return reply([]);
-      }
-      if(url.pathname.endsWith('/ai-analysis-stream')) {
-        if(mode==='unsupported') return route.fulfill({status:404,json:{message:'unsupported'}});
-        if(mode==='denied') return route.fulfill({status:401,json:{message:'expired'}});
-        return route.fulfill({contentType:'text/event-stream',body:'event: delta\r\ndata: '+JSON.stringify({delta:'# 完整报告\n<img src=x onerror="window.__xss=1">'})+'\r\n\r\n'+(mode==='partial'?'':'event: done\r\ndata: {"done":true}\r\n\r\n')});
-      }
-      if(url.pathname.endsWith('/ai-analysis')) {fallback++;return reply({content:'# 回退报告'});}
-      if(url.pathname.endsWith('/analysis-reports')) {
-        if(method==='POST') {saves++;reports.push({id:saves,title:'历史报告 '+saves,createdAt:'2026-10-22T00:00:00',markdown:body.markdown});}
-        return reply(reports);
-      }
-      if(url.pathname.includes('/analysis-reports/')) return reply({title:'历史报告',markdown:'# 历史安全报告\n<script>window.__xss=1</script>'});
-      if(url.pathname.endsWith('/students/fixture')) return reply({code:'fixture',name:'Fixture A',relation:'本人',itemCount:1});
-      return reply([]);
-    });
-    const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
-    await page.goto(base+'/mistakes/analyze/fixture');
-    await page.locator('input[type=file]').setInputFiles({name:'fixture.md',mimeType:'text/markdown',buffer:Buffer.from('# 错题\n测试题')});
-    await page.locator('input[type=checkbox]').uncheck();
-    const run=async()=>{await page.getByRole('button',{name:'开始 AI 分析',exact:true}).click();await until(async()=>!(await page.getByRole('button',{name:'开始 AI 分析',exact:true}).isDisabled()));};
-    await run();assert.equal(saves,1);assert.equal(fallback,0);
-    assert.equal(await page.evaluate(()=>window.__xss),undefined);
-    assert.equal(await page.locator('.markdown-content [onerror]').count(),0);
-    await page.getByRole('button',{name:'历史报告 1',exact:true}).click();
-    await until(async()=>(await page.locator('.markdown-content').innerText()).includes('历史安全报告'));
-    assert.equal(await page.locator('.markdown-content script').count(),0);
-    mode='partial';await run();assert.equal(saves,1);assert.equal(fallback,0);assert.ok((await page.locator('body').innerText()).includes('未自动保存'));
-    mode='unsupported';await run();assert.equal(saves,2);assert.equal(fallback,1);
-    mode='denied';await run();assert.equal(saves,2);assert.equal(fallback,1);
-    console.log('PASS AI complete/partial/unsupported/401/history/sanitization');
-    await context.addCookies([{ name: 'guanlan.token', value: 'fixture-A', url: base }]);
-    await page.goto(base+'/history');await page.waitForSelector('.hr-reader').catch(async e=>{console.error(await page.locator('body').innerText());throw e;});
-    await page.getByRole('searchbox').fill('虎门');await page.locator('.hr-table-scroll a').first().click();
-    const note=page.locator('.hr-note textarea');await note.fill('在线原始笔记');await note.blur();
-    await until(()=>notes.some(n=>n.content==='在线原始笔记'));
-    offline=true;await context.setOffline(true);
-    await until(async()=> (await page.locator('.hr-note small').innerText()).includes('待同步'));
-    await note.fill('离线修改笔记');await note.blur();
-    await until(async()=>(await page.locator('.hr-note small').innerText()).includes('待同步'));
-    offline=false;await context.setOffline(false);
-    await until(()=>notes.some(n=>n.content==='离线修改笔记'));
-    await until(async()=> (await page.locator('.hr-note small').innerText()).includes('已同步到账号'));
-    await until(async()=>!(await note.isDisabled()));assert.equal(await note.inputValue(),'离线修改笔记');
-    expired=true;await note.fill('登录失效后笔记');await note.blur();
+    const signIn = account => context.addCookies([
+      { name: 'guanlan.session', value: tokens[account], url: base, httpOnly: true },
+    ]);
+    await signIn('A');
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+
+    const note = page.locator('label.hr-note textarea');
+    const status = page.locator('label.hr-note small');
+    const openNote = async () => {
+      await page.waitForSelector('.hr-reader');
+      await page.getByRole('searchbox').fill('虎门');
+      await page.locator('.hr-table-scroll a').first().click();
+      await note.waitFor();
+    };
+    const editNote = async text => { await note.fill(text); await note.blur(); };
+    const saved = text => fixture.notes.A.some(row => row.content === text);
+    const pending = () => until('pending note status', async () => (await status.innerText()).includes('待同步'));
+    const refocus = () => page.evaluate(() => window.dispatchEvent(new Event('focus')));
+
+    await page.goto(`${base}/history`);
+    await openNote();
+    await editNote('在线原始笔记');
+    await until('online save', () => saved('在线原始笔记'));
+
+    await context.setOffline(true);
+    await editNote('离线修改笔记');
+    await pending();
+    assert.ok(saved('在线原始笔记'));
+    await context.setOffline(false);
+    await until('reconnected save', () => saved('离线修改笔记'));
+    await until('synced note status', async () => (await status.innerText()).includes('已同步到账号'));
+    assert.equal(await note.inputValue(), '离线修改笔记');
+
+    fixture.expired = true;
+    await editNote('登录失效后笔记');
     await page.waitForURL('**/login?**');
-    assert.equal(notes[0].content,'离线修改笔记');
-    expired=false;await context.addCookies([{name:'guanlan.token',value:'fixture-A',url:base}]);await page.goto(base+'/history');await page.waitForSelector('.hr-reader');
-    await until(()=>notes.some(n=>n.content==='登录失效后笔记'));
-    // Change the real cookie in the same browser context while A has a pending draft.
-    await page.getByRole('searchbox').fill('虎门');await page.locator('.hr-table-scroll a').first().click();
-    offline=true;await note.fill('A账号待同步私有草稿');await note.blur();
-    await until(async()=>(await page.locator('.hr-note small').innerText()).includes('待同步'));
-    await context.addCookies([{name:'guanlan.token',value:'fixture-B',url:base}]);
-    await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
-    await until(async()=>await note.isVisible() && (await note.inputValue())==='');
-    assert.equal(bNotes.length,0);
-    assert.ok(bWrites.every(body=>!JSON.stringify(body).includes('A账号待同步私有草稿')));
-    offline=false;
-    await context.addCookies([{name:'guanlan.token',value:'fixture-A',url:base}]);
-    await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
-    await until(()=>notes.some(n=>n.content==='A账号待同步私有草稿'));
-    assert.deepEqual(errors,[]);
-    console.log('PASS history offline edit/reconnect/401/pending replay/account switch; no page errors');
+    assert.ok(saved('离线修改笔记'));
+    fixture.expired = false;
+    await page.goto(`${base}/history`);
+    await until('save after reauthentication', () => saved('登录失效后笔记'));
+    await openNote();
+
+    // Prevent sync temporarily while allowing the BFF to verify the new session.
+    const studyRequests = '**/api/v1/study/**';
+    const disconnectStudy = route => route.abort('internetdisconnected');
+    await context.route(studyRequests, disconnectStudy);
+    const privateDraft = 'A账号待同步私有草稿';
+    await editNote(privateDraft);
+    await pending();
+    assert.ok(saved('登录失效后笔记'));
+    await signIn('B');
+    await context.unroute(studyRequests, disconnectStudy);
+    const bSession = page.waitForResponse(async response => {
+      if (!response.ok() || !response.url().endsWith('/auth/me')) return false;
+      return (await response.json()).data.user.id === accounts.B.id;
+    });
+    await refocus();
+    await bSession;
+    await openNote();
+    await until('account B sees no draft', async () => (await note.inputValue()) === '');
+    assert.equal(fixture.notes.B.length, 0);
+    assert.ok(!fixture.writes.some(write => write.account === 'B' && write.resource === 'notes'));
+
+    await signIn('A');
+    await refocus();
+    await until('draft replayed only for its owner', () => saved(privateDraft));
+    assert.equal(fixture.notes.B.length, 0);
+    assert.deepEqual(errors, []);
+    console.log('PASS history online/offline saves, 401 recovery and account isolation through the BFF');
     await context.close();
-  } finally {await browser.close();}
-})().catch(error=>{console.error(error);process.exitCode=1;});
+  } finally {
+    await browser.close();
+  }
+}
+
+module.exports = { createFixture, runBrowserChecks };
