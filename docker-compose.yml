@@ -1,6 +1,11 @@
 services:
   api:
-    build: ./apps/api
+    # 上下文必须是仓库根：apps/api/Dockerfile 里 COPY 的是 apps/api/* 与 storage/dataset，
+    # 以 ./apps/api 为上下文会找不到 apps/api/composer.json 而直接构建失败。
+    # 与 compose.production.yml 保持一致。
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
     environment:
       APP_ENV: local
       COMMENTS_ENABLED: "false"

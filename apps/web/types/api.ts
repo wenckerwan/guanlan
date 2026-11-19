@@ -170,6 +170,12 @@ export type ArticleDetail = ArticleSummary & {
   html: string
 }
 
+export type ArchivedAnalysisResponse = {
+  code: 'ANALYSIS_VERSION_ARCHIVED'
+  message: string
+  replacementSlug?: string
+}
+
 /* ---------- 错题分析 ---------- */
 
 export type MistakeOption = {

@@ -38,6 +38,14 @@ class ContentMaintenance
         }
     }
 
+    public static function withLock(string $table, callable $operation): mixed
+    {
+        return Db::transaction(function () use ($table, $operation) {
+            self::lock([$table]);
+            return $operation();
+        });
+    }
+
     public static function import(array $tables, callable $operation): void
     {
         Db::transaction(function () use ($tables, $operation) {

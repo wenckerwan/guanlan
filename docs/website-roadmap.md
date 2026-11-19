@@ -24,7 +24,7 @@
 
 | 源目录 | 站点模块 | 数据集 | 规模（当前） |
 |---|---|---|---|
-| `真题分析_2012-2026` | 真题分析 `/analysis` | `analysis_articles.json` | 13 篇 |
+| `真题分析_2012-2026` | 真题分析 `/analysis` | `analysis_articles.json` | 11 篇 |
 | `时政热点` | 时政热点 `/hotspots` | `hotspots.json` | 3 期 |
 | `真题分析_2012-2026` + `时政热点/时政考点预测_真题反推` | 时政预测 `/predictions` | `predictions.json` | 6 篇 |
 | `真题库v2` | 真题回顾 `/papers`、`/questions` | `papers.json` + `questions.json` | 42 卷 / 1479 题 |

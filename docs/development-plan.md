@@ -29,7 +29,7 @@
 | 模块 | 数据集 | 规模 |
 |---|---|---|
 | 真题回顾 | `papers.json` + `questions.json` | 42 卷 / 1479 题 |
-| 真题分析 | `analysis_articles.json` | 13 篇 |
+| 真题分析 | `analysis_articles.json` | 11 篇 |
 | 时政热点 | `hotspots.json` | 3 期 |
 | 时政预测 | `predictions.json` | 6 篇 |
 | 模拟押题 | `mocks.json` + `stats.json` | 1 套 / 38 题 |

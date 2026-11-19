@@ -1,8 +1,14 @@
-"""生成 analysis_articles.json / hotspots.json / predictions.json。"""
+"""默认生成全部文章；--only analysis 只生成分析文章并刷新数据清单。
+
+无参数 main() 保持 build_all.py 的全量构建行为，由总入口最后发布清单。
+"""
 from __future__ import annotations
 
+import argparse
 import json
 import re
+import sys
+from dataset_manifest import build_manifest, write_manifest
 from common import (
     DATASET_ROOT,
     RAW_ROOT,
@@ -18,11 +24,14 @@ ROOT = RAW_ROOT
 ANALYSIS_DIR = ROOT / "真题分析_2012-2026"
 HOTSPOT_DIR = ROOT / "时政热点"
 OUT = DATASET_ROOT
+SOURCE_MANIFEST = OUT.parent / "import-manifest.json"
+DATASET_MANIFEST = OUT.parent / "dataset-manifest.json"
 
+# 只有列在这里的源稿才会进入 analysis_articles.json。
+# 「选择题绝对错误选项规律.md」（初稿）与「…v2.md」（工作稿，正文与发行版重复 96.6%）
+# 已被 发行版 取代，不再上站；三份源稿仍保留在 storage/raw 供追溯，只是不参与生成。
 ANALYSIS_CATEGORY = {
     "选择题分析.md": "选择题规律",
-    "选择题绝对错误选项规律.md": "选择题规律",
-    "选择题绝对错误选项规律v2.md": "选择题规律",
     "选择题绝对错误选项规律v2_发行版.md": "选择题规律",
     "错项核对_2024-2026.md": "选择题规律",
     "分析题分析.md": "分析题规律",
@@ -76,10 +85,16 @@ def summary_of(text: str, limit: int = 120) -> str:
 
 
 def outline_of(text: str) -> list[dict]:
+    """正文目录：只收 H2/H3，跳过文档大标题。
+
+    源稿的 H1 就是文章标题本身：收进来会让列表页「N 个章节」+1，
+    阅读页目录也会把顶部标题重复一遍。三类文章（分析/热点/预测）
+    共用同一套列表与阅读组件，所以口径统一在这里。
+    """
     return [
         {"level": lvl, "title": clean(title)}
         for lvl, title, _ in split_all_headings(text)
-        if lvl <= 3
+        if 2 <= lvl <= 3
     ]
 
 
@@ -150,16 +165,29 @@ def build_predictions() -> list[dict]:
     return items
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--only", choices=["analysis"],
+        help="只生成 analysis_articles.json 并刷新数据清单；默认全量生成",
+    )
+    args = parser.parse_args([] if argv is None else argv)
     OUT.mkdir(parents=True, exist_ok=True)
-    for name, payload in [
+    payloads = [
         ("analysis_articles.json", build_analysis_articles()),
-        ("hotspots.json", build_hotspots()),
-        ("predictions.json", build_predictions()),
-    ]:
-        (OUT / name).write_text(json.dumps(payload, ensure_ascii=False, indent=1), encoding="utf-8")
+    ]
+    if args.only is None:
+        payloads.extend([
+            ("hotspots.json", build_hotspots()),
+            ("predictions.json", build_predictions()),
+        ])
+    for name, payload in payloads:
+        (OUT / name).write_text(json.dumps(payload, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(name, len(payload))
+    if args.only == "analysis":
+        write_manifest(DATASET_MANIFEST, build_manifest(OUT, SOURCE_MANIFEST))
+        print(DATASET_MANIFEST.name)
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

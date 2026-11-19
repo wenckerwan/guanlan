@@ -1,3 +1,4 @@
+import hashlib
 import json
 import tempfile
 import unittest
@@ -88,6 +89,17 @@ class DatasetManifestTest(unittest.TestCase):
         first = self.output.read_bytes()
         dataset_manifest.write_manifest(self.output, manifest)
         self.assertEqual(first, self.output.read_bytes())
+        self.assertNotIn(b"\r", first)
+        self.assertTrue(first.endswith(b"\n"))
+
+    def test_manifest_records_actual_bytes_for_each_dataset(self):
+        manifest = dataset_manifest.build_manifest(self.dataset_dir, self.source_path)
+        for name, details in manifest["datasets"].items():
+            path = self.dataset_dir / name
+            self.assertEqual(details["bytes"], len(path.read_bytes()))
+            self.assertEqual(
+                details["sha256"], hashlib.sha256(path.read_bytes()).hexdigest()
+            )
 
     def test_publish_manifest_uses_dataset_and_source_paths(self):
         result = build_all.publish_manifest(
