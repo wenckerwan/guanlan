@@ -1,6 +1,6 @@
 # 分析文章定向发布
 
-仓库快照由 13 篇改为 11 篇，其中“选择题规律”4 篇；发行版正文不变，目录去掉文档标题后为 37 节。两篇旧稿退出数据集，线上保留原记录、主键及收藏、评论、笔记和进度。旧链接显示下架说明，并在发行版可见时提供入口。历史评论保留在旧稿关联下，不展示在发行版。
+仓库快照 11 篇，其中「选择题规律」4 篇。文章正文自 2026-11-20 起由后台编辑接口维护（content_source=admin），analysis:publish-release 只处理归档状态与目录，不再改动正文；目录节数以线上为准，不再固定为 37 节。文章数据已于 c556776 移出 git（storage/dataset 下 analysis_articles/hotspots/predictions 三份），数据集校验器对缺失文件跳过、对 hash 不符仍报错。
 
 分析数据文件为 317,347 字节，保留的 11 篇正文未改，目录均去掉文档标题。生成器可用 `python tools/ingest/build_articles.py --only analysis` 单独更新分析和清单。热点和预测数据文件保持原样。API 构建使用仓库根目录，旧的数据子目录副本已经移除，镜像内包含数据清单和源清单。
 
@@ -15,6 +15,8 @@ bash tools/deploy/check_analysis_images.sh API_IMAGE WEB_IMAGE
 该命令只在隔离库中写入合成文章。部署后可以对实际网关执行只读验收：`python3 tools/deploy/check_analysis_gateway.py BASE_URL`。
 
 以下命令从服务部署目录运行，示例使用 `compose.production.yml`。应先验证新镜像启动和挂载的 `storage` 清单一致，再发布文章。实际生产写入须经授权。
+
+改正文的路径是后台编辑（PATCH /admin/analysis/{id}，带 expectedRevision，自动生成修订记录）；禁止用 db:seed 或全量 Seeder，那会同时重写热点与预测。
 
 ## 1. 只读预检与备份
 
@@ -61,7 +63,7 @@ chmod 600 "$backup_dir/rollback.json"
 
 ## 3. 上线验收
 
-- `/analysis` 可见 11 篇；“选择题规律”可见 4 篇；发行版列首，正文目录 37 节。
+- `/analysis` 可见 11 篇；“选择题规律”可见 4 篇；发行版列首；目录以线上实际显示为准（节数不固定）。
 - 游客前 3 篇仍可读，第 4 篇保留登录限制；两个旧链接显示归档说明，发行版入口继续遵循正常访问规则。
 - 两篇旧稿记录及关联仍在；人工正文未覆盖；热点、预测及维护标记与对账基准一致。
 
