@@ -20,4 +20,5 @@ return [
     ...CommandCollector::getAllCommands(),
     \App\Command\PublishAnalysisReleaseCommand::class,
     \App\Command\SyncPredictionBodiesCommand::class,
+    \App\Command\UpdateAnalysisBodiesCommand::class,
 ];

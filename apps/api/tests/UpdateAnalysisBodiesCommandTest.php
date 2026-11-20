@@ -1,6 +1,13 @@
 <?php
 declare(strict_types=1);
 
+namespace Hyperf\Database\Commands {
+    final class CommandCollector
+    {
+        public static function getAllCommands(): array { return []; }
+    }
+}
+
 namespace App\Support {
     final class ContentMaintenance
     {
@@ -79,6 +86,10 @@ namespace {
     {
         try { $action(); } catch (RuntimeException) { return; }
         throw new RuntimeException($message);
+    }
+    $commands = require dirname(__DIR__).'/config/autoload/commands.php';
+    foreach ([UpdateAnalysisBodiesCommand::class, App\Command\SyncPredictionBodiesCommand::class] as $registered) {
+        check(in_array($registered, $commands, true), 'Missing CLI registration: '.$registered);
     }
     $slug = 'ocr-5274fe86';
     $row = AnalysisArticle::$rows[$slug] = new AnalysisArticle($slug);
