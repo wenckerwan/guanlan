@@ -29,7 +29,7 @@ bash tools/deploy/check_analysis_images.sh API_IMAGE WEB_IMAGE
   - 白名单固定为 10 篇。若本次首次全量更新预期 10 篇都有变化，而 `changes` 少于 10，先核对 `unchanged`，排查本地是否重新生成、传输是否完整；已更新的文章会列入 `unchanged`。
   - `--apply` 必须带 `--receipt`。回执保存完整旧值及旧 `html` 的 SHA-256；回退用 `--rollback --receipt=<回执>`。
 
-**禁止 db:seed 或运行任何 Seeder。** 全量 `ArticleSeeder` 会同时重写 `analysis_articles`、`hotspots` 和 `predictions`；生产 dataset 文件可能落后于数据库，用它重新导入可能把已上线的正文整体覆盖为旧版本。
+**禁止 db:seed 或运行任何 Seeder。** 全量 `ArticleSeeder` 会同时重写 `analysis_articles`、`hotspots` 和 `predictions`；生产 dataset 文件可能落后于数据库。导入前会检查 `content_maintenance.maintained`：这三张表任一标记为 `1` 时，直接拒绝并报错，不会覆盖已维护的正文；只有三个标记均为 `0` 时，导入才会通过这项保护检查。清零前必须先备份并对账分析文章与预测文章的正文。
 
 ## 1. 只读预检与备份
 
