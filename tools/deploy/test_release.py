@@ -1,5 +1,7 @@
 """Behavioral release and rollback rehearsal with a stateful Docker adapter; no daemon needed."""
 import importlib.util
+from contextlib import redirect_stdout
+import io
 from pathlib import Path
 import tempfile
 import unittest
@@ -10,10 +12,17 @@ release=importlib.util.module_from_spec(spec);spec.loader.exec_module(release)
 class Fake:
     def __init__(self):
         self.calls=[];self.fail=False;self.tags={};self.current={s:'old-'+s for s in release.SERVICES};self.container_ids={s:s for s in release.SERVICES + release.UNCHANGED}
+        self.mayuan_db='';self.databases=['guanlan'];self.dump_failed=False
     def __call__(self,args,output=None):
         self.calls.append(args)
+        if 'mayuan-api' in args and any('MAYUAN_DB_DSN' in arg for arg in args):return self.mayuan_db
+        if any('SHOW DATABASES' in arg for arg in args):return '\n'.join(self.databases)
         if 'mysqldump' in ' '.join(args):
-            if output:output.write(b'CREATE TABLE fixture (id int);\n')
+            if self.dump_failed:raise RuntimeError('primary dump failed')
+            if output:
+                schemas=['guanlan', *args[args.index('sh', args.index('-c')+1)+1:]] if '$@' in ' '.join(args) else ['guanlan']
+                for name in schemas:
+                    output.write(f'CREATE DATABASE `{name}`;\nCREATE TABLE fixture (id int);\n'.encode())
             return ''
         if args[:3]==['git','rev-parse','HEAD']:return 'a'*40
         if args[:3]==['docker','image','inspect']:
@@ -64,6 +73,35 @@ class Tests(unittest.TestCase):
         self.assertIn('rollback-dev29-test',(self.root/'compose.release-images.yml').read_text())
     def test_missing_candidate_does_not_touch_running_services(self):
         with self.assertRaises(RuntimeError):self.manager.prepare('dev29-test','missing','new-web')
+        self.assertFalse(any('up' in c for c in self.fake.calls))
+    def test_prepare_dumps_configured_optional_database_when_present(self):
+        self.fake.mayuan_db='db_from_config'
+        self.fake.databases=['guanlan','db_from_config']
+        folder=self.prepare()
+        self.assertIn('CREATE DATABASE `guanlan`', (folder/'database.sql').read_text())
+        self.assertIn('CREATE DATABASE `db_from_config`', (folder/'database.sql').read_text())
+    def test_prepare_logs_and_skips_missing_optional_database(self):
+        self.fake.mayuan_db='missing_optional'
+        output=io.StringIO()
+        with redirect_stdout(output):folder=self.prepare()
+        self.assertIn('missing_optional',output.getvalue())
+        self.assertIn('skip',output.getvalue().lower())
+        self.assertNotIn('missing_optional',(folder/'database.sql').read_text())
+        self.assertIn('CREATE DATABASE `guanlan`',(folder/'database.sql').read_text())
+        self.assertEqual(self.manager.read(folder)['status'],'PREPARED')
+    def test_prepare_selects_only_target_databases_from_multiple_schemas(self):
+        self.fake.mayuan_db='configured_schema'
+        self.fake.databases=['mysql','another_app','configured_schema','guanlan','test_database']
+        folder=self.prepare()
+        dump=(folder/'database.sql').read_text()
+        self.assertIn('CREATE DATABASE `guanlan`',dump)
+        self.assertIn('CREATE DATABASE `configured_schema`',dump)
+        for name in ('mysql','another_app','test_database'):
+            self.assertNotIn(f'CREATE DATABASE `{name}`',dump)
+    def test_primary_dump_failure_does_not_complete_prepare(self):
+        self.fake.dump_failed=True
+        with self.assertRaisesRegex(RuntimeError,'primary dump failed'):self.prepare()
+        self.assertEqual(self.manager.read(self.manager.folder('dev29-test'))['status'],'PREPARING')
         self.assertFalse(any('up' in c for c in self.fake.calls))
     def test_config_drift_refuses_activation(self):
         self.prepare();(self.root/'compose.production.yml').write_text('changed')

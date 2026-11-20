@@ -84,6 +84,31 @@ class Release:
             raise ValueError('image reference contains unsupported characters')
         return reference
 
+    def backup_databases(self, output):
+        # Return only the schema name from the running application's connection configuration.
+        schema = self.compose('exec', '-T', 'mayuan-api', 'sh', '-c',
+                              'dsn=${MAYUAN_DB_DSN:-}; '
+                              'case "$dsn" in mysql:*) dsn=";${dsn#mysql:};";; *) exit 0;; esac; '
+                              'case "$dsn" in *";host=mysql;"*) ;; *) exit 0;; esac; '
+                              'case "$dsn" in *";dbname="*) db=${dsn#*;dbname=}; printf "%s\\n" "${db%%;*}";; esac')
+        optional = []
+        if schema:
+            if not re.fullmatch(r'[a-zA-Z0-9_][a-zA-Z0-9_-]{0,63}', schema):
+                raise RuntimeError('Invalid optional database name in application configuration')
+            databases = self.compose('exec', '-T', 'mysql', 'sh', '-c',
+                                     'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -uroot -NB -e "SHOW DATABASES;"')
+            if schema in databases.splitlines():
+                optional.append(schema)
+            else:
+                print(f'Optional database backup skipped: {schema} does not exist on this MySQL service.', flush=True)
+        else:
+            print('Optional database backup skipped: no Mayuan schema configured on this MySQL service.', flush=True)
+        # The main schema is required. Never suppress a mysqldump failure.
+        self.compose('exec', '-T', 'mysql', 'sh', '-c',
+                     'if [ "$#" -gt 0 ] && [ "$1" = "$MYSQL_DATABASE" ]; then shift; fi; '
+                     'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysqldump -uroot --single-transaction --routines '
+                     '--triggers --databases "$MYSQL_DATABASE" "$@"', 'sh', *optional, output=output)
+
     def prepare(self, release_id, api_image, web_image, mayuan_web_image=None):
         folder = self.folder(release_id)
         if folder.exists():
@@ -121,8 +146,7 @@ class Release:
         if self.overlay.exists():
             (folder / 'previous-images.yml').write_bytes(self.overlay.read_bytes())
         with (folder / 'database.sql').open('wb') as output:
-            self.compose('exec', '-T', 'mysql', 'sh', '-c',
-                         'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysqldump -uroot --single-transaction --routines --triggers --databases "$MYSQL_DATABASE" mayuan', output=output)
+            self.backup_databases(output)
         dump = folder / 'database.sql'
         if dump.stat().st_size == 0 or b'CREATE TABLE' not in dump.read_bytes():
             raise RuntimeError('database backup is empty or invalid')
