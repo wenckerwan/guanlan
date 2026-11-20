@@ -13,7 +13,7 @@ import urllib.request
 
 SERVICES = ('api', 'web', 'gateway')
 UNCHANGED = ('mysql', 'redis', 'mayuan-api', 'mayuan-web')
-CONFIGS = ('compose.production.yml', 'compose.ui-release.yml', 'docker/nginx/production.conf')
+CONFIGS = ('compose.production.yml', 'compose.ui-release.yml', 'docker/nginx/production.conf', 'compose.tuning.yml')
 IMMUTABLE_INPUTS = ('storage/dataset', 'storage/dataset-manifest.json', 'storage/import-manifest.json', 'storage/history')
 IMAGE_REFERENCE = re.compile(r'[A-Za-z0-9][A-Za-z0-9._/@:-]{0,254}\Z')
 
@@ -33,7 +33,7 @@ class Release:
 
     def compose(self, *args, output=None):
         command = ['docker', 'compose', '--env-file', str(self.env), '-f', str(self.root / 'compose.production.yml')]
-        for name in ('compose.ui-release.yml', 'compose.release-images.yml'):
+        for name in ('compose.ui-release.yml', 'compose.tuning.yml', 'compose.release-images.yml'):
             if (self.root / name).exists():
                 command += ['-f', str(self.root / name)]
         return self.run(command + list(args), output=output)

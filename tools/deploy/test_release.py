@@ -69,6 +69,37 @@ class Tests(unittest.TestCase):
         self.prepare();(self.root/'compose.production.yml').write_text('changed')
         with self.assertRaises(RuntimeError):self.manager.activate('dev29-test')
         self.assertFalse(any('up' in c for c in self.fake.calls))
+    def test_optional_tuning_overlay_order(self):
+        ui = 'compose.ui-release.yml'
+        tuning = 'compose.tuning.yml'
+        images = 'compose.release-images.yml'
+        for overlays in ((ui, tuning), (ui, tuning, images), (ui,)):
+            with self.subTest(overlays=overlays):
+                for name in (ui, tuning, images):
+                    path = self.root/name
+                    if name in overlays:
+                        path.write_text('services: {}')
+                    else:
+                        path.unlink(missing_ok=True)
+                self.manager.compose('config', '--quiet')
+                args = self.fake.calls[-1]
+                files = [Path(args[index+1]).name for index, arg in enumerate(args) if arg == '-f']
+                self.assertEqual(files, ['compose.production.yml', *overlays])
+    def test_tuning_drift_refuses_activation_and_rollback(self):
+        tuning = self.root/'compose.tuning.yml'
+        tuning.write_text('original')
+        folder = self.prepare()
+        self.assertEqual((folder/tuning.name).read_text(), 'original')
+        tuning.write_text('changed')
+        with self.assertRaisesRegex(RuntimeError, 'configuration changed'):
+            self.manager.activate('dev29-test')
+        self.assertFalse(any('up' in args for args in self.fake.calls))
+        tuning.write_text('original')
+        self.manager.activate('dev29-test')
+        tuning.write_text('changed')
+        with self.assertRaisesRegex(RuntimeError, 'configuration changed'):
+            self.manager.rollback('dev29-test')
+        self.assertEqual(self.manager.read(folder)['status'], 'ACTIVE')
     def test_environment_drift_refuses_activation(self):
         self.prepare();(self.root/'.env.production').write_text('APP_KEY=changed')
         with self.assertRaises(RuntimeError):self.manager.activate('dev29-test')
