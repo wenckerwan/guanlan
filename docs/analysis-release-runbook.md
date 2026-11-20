@@ -1,6 +1,6 @@
 # 分析文章定向发布
 
-仓库快照 11 篇，其中「选择题规律」4 篇。文章正文自 2026-11-20 起由后台编辑接口维护（content_source=admin），analysis:publish-release 只处理归档状态与目录，不再改动正文；目录节数以线上为准，不再固定为 37 节。文章数据已于 c556776 移出 git（storage/dataset 下 analysis_articles/hotspots/predictions 三份），数据集校验器对缺失文件跳过、对 hash 不符仍报错。
+仓库快照 11 篇，其中「选择题规律」4 篇。分析文章正文自 2026-11-20 起由后台编辑接口维护（`content_source=admin`）。预测文章正文由 `content:sync-predictions` 维护；生产 dataset 文件用于启动校验和来源对账，可能落后于数据库。`analysis:publish-release` 只处理归档状态与目录，不再改动正文；目录节数以线上为准，不再固定为 37 节。文章数据已于 c556776 移出 git（storage/dataset 下 analysis_articles/hotspots/predictions 三份），数据集校验器对缺失文件跳过、对 hash 不符仍报错。
 
 分析数据文件为 317,347 字节，保留的 11 篇正文未改，目录均去掉文档标题。生成器可用 `python tools/ingest/build_articles.py --only analysis` 单独更新分析和清单。热点和预测数据文件保持原样。API 构建使用仓库根目录，旧的数据子目录副本已经移除，镜像内包含数据清单和源清单。
 
@@ -17,6 +17,19 @@ bash tools/deploy/check_analysis_images.sh API_IMAGE WEB_IMAGE
 以下命令从服务部署目录运行，示例使用 `compose.production.yml`。应先验证新镜像启动和挂载的 `storage` 清单一致，再发布文章。实际生产写入须经授权。
 
 改正文的路径是后台编辑（PATCH /admin/analysis/{id}，带 expectedRevision，自动生成修订记录）；禁止用 db:seed 或全量 Seeder，那会同时重写热点与预测。
+
+## 0. 正文更新的两条路（先读）
+
+仓库不保存文章正文。线上正文以数据库为准；生产 `storage/dataset/` 下的 JSON 用于启动校验（`verify-dataset`）与来源对账，可能落后于数据库。`dataset-manifest.json` 记录的是这些文件的 SHA-256，不是线上正文的 SHA-256。
+
+- **分析文章（11 篇，`analysis_articles`）**：走后台编辑接口 `PATCH /admin/analysis/{id}`，必须带 `expectedRevision`。保存后重算 `html`、`outline`、`word_count`，并生成 `article_revisions`，可逐篇恢复。
+- **预测文章（10 篇，`predictions`）**：在 API 容器内运行 `php bin/hyperf.php content:sync-predictions --source=<path> [--apply --receipt=<path>]`。`--source` 指向通过清单校验的 `storage/dataset/predictions.json`。
+  - 不带 `--apply` 是只读预检，输出 `changes` 和 `unchanged`。
+  - 只更新 `title`、`summary`、`html`、`outline`、`word_count`，不动 `slug`、`layer`、`sort_order`、`priority`、`status`。
+  - 白名单固定为 10 篇。若本次首次全量更新预期 10 篇都有变化，而 `changes` 少于 10，先核对 `unchanged`，排查本地是否重新生成、传输是否完整；已更新的文章会列入 `unchanged`。
+  - `--apply` 必须带 `--receipt`。回执保存完整旧值及旧 `html` 的 SHA-256；回退用 `--rollback --receipt=<回执>`。
+
+**禁止 db:seed 或运行任何 Seeder。** 全量 `ArticleSeeder` 会同时重写 `analysis_articles`、`hotspots` 和 `predictions`；生产 dataset 文件可能落后于数据库，用它重新导入可能把已上线的正文整体覆盖为旧版本。
 
 ## 1. 只读预检与备份
 
@@ -66,8 +79,12 @@ chmod 600 "$backup_dir/rollback.json"
 - `/analysis` 可见 11 篇；“选择题规律”可见 4 篇；发行版列首；目录以线上实际显示为准（节数不固定）。
 - 游客前 3 篇仍可读，第 4 篇保留登录限制；两个旧链接显示归档说明，发行版入口继续遵循正常访问规则。
 - 两篇旧稿记录及关联仍在；人工正文未覆盖；热点、预测及维护标记与对账基准一致。
+- 分析正文走后台编辑接口，预测正文走 `content:sync-predictions`；`analysis:publish-release` 只处理归档状态与目录，不改正文。
 
 ## 4. 回退
+
+- **分析正文**：从该篇的 `article_revisions` 恢复到上一修订，不要整库回滚。
+- **预测正文**：将权限为 `0600` 的宿主机回执复制到 API 容器的私有目录，并在容器内运行 `php bin/hyperf.php content:sync-predictions --rollback --receipt=<容器内回执路径>`。回执必须保存在宿主机 `/www/backup/guanlan/releases/<tag>/`，权限 `0600`；容器重建会清除 `/tmp`。回退前会核对现值仍与应用后的值一致。
 
 把宿主机凭据带入当前 API 容器的私有目录，使用发布时的同一数据库：
 
