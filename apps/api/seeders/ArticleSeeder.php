@@ -15,19 +15,6 @@ use Hyperf\Database\Seeders\Seeder;
  */
 class ArticleSeeder extends Seeder
 {
-    /**
-     * 首页卡片用到的学科映射（沿用 dev.2 的 slug）。
-     * 键需与 dataset/hotspots.json 的 period 完全一致（数据里是 ASCII 连字符）。
-     */
-    private const CARD_MAP = [
-        '2026年1-6月' => ['slug' => 'xi-jinping-thought', 'level' => 'S', 'type' => '理论与政策', 'tag' => '上半年主线'],
-        '2026年7-8月' => ['slug' => 'xi-jinping-thought', 'level' => 'S', 'type' => '理论与政策', 'tag' => '七一与上合'],
-        '2026年9月' => ['slug' => 'xi-jinping-thought', 'level' => 'S', 'type' => '理论与政策', 'tag' => '9月更新'],
-        '2026年9月下_0927更新' => ['slug' => 'xi-jinping-thought', 'level' => 'S', 'type' => '理论与政策', 'tag' => '9月增补'],
-        '2026年10月' => ['slug' => 'xi-jinping-thought', 'level' => 'S', 'type' => '理论与政策', 'tag' => '10月补更'],
-        '2026年11月' => ['slug' => 'xi-jinping-thought', 'level' => 'S', 'type' => '理论与政策', 'tag' => '五中全会'],
-    ];
-
     public function run(): void
     {
         \App\Support\ContentMaintenance::import(['analysis_articles', 'hotspots', 'predictions'], function () { $this->importDataset(); });
@@ -82,46 +69,8 @@ class ArticleSeeder extends Seeder
 
     private function seedHotspots(): void
     {
-        $rows = DatasetReader::list('hotspots.json');
-        if ($rows === []) {
-            echo '[ArticleSeeder] 跳过时政热点：dataset 缺失' . PHP_EOL;
-            return;
-        }
-
-        $subjectIds = $this->subjectIds();
-
-        // 清空时政长文（保留 dev.2 的卡片式热点：其 slug 为 NULL）
-        Hotspot::query()->whereNotNull('slug')->delete();
-
-        $now = DatasetReader::now();
-
-        foreach ($rows as $row) {
-            $period = (string) ($row['period'] ?? '');
-            $card = self::CARD_MAP[$period] ?? ['slug' => 'xi-jinping-thought', 'level' => 'A', 'type' => '形势与政策', 'tag' => '时政'];
-
-            // 本地审核后才产出 dataset，入库即发布（无云端筛选态）
-            Hotspot::create([
-                'slug' => (string) $row['slug'],
-                'title' => (string) $row['title'],
-                'level' => $card['level'],
-                'priority' => (string) ($row['priority'] ?? 'A'),
-                'period' => $period,
-                'summary' => mb_substr((string) ($row['summary'] ?? ''), 0, 500),
-                'type' => $card['type'],
-                'tag' => $card['tag'],
-                'html' => (string) ($row['html'] ?? ''),
-                'outline' => $row['outline'] ?? [],
-                'word_count' => (int) ($row['word_count'] ?? 0),
-                'source_file' => (string) ($row['source_file'] ?? ''),
-                'published_at' => $this->periodToDate($period),
-                'subject_id' => $subjectIds[$card['slug']] ?? 1,
-                'status' => \App\Support\ContentStatus::PUBLISHED,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
-        }
-
-        echo '[ArticleSeeder] 时政热点 ' . Hotspot::query()->whereNotNull('slug')->count() . ' 期' . PHP_EOL;
+        $count = (new \App\Seeder\HotspotDatasetImporter())->import();
+        echo '[ArticleSeeder] 时政热点 ' . $count . ' 条' . PHP_EOL;
     }
 
     private function seedPredictions(): void
@@ -153,24 +102,5 @@ class ArticleSeeder extends Seeder
         }
 
         echo '[ArticleSeeder] 时政预测 ' . Prediction::query()->count() . ' 篇' . PHP_EOL;
-    }
-
-    /** @return array<string, int> slug => subject_id */
-    private function subjectIds(): array
-    {
-        $out = [];
-        $rows = \Hyperf\DbConnection\Db::table('subjects')->select('id', 'slug')->get();
-        foreach ($rows as $row) {
-            $out[(string) $row->slug] = (int) $row->id;
-        }
-        return $out;
-    }
-
-    private function periodToDate(string $period): string
-    {
-        if (preg_match('/(\d{4})年(\d{1,2})月/u', $period, $m)) {
-            return sprintf('%04d-%02d-01', (int) $m[1], (int) $m[2]);
-        }
-        return date('Y-m-d');
     }
 }

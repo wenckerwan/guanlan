@@ -19,7 +19,7 @@ const active = ref('')
     </aside>
     <article class="reader-body">
       <header class="reader-head">
-        <span class="section-kicker">{{ article.priority || 'A' }} 级 · {{ article.category || article.layer || article.period || '资料' }}</span>
+        <span class="section-kicker">{{ article.priority || 'A' }} 级<span v-if="article.date"> · {{ article.date }}</span> · {{ article.tag || article.category || article.layer || article.period || '资料' }}</span>
         <h1>{{ article.title }}</h1>
         <p v-if="article.summary">{{ article.summary }}</p>
       </header>

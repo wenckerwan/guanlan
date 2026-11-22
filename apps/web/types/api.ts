@@ -159,6 +159,7 @@ export type ArticleSummary = {
   wordCount?: number
   release?: boolean
   period?: string
+  date?: string
   level?: string
   type?: string
   tag?: string

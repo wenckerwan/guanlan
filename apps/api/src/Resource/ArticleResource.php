@@ -34,6 +34,7 @@ class ArticleResource
             $base['release'] = (bool) $model->release;
         } elseif ($model instanceof Hotspot) {
             $base['period'] = (string) $model->period;
+            $base['date'] = substr((string) ($model->published_at ?? ''), 0, 10);
             $base['level'] = (string) $model->level;
             $base['type'] = (string) $model->type;
             $base['tag'] = (string) $model->tag;

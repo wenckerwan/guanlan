@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { Newspaper } from 'lucide-vue-next'
 import type { ArticleSummary } from '~/types/api'
 
@@ -27,7 +27,7 @@ const periodRange = computed(() => {
 
 useHead(() => ({
   title: '时政热点｜观澜考研政治知识库',
-  meta: [{ name: 'description', content: `${periodRange.value}考研政治时政考点，按月份与优先级整理。` }],
+  meta: [{ name: 'description', content: `${periodRange.value}考研政治时政事件时间线，按事件发生日期整理，标注优先级与教材接口。` }],
 }))
 
 onMounted(() => {
@@ -47,7 +47,7 @@ onMounted(() => {
       <Breadcrumbs />
       <section class="library-heading">
         <h1>时政热点</h1>
-        <p>按月份整理，标注优先级与对应教材知识点。游客每个栏目可免费阅读 3 篇。</p>
+        <p>一条材料一个事件，按事件发生日期排成时间线（最新在前），分月归档；标注优先级与对应教材知识点。游客每个栏目可免费阅读 3 篇。</p>
       </section>
       <NuxtLink class="library-row current-affairs-entry" to="/practice/current-affairs">
         <span class="library-icon"><Newspaper :size="18" aria-hidden="true" /></span>

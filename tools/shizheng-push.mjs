@@ -1,29 +1,30 @@
 #!/usr/bin/env node
 /**
- * 时政本地推送工具（seed 式数据管）
+ * 时政事件条目推送工具（seed 式数据管）
  *
- * 用途：本地抓取 + 审核完一期时政后，把它追加进 storage/dataset/hotspots.json，
- *       并自动重算 storage/dataset-manifest.json（bytes/items/sha256/totals），
- *       保证部署时 DatasetManifestVerifier 校验通过、api 启动 seed 成功。
+ * 用途：把审核好的事件长文写进 storage/dataset/hotspots.json，并自动重算
+ *       storage/dataset-manifest.json（bytes/items/sha256/totals），
+ *       保证部署时 DatasetManifestVerifier 校验通过、shizheng:import 灌库成功。
  *
  * 用法：
- *   node tools/shizheng-push.mjs --input ./新一期.json
- *   node tools/shizheng-push.mjs --check            # 只校验 hotspots.json 与 manifest 是否一致
+ *   node tools/shizheng-push.mjs --input ./事件.json            # 追加
+ *   node tools/shizheng-push.mjs --input ./事件.json --replace  # 整表替换（按 date 排序）
+ *   node tools/shizheng-push.mjs --check                        # 只校验并重算 manifest
  *
- * 输入文件（--input）是一个 JSON 对象（单期），字段：
+ * 输入是事件对象或数组，字段：
  *   {
- *     "slug":     "2026-10-abc123",          // 必填，全库唯一，建议 期-日期-短哈希
- *     "title":    "时政考点·2026年10月",      // 必填，全库唯一
- *     "period":   "2026年10月",              // 必填，分组键；新增期需在 ArticleSeeder.CARD_MAP 补映射
- *     "priority": "S",                        // 可选，S/A/B，默认 A
- *     "summary":  "……",                      // 可选，列表摘要（截断 500 字）
- *     "html":     "<h2>…</h2>",             // 必填，长文正文（HTML）
- *     "outline":  [{"level":2,"title":"…"}], // 可选，目录；缺省时工具会从 html 的 h2/h3 自动提取
- *     "word_count": 1234,                     // 可选；缺省时按 html 文本字数统计
- *     "source_file": "时政考点_2026年10月.md"  // 可选，溯源文件名
+ *     "slug":     "ev-20261112-3fa2c1",   // 必填，全库唯一
+ *     "title":    "纪念孙中山先生诞辰160周年大会", // 必填，全库唯一
+ *     "date":     "2026-11-12",           // 必填，事件发生日
+ *     "module":   "史纲",                  // 必填，习思想/毛中特/史纲/马原/思法/当代
+ *     "priority": "S",                     // 可选，S/A/B，默认 A
+ *     "period":   "2026年11月",            // 可选，缺省由 date 推出
+ *     "summary":  "……",                   // 可选，列表摘要
+ *     "html":     "<h2>…</h2>",           // 必填，长文正文（HTML）
+ *     "outline":  [{"level":2,"title":"…"}], // 可选，缺省从 html 的 h2/h3 提取
+ *     "word_count": 1234,                  // 可选，缺省按纯文本字数统计
+ *     "source_file": "孙中山诞辰160周年专题_2026.md"
  *   }
- *
- * 也可以用 --input ./多条.json 传一个数组（一次推多期）。
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -37,11 +38,14 @@ const MANIFEST = resolve(ROOT, 'storage/dataset-manifest.json');
 const DATASET_DIR = resolve(ROOT, 'storage/dataset');
 
 const args = process.argv.slice(2);
-const opt = { input: null, check: false };
+const opt = { input: null, check: false, replace: false };
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--input') opt.input = args[++i];
   else if (args[i] === '--check') opt.check = true;
+  else if (args[i] === '--replace') opt.replace = true;
 }
+
+const MODULES = ['习思想', '毛中特', '史纲', '马原', '思法', '当代'];
 
 function fail(msg) {
   console.error('✗ ' + msg);
@@ -79,20 +83,31 @@ function extractOutline(html) {
 function validateEntry(e, idx, existingSlugs, existingTitles) {
   const where = `第 ${idx + 1} 条`;
   if (typeof e !== 'object' || e === null) fail(`${where}: 不是对象`);
-  for (const k of ['slug', 'title', 'period', 'html']) {
+  for (const k of ['slug', 'title', 'html']) {
     if (!e[k] || typeof e[k] !== 'string') fail(`${where}: 缺少必填字符串字段 ${k}`);
   }
+  if (!e.period && !e.date) fail(`${where}: 需要 period 或 date 之一`);
+  if (e.date && !/^\d{4}-\d{2}-\d{2}$/.test(e.date)) fail(`${where}: date 须为 YYYY-MM-DD`);
   if (existingSlugs.has(e.slug)) fail(`${where}: slug 重复 → ${e.slug}`);
   if (existingTitles.has(e.title)) fail(`${where}: title 重复 → ${e.title}`);
   if (e.priority && !['S', 'A', 'B'].includes(e.priority)) fail(`${where}: priority 须为 S/A/B`);
   if (e.outline && !Array.isArray(e.outline)) fail(`${where}: outline 须为数组`);
+  if (e.module && !MODULES.includes(e.module)) fail(`${where}: module 须为 ${MODULES.join('/')}`);
+}
+
+// 事件条目：period 缺省时由 date 推成「2026年11月」这样的月份分组
+function periodOf(e) {
+  if (e.period) return e.period.trim();
+  const [y, m] = e.date.split('-');
+  return `${Number(y)}年${Number(m)}月`;
 }
 
 function normalizeEntry(e) {
-  return {
+  const entry = {
     slug: e.slug.trim(),
     title: e.title.trim(),
-    period: e.period.trim(),
+    period: periodOf(e),
+    date: (e.date || '').trim(),
     priority: e.priority || 'A',
     summary: (e.summary || '').trim(),
     html: e.html,
@@ -100,6 +115,10 @@ function normalizeEntry(e) {
     word_count: Number.isInteger(e.word_count) && e.word_count > 0 ? e.word_count : textOf(e.html).length,
     source_file: (e.source_file || '').trim(),
   };
+  for (const k of ['module', 'level', 'type', 'tag']) {
+    if (e[k]) entry[k] = String(e[k]).trim();
+  }
+  return entry;
 }
 
 // 重算单个 dataset 的 manifest 条目（与 DatasetManifestVerifier.describeDataset 同规则）
@@ -170,15 +189,18 @@ const normalized = incoming.map(normalizeEntry);
 const knownPeriods = new Set(hotspots.map((h) => h.period));
 const newPeriods = [...new Set(normalized.map((h) => h.period))].filter((p) => !knownPeriods.has(p));
 
-const merged = hotspots.concat(normalized);
+const sortKey = (h) => (h.date || `${h.period}-01`);
+const merged = opt.replace
+  ? [...normalized].sort((a, b) => sortKey(a).localeCompare(sortKey(b)))
+  : hotspots.concat(normalized);
 writeFileSync(HOTSPOTS, JSON.stringify(merged, null, 2) + '\n', 'utf8');
-ok(`已追加 ${normalized.length} 期 → hotspots.json 现共 ${merged.length} 期`);
+ok(`${opt.replace ? '已整表替换' : '已追加'} ${normalized.length} 条 → hotspots.json 现共 ${merged.length} 条`);
 
 const totals = rebuildManifest();
 ok(`manifest 已重算 → totals: ${totals.files} 文件 / ${totals.items} 项 / ${totals.bytes} 字节`);
 
 if (newPeriods.length) {
-  console.warn('\n⚠ 检测到新 period（需同步 ArticleSeeder.CARD_MAP，否则卡片落 fallback level=A/type=形势与政策）:');
+  console.warn('\n⚠ 检测到新 period（未在 ArticleSeeder.CARD_MAP 配置；条目自带 level/type/tag 或以 date+module 推送时不受影响）:');
   for (const p of newPeriods) console.warn(`   '${p}' => ['slug' => 'xi-jinping-thought', 'level' => 'S', 'type' => '理论与政策', 'tag' => '在这里起个标签'],`);
 }
 

@@ -43,9 +43,9 @@ class ArticleService
             ->where('status', '<>', ContentStatus::HIDDEN)
             ->when($period !== '', fn (Builder $q) => $q->where('period', $period))
             ->when($priority !== '', fn (Builder $q) => $q->where('priority', $priority))
-            ->orderByRaw("FIELD(priority, 'S', 'A', 'B', 'C')")
+            // 时政改为一事件一篇后，栏目顺序就是事件时间线：按发生日期倒序（最新在前），同日按录入顺序。
             ->orderByDesc('published_at')
-            ->orderBy('id')
+            ->orderByDesc('id')
             ->get()
             ->all();
     }

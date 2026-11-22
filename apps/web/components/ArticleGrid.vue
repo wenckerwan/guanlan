@@ -61,7 +61,7 @@ defineExpose({ gateOpen })
           <span v-if="showPriority" class="priority-mark" :class="(item.priority || 'A').toLowerCase()">{{ item.priority || 'A' }}</span>
           <span class="article-copy">
             <strong>
-              {{ item.title }}
+              <span v-if="item.date" class="article-date">{{ item.date.slice(5).replace('-', '/') }}</span>{{ item.title }}
               <span v-if="item.release" class="release-badge">发行版</span>
             </strong>
             <small>{{ truncate(item.summary, 110) }}</small>
@@ -85,7 +85,7 @@ defineExpose({ gateOpen })
             <span v-if="showPriority" class="priority-mark" :class="(item.priority || 'A').toLowerCase()">{{ item.priority || 'A' }}</span>
             <span class="article-copy">
               <strong>
-                {{ item.title }}
+                <span v-if="item.date" class="article-date">{{ item.date.slice(5).replace('-', '/') }}</span>{{ item.title }}
                 <span class="lock-badge">需登录</span>
               </strong>
               <small>{{ truncate(item.summary, 110) }}</small>
@@ -110,4 +110,5 @@ defineExpose({ gateOpen })
 .article-row .article-copy { flex: 1; overflow-wrap: anywhere; }
 .article-row > svg { flex: none; align-self: center; color: var(--muted); }
 .article-row:hover strong, .article-row:focus-visible strong { color: var(--brand); text-decoration: underline; }
+.article-date { display: inline-block; min-width: 44px; margin-right: 6px; color: var(--muted); font-variant-numeric: tabular-nums; font-weight: 500; }
 </style>
