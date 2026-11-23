@@ -93,3 +93,16 @@ cp /www/backup/guanlan/shizheng-20261122/dataset-manifest-before.json storage/da
   详情页含目录与表格；旧 slug `2027-1293509f` 等返回 404；api / web 健康、日志无错误。
 - 已知修复：导入器最初用 `TRUNCATE` 清表，会隐式提交并打断 `ContentMaintenance` 事务
   （报 `There is no active transaction`）。已改为 `DatasetReader::truncate()`（DELETE），重跑导入无异常。
+
+## 追加：真题分析下架「数据说明」分组（2026-11-23）
+
+- `/analysis` 里 category 为「数据说明」的那篇（`ocr-5274fe86`《真题分析文件复盘报告：OCR与答案错位导致的疏漏》）
+  是内部复盘稿，不属于面向读者的真题分析，按用户要求下架。
+- 数据：`storage/dataset/analysis_articles.json` 由 11 条改为 10 条；manifest 同步
+  （analysis_articles 11 → 10，totals 1973 → 1972 项）。服务器侧 `Dataset integrity OK: 8 verified`。
+- 数据库：删除 `analysis_articles` 中该行，并清理其 3 条 `article_revisions` 与关联评论；
+  其余 12 行（含 2 条隐藏的历史版本）保留，未做整表重灌。
+- 验证：`/api/v1/analysis` 10 条、分组只剩 会议与周年／分析题规律／综合结论／选择题规律；
+  `/analysis` 200；被下架 slug 详情 404。
+- 说明：分析类文章仍以 admin 维护为主，本次只做「单条下架」，不走整表导入
+  （整表导入会连带删掉 2 条隐藏的历史版本行）。
