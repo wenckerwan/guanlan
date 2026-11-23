@@ -33,17 +33,23 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const HOTSPOTS = resolve(ROOT, 'storage/dataset/hotspots.json');
+const DEFAULT_DATASET = 'hotspots.json';
 const MANIFEST = resolve(ROOT, 'storage/dataset-manifest.json');
 const DATASET_DIR = resolve(ROOT, 'storage/dataset');
 
 const args = process.argv.slice(2);
-const opt = { input: null, check: false, replace: false };
+const opt = { input: null, check: false, replace: false, dataset: DEFAULT_DATASET };
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--input') opt.input = args[++i];
   else if (args[i] === '--check') opt.check = true;
   else if (args[i] === '--replace') opt.replace = true;
+  else if (args[i] === '--dataset') opt.dataset = args[++i];
 }
+
+const SUPPORTED = ['hotspots.json', 'predictions.json'];
+if (!SUPPORTED.includes(opt.dataset)) fail(`--dataset 只支持 ${SUPPORTED.join(' / ')}`);
+const IS_PREDICTION = opt.dataset === 'predictions.json';
+const HOTSPOTS = resolve(DATASET_DIR, opt.dataset);
 
 const MODULES = ['习思想', '毛中特', '史纲', '马原', '思法', '当代'];
 
@@ -83,6 +89,16 @@ function extractOutline(html) {
 function validateEntry(e, idx, existingSlugs, existingTitles) {
   const where = `第 ${idx + 1} 条`;
   if (typeof e !== 'object' || e === null) fail(`${where}: 不是对象`);
+  if (IS_PREDICTION) {
+    for (const k of ['slug', 'title', 'layer', 'html']) {
+      if (!e[k] || typeof e[k] !== 'string') fail(`${where}: 缺少必填字符串字段 ${k}`);
+    }
+    if (e.sort_order !== undefined && !Number.isInteger(e.sort_order)) fail(`${where}: sort_order 须为整数`);
+    if (existingSlugs.has(e.slug)) fail(`${where}: slug 重复 → ${e.slug}`);
+    if (existingTitles.has(e.title)) fail(`${where}: title 重复 → ${e.title}`);
+    if (e.priority && !['S', 'A', 'B'].includes(e.priority)) fail(`${where}: priority 须为 S/A/B`);
+    return;
+  }
   for (const k of ['slug', 'title', 'html']) {
     if (!e[k] || typeof e[k] !== 'string') fail(`${where}: 缺少必填字符串字段 ${k}`);
   }
@@ -102,7 +118,23 @@ function periodOf(e) {
   return `${Number(y)}年${Number(m)}月`;
 }
 
+function normalizePrediction(e) {
+  return {
+    slug: e.slug.trim(),
+    title: e.title.trim(),
+    layer: e.layer.trim(),
+    priority: e.priority || 'A',
+    summary: (e.summary || '').trim(),
+    html: e.html,
+    outline: Array.isArray(e.outline) && e.outline.length ? e.outline : extractOutline(e.html),
+    source_file: (e.source_file || '').trim(),
+    word_count: Number.isInteger(e.word_count) && e.word_count > 0 ? e.word_count : textOf(e.html).length,
+    sort_order: Number.isInteger(e.sort_order) ? e.sort_order : 99,
+  };
+}
+
 function normalizeEntry(e) {
+  if (IS_PREDICTION) return normalizePrediction(e);
   const entry = {
     slug: e.slug.trim(),
     title: e.title.trim(),
@@ -179,22 +211,25 @@ if (!opt.input) fail('缺少 --input <新一期.json>，或用 --check 仅校验
 const incomingRaw = readJson(resolve(process.cwd(), opt.input));
 const incoming = Array.isArray(incomingRaw) ? incomingRaw : [incomingRaw];
 
-const existingSlugs = new Set(hotspots.map((h) => h.slug));
-const existingTitles = new Set(hotspots.map((h) => h.title));
+// --replace 是整表重建，不与旧条目比对唯一性
+const existingSlugs = new Set(opt.replace ? [] : hotspots.map((h) => h.slug));
+const existingTitles = new Set(opt.replace ? [] : hotspots.map((h) => h.title));
 incoming.forEach((e, i) => validateEntry(e, i, existingSlugs, existingTitles));
 
 const normalized = incoming.map(normalizeEntry);
 
 // 新增 period 提醒：CARD_MAP 需补映射，否则落 fallback
 const knownPeriods = new Set(hotspots.map((h) => h.period));
-const newPeriods = [...new Set(normalized.map((h) => h.period))].filter((p) => !knownPeriods.has(p));
+const newPeriods = IS_PREDICTION ? [] : [...new Set(normalized.map((h) => h.period))].filter((p) => !knownPeriods.has(p));
 
-const sortKey = (h) => (h.date || `${h.period}-01`);
+const sortKey = IS_PREDICTION
+  ? (h) => String(h.sort_order ?? 99).padStart(4, '0')
+  : (h) => (h.date || `${h.period}-01`);
 const merged = opt.replace
   ? [...normalized].sort((a, b) => sortKey(a).localeCompare(sortKey(b)))
   : hotspots.concat(normalized);
 writeFileSync(HOTSPOTS, JSON.stringify(merged, null, 2) + '\n', 'utf8');
-ok(`${opt.replace ? '已整表替换' : '已追加'} ${normalized.length} 条 → hotspots.json 现共 ${merged.length} 条`);
+ok(`${opt.replace ? '已整表替换' : '已追加'} ${normalized.length} 条 → ${opt.dataset} 现共 ${merged.length} 条`);
 
 const totals = rebuildManifest();
 ok(`manifest 已重算 → totals: ${totals.files} 文件 / ${totals.items} 项 / ${totals.bytes} 字节`);
@@ -205,6 +240,5 @@ if (newPeriods.length) {
 }
 
 console.log('\n下一步:');
-console.log('  1. （如有新 period）补 ArticleSeeder.CARD_MAP，php -l 校验');
-console.log('  2. git add storage/dataset/hotspots.json storage/dataset-manifest.json apps/api/seeders/ArticleSeeder.php');
-console.log('  3. 提交并推送，部署后 api 启动时自动 seed（幂等，按 slug 清空重灌 whereNotNull(slug)）');
+console.log(`  1. git add storage/dataset/${opt.dataset} storage/dataset-manifest.json <改动代码>`);
+console.log(`  2. 提交推送，部署后在容器内执行 php bin/hyperf.php ${IS_PREDICTION ? 'predict:import' : 'shizheng:import'} --force`);

@@ -75,3 +75,21 @@ cp /www/backup/guanlan/shizheng-20261122/dataset-manifest-before.json storage/da
   本次以运行镜像的源码基线 `578aff5` 为父提交，发布提交 `796d109` 已快进到 `main`，使 `main` 与线上一致。
 - 2026-11-22 起时政内容以「事件」为最小单位维护，新增一期时按 `docs/shizheng-local-push.md` 走
   `node tools/shizheng-push.mjs --input` + `shizheng:import`。
+
+---
+
+## 追加：时政预测按题位重整（2026-11-23）
+
+- `/predictions` 由「10 篇混编长文」（真题反推 + 热点预测 + 原文精选 + 专题精选 + 每日增补）改为
+  **按题位拆分的 10 篇**：命题规律总纲 1 篇、选择题 Q15/Q16/Q32/Q33 各 1 篇、分析题 Q34—Q38 各 1 篇。
+  其中「原文精选 / 专题精选 / 每日增补」7 篇与 `/hotspots` 事件条目重复，按决定下架。
+- 数据：`storage/dataset/predictions.json` 重写（49 KB，10 条，`layer` + `sort_order` 决定分组与顺序），
+  manifest 同步（predictions 10 条不变，字节数更新）。
+- 后端：新增 `PredictionDatasetImporter` 与 `predict:import` 命令（只重灌 predictions 表）。
+- 镜像：`guanlan-api:pred-20261123`、`guanlan-web:pred-20261123`；编排覆盖
+  `/www/backup/guanlan/pred-20261123/compose.pred.yml`；旧 predictions 表数据备份为
+  `/www/backup/guanlan/pred-20261123/predictions-before.sql`。
+- 验证：`/api/v1/predictions` 10 条且按题位顺序、游客 3 免 7 锁；`/predictions` 200 且渲染新文案；
+  详情页含目录与表格；旧 slug `2027-1293509f` 等返回 404；api / web 健康、日志无错误。
+- 已知修复：导入器最初用 `TRUNCATE` 清表，会隐式提交并打断 `ContentMaintenance` 事务
+  （报 `There is no active transaction`）。已改为 `DatasetReader::truncate()`（DELETE），重跑导入无异常。

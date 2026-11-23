@@ -22,4 +22,5 @@ return [
     \App\Command\SyncPredictionBodiesCommand::class,
     \App\Command\UpdateAnalysisBodiesCommand::class,
     \App\Command\ShizhengImportCommand::class,
+    \App\Command\PredictImportCommand::class,
 ];

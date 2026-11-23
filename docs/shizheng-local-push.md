@@ -103,3 +103,29 @@ php bin/hyperf.php shizheng:import --force                              # 容器
 - 云端自动抓取（crawler / 候选池 / AI 筛选）已于 2026-10-04 拆除，不恢复。
 - 2026-11 起 `/hotspots` 由「按月长文」改为「按事件的长文时间线」：旧的分月长文条目
   被同一批源材料拆出的事件条目取代，旧 slug 不再可访问。
+
+## 时政预测（predictions.json）
+
+预测不再按"文件"入库，而是**按题位拆分**：Q15／Q16 单选、Q32／Q33 多选、Q34—Q38 分析题，
+另加一篇「命题规律总纲」。字段与热点不同：
+
+| 字段 | 必填 | 说明 |
+|---|---|---|
+| `slug` | ✅ | 全库唯一，建议 `pred-2027-qNN-短哈希`。 |
+| `title` | ✅ | 以题位开头，如 `Q15 单选｜国内唯一性事实`。 |
+| `layer` | ✅ | 分组键：`命题规律`／`选择题`／`分析题`。 |
+| `sort_order` | ✅ | 题位顺序：总纲 0，Q15/16/32/33 = 11/12/13/14，Q34—Q38 = 21—25。 |
+| `priority` | ⬜ | S／A／B，用于卡片角标。 |
+| `html` | ✅ | 正文；`h2`/`h3` 自动提为目录。 |
+
+推送与入库：
+
+```bash
+node tools/shizheng-push.mjs --input ./预测.json --dataset predictions.json   # 追加
+node tools/shizheng-push.mjs --input ./预测.json --dataset predictions.json --replace
+# 服务器侧
+docker compose ... run --rm --no-deps -T --entrypoint php api bin/hyperf.php predict:import --force
+```
+
+> `predict:import` 只重灌 `predictions` 表；`shizheng:import` 只重灌 `hotspots` 表。
+> 表格清空必须用 DELETE（`DatasetReader::truncate()`），**不能写 TRUNCATE**——DDL 会隐式提交并打断导入事务。

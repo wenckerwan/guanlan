@@ -1,7 +1,7 @@
 ﻿<script setup lang="ts">
 import type { ArticleSummary } from '~/types/api'
 
-useHead({ title: '时政预测｜观澜考研政治知识库', meta: [{ name: 'description', content: '2027 考研政治时政考点预测：真题反推、热点预测与专题精选。' }] })
+useHead({ title: '时政预测｜观澜考研政治知识库', meta: [{ name: 'description', content: '2027 考研政治时政预测：按题位拆分 Q15—Q38，含命题规律、真题依据、候选材料与排雷。' }] })
 
 const route = useRoute()
 const router = useRouter()
@@ -26,7 +26,7 @@ onMounted(() => {
       <Breadcrumbs />
       <section class="library-heading">
         <h1>时政预测</h1>
-        <p>真题反推、热点预测与专题精选。游客每个栏目可免费阅读 3 篇。</p>
+        <p>按题位拆分：Q15／Q16 单选、Q32／Q33 多选、Q34—Q38 分析题，另附命题规律总纲。每篇给真题依据、2027 候选材料、设问骨架与排雷。游客每个栏目可免费阅读 3 篇。</p>
       </section>
       <ArticleGrid :items="items" :pending="pending" :failed="!!error" base-path="/predictions" group-key="layer" @retry="refresh()" />
       <NuxtLink class="back-link" to="/">返回首页</NuxtLink>

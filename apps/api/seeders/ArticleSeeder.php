@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 use App\Model\AnalysisArticle;
-use App\Model\Hotspot;
-use App\Model\Prediction;
 use App\Seeder\DatasetReader;
 use App\Seeder\DatasetManifestVerifier;
 use Hyperf\Database\Seeders\Seeder;
@@ -75,32 +73,7 @@ class ArticleSeeder extends Seeder
 
     private function seedPredictions(): void
     {
-        $rows = DatasetReader::list('predictions.json');
-        if ($rows === []) {
-            echo '[ArticleSeeder] 跳过时政预测：dataset 缺失' . PHP_EOL;
-            return;
-        }
-
-        DatasetReader::truncate('predictions');
-        $now = DatasetReader::now();
-
-        foreach ($rows as $row) {
-            Prediction::create([
-                'slug' => (string) $row['slug'],
-                'title' => (string) $row['title'],
-                'layer' => (string) ($row['layer'] ?? ''),
-                'priority' => (string) ($row['priority'] ?? 'A'),
-                'summary' => mb_substr((string) ($row['summary'] ?? ''), 0, 500),
-                'html' => (string) ($row['html'] ?? ''),
-                'outline' => $row['outline'] ?? [],
-                'source_file' => (string) ($row['source_file'] ?? ''),
-                'word_count' => (int) ($row['word_count'] ?? 0),
-                'sort_order' => (int) ($row['sort_order'] ?? 0),
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
-        }
-
-        echo '[ArticleSeeder] 时政预测 ' . Prediction::query()->count() . ' 篇' . PHP_EOL;
+        $count = (new \App\Seeder\PredictionDatasetImporter())->import();
+        echo '[ArticleSeeder] 时政预测 ' . $count . ' 篇' . PHP_EOL;
     }
 }

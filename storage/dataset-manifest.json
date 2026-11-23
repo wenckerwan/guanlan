@@ -35,10 +35,10 @@
       "sha256": "193cd722f14f3bd9dc6e03a92822ec479dd38e480112561a262614801ea47ab3"
     },
     "predictions.json": {
-      "bytes": 585841,
+      "bytes": 49447,
       "groups": {},
       "items": 10,
-      "sha256": "664787cf67f9925f6c8a90c136b6b375d72b28c27d0818044034ac8753212a08"
+      "sha256": "459f3cf9f4e0af8aa8096eb21b6f3d60766c412bd1fc3c51c47a27399550bda6"
     },
     "questions.json": {
       "bytes": 2962713,
@@ -73,7 +73,7 @@
     "sha256": "0a790455b203627c61eb7ac89d49fb66eb11d02f31c06596cc998cde3c964e3c"
   },
   "totals": {
-    "bytes": 4893246,
+    "bytes": 4356852,
     "files": 8,
     "items": 1973
   }
