@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { HeartHandshake, Home } from 'lucide-vue-next'
+import { Cloud, HeartHandshake, Home } from 'lucide-vue-next'
 
 /**
  * 站点页脚：友情链接区 + 版权行。
@@ -8,6 +8,7 @@ import { HeartHandshake, Home } from 'lucide-vue-next'
 const friendLinks = [
   { href: 'https://wencker.top/', label: '个人主页', note: 'wencker.top', home: true },
   { href: 'https://afdian.com/a/wencker', label: '爱发电赞助', note: '支持观澜持续更新', sponsor: true },
+  { href: 'https://www.rainyun.com/home', label: '本站由雨云提供计算服务', note: 'rainyun.com', cloud: true },
 ]
 const year = new Date().getFullYear()
 </script>
@@ -22,6 +23,7 @@ const year = new Date().getFullYear()
             <a :href="link.href" target="_blank" rel="noopener noreferrer" class="site-footer__link" :class="{ sponsor: link.sponsor }">
               <HeartHandshake v-if="link.sponsor" :size="14" aria-hidden="true" />
               <Home v-else-if="link.home" :size="14" aria-hidden="true" />
+              <Cloud v-else-if="link.cloud" :size="14" aria-hidden="true" />
               <span class="site-footer__label">{{ link.label }}</span>
               <small v-if="link.note">{{ link.note }}</small>
             </a>
